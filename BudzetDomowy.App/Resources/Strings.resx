@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute name="xml:space" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="AppTitle" xml:space="preserve"><value>Budżet domowy</value></data>
+  <data name="ProfileSuffix" xml:space="preserve"><value> [profil {0}]</value></data>
+  <data name="StartupFailed" xml:space="preserve"><value>Nie udało się uruchomić programu:
+{0}</value></data>
+  <data name="Cancel" xml:space="preserve"><value>Anuluj</value></data>
+  <data name="Close" xml:space="preserve"><value>Zamknij</value></data>
+  <data name="Undo" xml:space="preserve"><value>Cofnij</value></data>
+  <data name="ArchivedSuffix" xml:space="preserve"><value>(archiwum)</value></data>
+  <data name="UpdateRequiredShort" xml:space="preserve"><value>W folderze danych są zapisy z nowszej wersji programu. Zaktualizuj program, zanim zaczniesz wpisywać dane.</value></data>
+  <data name="WizardTitle" xml:space="preserve"><value>Budżet domowy – pierwsze uruchomienie</value></data>
+  <data name="WizardWelcome" xml:space="preserve"><value>Witaj w programie Budżet domowy</value></data>
+  <data name="WizardFolderIntro" xml:space="preserve"><value>Wskaż folder, w którym program ma trzymać dane. Aby dwie osoby pracowały na tych samych danych, każda wskazuje ten sam folder synchronizowany przez OneDrive (druga osoba – folder udostępniony jej przez OneDrive).</value></data>
+  <data name="WizardFolderLabel" xml:space="preserve"><value>Folder danych</value></data>
+  <data name="WizardBrowse" xml:space="preserve"><value>Przeglądaj…</value></data>
+  <data name="WizardBrowseTitle" xml:space="preserve"><value>Wybierz folder danych</value></data>
+  <data name="WizardOneDriveHint" xml:space="preserve"><value>Wskazówka: kliknij folder w Eksploratorze prawym przyciskiem myszy i wybierz „Zawsze zachowaj na tym urządzeniu”, aby OneDrive nie zamieniał plików na wersje tylko w chmurze.</value></data>
+  <data name="WizardNext" xml:space="preserve"><value>Dalej</value></data>
+  <data name="WizardBack" xml:space="preserve"><value>Wstecz</value></data>
+  <data name="WizardFinish" xml:space="preserve"><value>Zakończ</value></data>
+  <data name="WizardDeviceIntro" xml:space="preserve"><value>Nazwij ten komputer. Nazwa pomoże odróżnić urządzenia na ekranie synchronizacji.</value></data>
+  <data name="WizardDeviceLabel" xml:space="preserve"><value>Nazwa komputera</value></data>
+  <data name="WizardFinishHint" xml:space="preserve"><value>Po kliknięciu „Zakończ” program wczyta istniejące dane z folderu i przygotuje domyślne kategorie (jeśli nikt jeszcze ich nie utworzył).</value></data>
+  <data name="WizardFailed" xml:space="preserve"><value>Nie udało się przygotować danych: {0}</value></data>
+  <data name="CheckFolderMissing" xml:space="preserve"><value>Folder nie istnieje. Utwórz go najpierw w Eksploratorze.</value></data>
+  <data name="CheckFolderExists" xml:space="preserve"><value>Folder istnieje.</value></data>
+  <data name="CheckWritable" xml:space="preserve"><value>W folderze można zapisywać.</value></data>
+  <data name="CheckNotWritable" xml:space="preserve"><value>Brak uprawnień do zapisu w tym folderze.</value></data>
+  <data name="CheckOneDrive" xml:space="preserve"><value>Folder znajduje się w OneDrive.</value></data>
+  <data name="CheckNoOneDrive" xml:space="preserve"><value>Nie wykryto OneDrive. Dane nie będą synchronizowane z innym komputerem, dopóki folder nie znajdzie się w OneDrive.</value></data>
+  <data name="CheckExistingData" xml:space="preserve"><value>W folderze są już dane z liczby urządzeń: {0}. Zostaną wczytane.</value></data>
+  <data name="CheckEmptyFolder" xml:space="preserve"><value>Folder nie zawiera jeszcze danych – zaczynasz od zera.</value></data>
+  <data name="CheckCloudOnly" xml:space="preserve"><value>Pliki danych dostępne tylko w chmurze: {0}. Kliknij folder prawym przyciskiem i wybierz „Zawsze zachowaj na tym urządzeniu”, poczekaj na pobranie plików i dopiero wtedy zakończ kreator.</value></data>
+  <data name="CheckConflicts" xml:space="preserve"><value>Znaleziono pliki z konfliktem OneDrive: {0}. Nie będą wczytywane; po zakończeniu sprawdź je w szczegółach synchronizacji.</value></data>
+  <data name="NavDashboard" xml:space="preserve"><value>Pulpit</value></data>
+  <data name="NavTransactions" xml:space="preserve"><value>Transakcje</value></data>
+  <data name="NavBudgets" xml:space="preserve"><value>Budżety</value></data>
+  <data name="NavEvents" xml:space="preserve"><value>Wydarzenia</value></data>
+  <data name="NavReports" xml:space="preserve"><value>Raporty</value></data>
+  <data name="NavSettings" xml:space="preserve"><value>Ustawienia</value></data>
+  <data name="PlaceholderMessage" xml:space="preserve"><value>Ten ekran powstanie w jednej z kolejnych faz projektu.</value></data>
+  <data name="QuickDate" xml:space="preserve"><value>Data</value></data>
+  <data name="QuickAmount" xml:space="preserve"><value>Kwota</value></data>
+  <data name="QuickCategory" xml:space="preserve"><value>Kategoria</value></data>
+  <data name="QuickNote" xml:space="preserve"><value>Notatka</value></data>
+  <data name="QuickEvent" xml:space="preserve"><value>Wydarzenie</value></data>
+  <data name="QuickType" xml:space="preserve"><value>Rodzaj</value></data>
+  <data name="QuickAdd" xml:space="preserve"><value>Dodaj</value></data>
+  <data name="QuickCategoryHint" xml:space="preserve"><value>wpisz, aby filtrować</value></data>
+  <data name="QuickNoteHint" xml:space="preserve"><value>np. Lewiatan</value></data>
+  <data name="QuickTypeTip" xml:space="preserve"><value>Wydatek / Przychód (F2)</value></data>
+  <data name="QuickAddTip" xml:space="preserve"><value>Zapisz wpis (Enter)</value></data>
+  <data name="QuickAddBadAmount" xml:space="preserve"><value>Wpisz poprawną kwotę, np. 12,50.</value></data>
+  <data name="QuickAddSaved" xml:space="preserve"><value>Dodano: {0}</value></data>
+  <data name="TypeExpense" xml:space="preserve"><value>Wydatek</value></data>
+  <data name="TypeIncome" xml:space="preserve"><value>Przychód</value></data>
+  <data name="NoEvent" xml:space="preserve"><value>— brak —</value></data>
+  <data name="SyncWaiting" xml:space="preserve"><value>Oczekiwanie na synchronizację</value></data>
+  <data name="SyncRunning" xml:space="preserve"><value>Trwa synchronizacja…</value></data>
+  <data name="SyncDone" xml:space="preserve"><value>Zsynchronizowano · {0}</value></data>
+  <data name="SyncProblem" xml:space="preserve"><value>Problem z synchronizacją ({0})</value></data>
+  <data name="SyncUpdateRequired" xml:space="preserve"><value>Zaktualizuj program</value></data>
+  <data name="SyncClickForDetails" xml:space="preserve"><value>Kliknij, aby zobaczyć szczegóły synchronizacji</value></data>
+  <data name="SyncDetailsTitle" xml:space="preserve"><value>Synchronizacja</value></data>
+  <data name="SyncDetailsDone" xml:space="preserve"><value>Zsynchronizowano {0}</value></data>
+  <data name="SyncDetailsProblem" xml:space="preserve"><value>Synchronizacja zgłasza problemy</value></data>
+  <data name="SyncDetailsFolder" xml:space="preserve"><value>Folder danych</value></data>
+  <data name="SyncDetailsLocal" xml:space="preserve"><value>Folder lokalny (baza podręczna, poza OneDrive)</value></data>
+  <data name="SyncDetailsThisDevice" xml:space="preserve"><value>Ten komputer</value></data>
+  <data name="SyncDetailsIssues" xml:space="preserve"><value>Problemy</value></data>
+  <data name="SyncDetailsDevices" xml:space="preserve"><value>Urządzenia</value></data>
+  <data name="SyncNoIssues" xml:space="preserve"><value>Brak problemów.</value></data>
+  <data name="SyncColDevice" xml:space="preserve"><value>Urządzenie</value></data>
+  <data name="SyncColEvents" xml:space="preserve"><value>Zdarzeń</value></data>
+  <data name="SyncColLastRead" xml:space="preserve"><value>Ostatnio wczytano</value></data>
+  <data name="SyncNow" xml:space="preserve"><value>Synchronizuj teraz</value></data>
+  <data name="SyncOpenFolder" xml:space="preserve"><value>Otwórz folder</value></data>
+  <data name="ThisComputer" xml:space="preserve"><value>(ten komputer)</value></data>
+  <data name="OtherComputer" xml:space="preserve"><value>Inny komputer</value></data>
+  <data name="IssueFolderUnavailable" xml:space="preserve"><value>Folder danych jest niedostępny: {0}. Sprawdź, czy dysk lub OneDrive działa.</value></data>
+  <data name="IssueCloudOnly" xml:space="preserve"><value>Plik {0} jest dostępny tylko w chmurze. Kliknij folder danych w Eksploratorze prawym przyciskiem i wybierz „Zawsze zachowaj na tym urządzeniu”.</value></data>
+  <data name="IssueConflict" xml:space="preserve"><value>Plik {0} wygląda na kopię konfliktową OneDrive i nie został wczytany. Sprawdź jego zawartość i usuń go, gdy nie jest potrzebny.</value></data>
+  <data name="IssueUpdateRequired" xml:space="preserve"><value>Plik {0} zawiera dane z nowszej wersji programu. Zaktualizuj program; do tego czasu zapisywanie jest wyłączone.</value></data>
+  <data name="IssueReadError" xml:space="preserve"><value>Nie można odczytać pliku {0} ({1}). Program spróbuje ponownie.</value></data>
+  <data name="IssueCorrupt" xml:space="preserve"><value>Pominięto uszkodzone wiersze ({0}) w pliku {1}.</value></data>
+  <data name="IssueFailedEvents" xml:space="preserve"><value>Nie udało się zastosować zdarzeń ({0}) z pliku {1}.</value></data>
+  <data name="ColDate" xml:space="preserve"><value>Data</value></data>
+  <data name="ColType" xml:space="preserve"><value>Rodzaj</value></data>
+  <data name="ColAmount" xml:space="preserve"><value>Kwota</value></data>
+  <data name="ColCategory" xml:space="preserve"><value>Kategoria</value></data>
+  <data name="ColNote" xml:space="preserve"><value>Notatka</value></data>
+  <data name="ColEvent" xml:space="preserve"><value>Wydarzenie</value></data>
+  <data name="FilterFrom" xml:space="preserve"><value>Od</value></data>
+  <data name="FilterTo" xml:space="preserve"><value>Do</value></data>
+  <data name="FilterCategory" xml:space="preserve"><value>Kategoria</value></data>
+  <data name="FilterEvent" xml:space="preserve"><value>Wydarzenie</value></data>
+  <data name="FilterType" xml:space="preserve"><value>Rodzaj</value></data>
+  <data name="FilterSearch" xml:space="preserve"><value>Szukaj</value></data>
+  <data name="FilterSearchHint" xml:space="preserve"><value>notatka, kategoria, kwota</value></data>
+  <data name="FilterAllCategories" xml:space="preserve"><value>Wszystkie kategorie</value></data>
+  <data name="FilterAllEvents" xml:space="preserve"><value>Wszystkie</value></data>
+  <data name="FilterAllTypes" xml:space="preserve"><value>Wszystkie</value></data>
+  <data name="FilterExpenses" xml:space="preserve"><value>Wydatki</value></data>
+  <data name="FilterIncome" xml:space="preserve"><value>Przychody</value></data>
+  <data name="FilterThisMonth" xml:space="preserve"><value>Ten miesiąc</value></data>
+  <data name="FilterClear" xml:space="preserve"><value>Wyczyść filtry</value></data>
+  <data name="BulkChangeCategory" xml:space="preserve"><value>Zmień kategorię zaznaczonych…</value></data>
+  <data name="BulkNewCategory" xml:space="preserve"><value>Nowa kategoria</value></data>
+  <data name="BulkApply" xml:space="preserve"><value>Zastosuj</value></data>
+  <data name="BulkDelete" xml:space="preserve"><value>Usuń zaznaczone</value></data>
+  <data name="TransactionsEmpty" xml:space="preserve"><value>Brak transakcji dla wybranych filtrów.</value></data>
+  <data name="SummaryVisible" xml:space="preserve"><value>Widoczne: {0} · Wydatki: {1} · Przychody: {2} · Bilans: {3}</value></data>
+  <data name="SummarySelected" xml:space="preserve"><value>Zaznaczono: {0} · Wydatki: {1} · Przychody: {2} · Bilans: {3}</value></data>
+  <data name="DeletedCount" xml:space="preserve"><value>Usunięto wpisów: {0}</value></data>
+  <data name="CategoryChangedCount" xml:space="preserve"><value>Zmieniono kategorię wpisów: {0}</value></data>
+  <data name="SettingsGeneral" xml:space="preserve"><value>Ogólne</value></data>
+  <data name="SettingsCategories" xml:space="preserve"><value>Kategorie</value></data>
+  <data name="SettingsTheme" xml:space="preserve"><value>Motyw</value></data>
+  <data name="ThemeSystem" xml:space="preserve"><value>Zgodny z Windows</value></data>
+  <data name="ThemeLight" xml:space="preserve"><value>Jasny</value></data>
+  <data name="ThemeDark" xml:space="preserve"><value>Ciemny</value></data>
+  <data name="SettingsDataSection" xml:space="preserve"><value>Dane</value></data>
+  <data name="SettingsShortcuts" xml:space="preserve"><value>Skróty klawiszowe</value></data>
+  <data name="SettingsShortcutsText" xml:space="preserve"><value>Enter – zapisz wpis z paska u góry
+Tab – następne pole
+F2 – przełącz Wydatek/Przychód
+Ctrl+L – przejdź do pola Kwota
+Ctrl+Z – cofnij ostatnią operację (gdy widać komunikat)
+Ctrl+1 … Ctrl+6 – przełączanie ekranów
+Del – usuń zaznaczone transakcje</value></data>
+  <data name="CategoryAdd" xml:space="preserve"><value>Dodaj kategorię</value></data>
+  <data name="CategoryAddChild" xml:space="preserve"><value>Dodaj podkategorię</value></data>
+  <data name="CategoryMoveUp" xml:space="preserve"><value>Przesuń wyżej</value></data>
+  <data name="CategoryMoveDown" xml:space="preserve"><value>Przesuń niżej</value></data>
+  <data name="CategoryName" xml:space="preserve"><value>Nazwa</value></data>
+  <data name="CategoryType" xml:space="preserve"><value>Typ</value></data>
+  <data name="CategoryParent" xml:space="preserve"><value>Kategoria nadrzędna</value></data>
+  <data name="CategoryIcon" xml:space="preserve"><value>Ikona</value></data>
+  <data name="CategoryIconHint" xml:space="preserve"><value>emoji (Win + .)</value></data>
+  <data name="CategoryColor" xml:space="preserve"><value>Kolor</value></data>
+  <data name="CategoryArchived" xml:space="preserve"><value>Zarchiwizowana (ukryta przy dodawaniu wpisów)</value></data>
+  <data name="CategorySave" xml:space="preserve"><value>Zapisz zmiany</value></data>
+  <data name="CategoryRemove" xml:space="preserve"><value>Usuń</value></data>
+  <data name="CategoryRemoveTip" xml:space="preserve"><value>Kategoria bez wpisów zostanie usunięta, z wpisami – zarchiwizowana.</value></data>
+  <data name="CategoryTypeExpense" xml:space="preserve"><value>Wydatek</value></data>
+  <data name="CategoryTypeIncome" xml:space="preserve"><value>Przychód</value></data>
+  <data name="CategoryTypeBoth" xml:space="preserve"><value>Wydatek i przychód</value></data>
+  <data name="NoParent" xml:space="preserve"><value>— główna kategoria —</value></data>
+  <data name="NewCategoryName" xml:space="preserve"><value>Nowa kategoria</value></data>
+  <data name="CategoryNameRequired" xml:space="preserve"><value>Podaj nazwę kategorii.</value></data>
+  <data name="CategoryColorInvalid" xml:space="preserve"><value>Kolor ma mieć postać #RRGGBB.</value></data>
+  <data name="CategorySaved" xml:space="preserve"><value>Zapisano.</value></data>
+  <data name="CategoryDeleted" xml:space="preserve"><value>Usunięto kategorię „{0}”.</value></data>
+  <data name="CategoryArchivedToast" xml:space="preserve"><value>Kategoria „{0}” ma wpisy lub podkategorie, więc została zarchiwizowana.</value></data>
+</root>

@@ -1,0 +1,95 @@
+<Window x:Class="BudzetDomowy.App.Views.FirstRunWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ui="http://schemas.modernwpf.com/2019"
+        xmlns:infra="clr-namespace:BudzetDomowy.App.Infrastructure"
+        ui:WindowHelper.UseModernWindowStyle="True"
+        Icon="pack://application:,,,/Assets/BudzetDomowy.ico"
+        Title="{infra:Str WizardTitle}" Width="680" Height="560" MinWidth="560" MinHeight="480"
+        WindowStartupLocation="CenterScreen">
+    <Window.Resources>
+        <infra:BoolToVisibilityConverter x:Key="BoolToVis" />
+        <infra:NullToVisibilityConverter x:Key="NullToVis" />
+    </Window.Resources>
+    <Grid Margin="32,24,32,24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Margin="0,0,0,16">
+            <TextBlock Text="{infra:Str WizardWelcome}" FontSize="26" FontWeight="SemiBold" />
+            <TextBlock Text="{Binding ProfileLabel, StringFormat='Profil: {0}'}" Margin="0,4,0,0" Opacity="0.7"
+                       Visibility="{Binding ProfileLabel, Converter={StaticResource NullToVis}}" />
+        </StackPanel>
+
+        <!-- Step 1: folder -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto"
+                      Visibility="{Binding IsStep1, Converter={StaticResource BoolToVis}}">
+            <StackPanel>
+                <TextBlock Text="{infra:Str WizardFolderIntro}" TextWrapping="Wrap" Margin="0,0,0,12" />
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBox x:Name="FolderBox" Text="{Binding FolderPath, UpdateSourceTrigger=PropertyChanged}"
+                             ui:ControlHelper.Header="{infra:Str WizardFolderLabel}" />
+                    <Button Grid.Column="1" Content="{infra:Str WizardBrowse}" Margin="8,0,0,0" VerticalAlignment="Bottom"
+                            Click="Browse_Click" />
+                </Grid>
+                <ItemsControl ItemsSource="{Binding CheckLines}" Margin="0,16,0,0">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Grid Margin="0,3">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="28" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="{Binding Glyph}" FontSize="15" x:Name="Glyph" />
+                                <TextBlock Grid.Column="1" Text="{Binding Text}" TextWrapping="Wrap" />
+                            </Grid>
+                            <DataTemplate.Triggers>
+                                <DataTrigger Binding="{Binding Level}" Value="Ok">
+                                    <Setter TargetName="Glyph" Property="Foreground" Value="{StaticResource IncomeBrush}" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding Level}" Value="Error">
+                                    <Setter TargetName="Glyph" Property="Foreground" Value="{StaticResource ExpenseBrush}" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding Level}" Value="Warning">
+                                    <Setter TargetName="Glyph" Property="Foreground" Value="{StaticResource WarningBrush}" />
+                                </DataTrigger>
+                            </DataTemplate.Triggers>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <TextBlock Text="{infra:Str WizardOneDriveHint}" TextWrapping="Wrap" Margin="0,16,0,0" Opacity="0.7" />
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Step 2: this computer -->
+        <StackPanel Grid.Row="1" Visibility="{Binding IsStep2, Converter={StaticResource BoolToVis}}">
+            <TextBlock Text="{infra:Str WizardDeviceIntro}" TextWrapping="Wrap" Margin="0,0,0,12" />
+            <TextBox Text="{Binding DeviceName, UpdateSourceTrigger=PropertyChanged}"
+                     ui:ControlHelper.Header="{infra:Str WizardDeviceLabel}" MaxLength="60" />
+            <TextBlock Text="{Binding FolderPath, StringFormat='{}{0}'}" Margin="0,16,0,0" TextWrapping="Wrap" Opacity="0.7" />
+            <TextBlock Text="{infra:Str WizardFinishHint}" TextWrapping="Wrap" Margin="0,16,0,0" Opacity="0.7" />
+            <ProgressBar IsIndeterminate="True" Margin="0,16,0,0"
+                         Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}" />
+            <TextBlock Text="{Binding ErrorMessage}" Foreground="{StaticResource ExpenseBrush}" TextWrapping="Wrap" Margin="0,12,0,0" />
+        </StackPanel>
+
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
+            <Button Content="{infra:Str Cancel}" Command="{Binding CancelCommand}" Margin="0,0,8,0" MinWidth="90" />
+            <Button Content="{infra:Str WizardBack}" Command="{Binding BackCommand}" Margin="0,0,8,0" MinWidth="90"
+                    Visibility="{Binding IsStep2, Converter={StaticResource BoolToVis}}" />
+            <Button Content="{infra:Str WizardNext}" Command="{Binding NextCommand}" IsEnabled="{Binding CanGoNext}"
+                    Style="{StaticResource AccentButtonStyle}" MinWidth="110"
+                    Visibility="{Binding IsStep1, Converter={StaticResource BoolToVis}}" />
+            <Button Content="{infra:Str WizardFinish}" Command="{Binding FinishCommand}" IsEnabled="{Binding CanGoNext}"
+                    Style="{StaticResource AccentButtonStyle}" MinWidth="110"
+                    Visibility="{Binding IsStep2, Converter={StaticResource BoolToVis}}" />
+        </StackPanel>
+    </Grid>
+</Window>
