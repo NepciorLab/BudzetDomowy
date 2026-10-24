@@ -23,15 +23,12 @@
 
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel Margin="16,12,4,12">
-            <!-- Which report: overview, comparisons, places -->
-            <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                <RadioButton Content="{infra:Str ReportTabOverview}" GroupName="tab" IsChecked="{Binding IsOverview, Mode=OneWay}"
-                             Command="{Binding SetTabCommand}" CommandParameter="Overview" MinWidth="0" />
-                <RadioButton Content="{infra:Str ReportTabCompare}" GroupName="tab" IsChecked="{Binding IsCompare, Mode=OneWay}"
-                             Command="{Binding SetTabCommand}" CommandParameter="Compare" MinWidth="0" Margin="8,0,0,0" />
-                <RadioButton Content="{infra:Str ReportTabPlaces}" GroupName="tab" IsChecked="{Binding IsPlaces, Mode=OneWay}"
-                             Command="{Binding SetTabCommand}" CommandParameter="Places" MinWidth="0" Margin="8,0,0,0" />
-            </StackPanel>
+            <!-- Which report: overview, comparisons, places (a strip of tabs; the content below follows the selection) -->
+            <TabControl SelectedIndex="{Binding TabIndex, Mode=TwoWay}" Padding="0" Margin="0,0,0,10" BorderThickness="0">
+                <TabItem Header="{infra:Str ReportTabOverview}" />
+                <TabItem Header="{infra:Str ReportTabCompare}" />
+                <TabItem Header="{infra:Str ReportTabPlaces}" />
+            </TabControl>
 
             <!-- Period -->
             <StackPanel Orientation="Horizontal" Margin="0,0,0,12" Visibility="{Binding ShowPeriod, Converter={StaticResource BoolToVis}}">

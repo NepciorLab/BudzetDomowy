@@ -155,6 +155,19 @@ public class V2UiTests
     });
 
     [Fact]
+    public void Reports_TabStripAndTabStayInSync() => WithApp(app =>
+    {
+        var vm = app.Get<ReportsViewModel>();
+        vm.TabIndex = 2;
+        Assert.Equal(ReportTab.Places, vm.Tab);
+        Assert.True(vm.IsPlaces);
+        vm.SetTabCommand.Execute("Compare");
+        Assert.Equal(1, vm.TabIndex);
+        vm.TabIndex = 99;                         // nonsense is ignored
+        Assert.Equal(ReportTab.Compare, vm.Tab);
+    });
+
+    [Fact]
     public void Reports_ChartsCanBeSwitchedFromColumnsToLines() => WithApp(app =>
     {
         var vm = app.Get<ReportsViewModel>();

@@ -29,6 +29,18 @@ public sealed partial class ReportsViewModel : ObservableObject, IPeriodNavigabl
     [ObservableProperty, NotifyPropertyChangedFor(nameof(IsOverview)), NotifyPropertyChangedFor(nameof(IsCompare)),
         NotifyPropertyChangedFor(nameof(IsPlaces)), NotifyPropertyChangedFor(nameof(ShowPeriod))] private ReportTab _tab;
 
+    /// <summary>The tab strip works with an index; it is the same choice as <see cref="Tab"/>.</summary>
+    public int TabIndex
+    {
+        get => (int)Tab;
+        set
+        {
+            if (Enum.IsDefined(typeof(ReportTab), value)) Tab = (ReportTab)value;
+        }
+    }
+
+    partial void OnTabChanged(ReportTab value) => OnPropertyChanged(nameof(TabIndex));
+
     public bool IsOverview => Tab == ReportTab.Overview;
     public bool IsCompare => Tab == ReportTab.Compare;
     public bool IsPlaces => Tab == ReportTab.Places;
