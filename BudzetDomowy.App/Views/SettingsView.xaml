@@ -21,15 +21,59 @@
                     <TextBlock Text="{infra:Str SettingsDataSection}" FontSize="18" FontWeight="SemiBold" Margin="0,28,0,8" />
                     <TextBlock Text="{infra:Str SyncDetailsFolder}" Opacity="0.7" />
                     <TextBlock Text="{Binding DataFolder}" TextWrapping="Wrap" />
-                    <Button Content="{infra:Str SyncOpenFolder}" Command="{Binding OpenDataFolderCommand}" Margin="0,6,0,0" />
+                    <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                        <Button Content="{infra:Str SyncOpenFolder}" Command="{Binding OpenDataFolderCommand}" Margin="0,0,8,0" />
+                        <Button Content="{infra:Str FolderChange}" Command="{Binding ChangeDataFolderCommand}" />
+                    </StackPanel>
+
+                    <!-- a chosen new data folder: what we found there and what to do with the existing journals -->
+                    <Border Visibility="{Binding HasPendingDataFolder, Converter={x:Static infra:BoolToVisibilityConverter.Visible}}"
+                            CornerRadius="8" Padding="14,10" Margin="0,10,0,0" Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}">
+                        <StackPanel>
+                            <TextBlock Text="{infra:Str FolderPendingTitle}" FontWeight="SemiBold" />
+                            <TextBlock Text="{Binding PendingDataFolder}" TextWrapping="Wrap" Opacity="0.85" Margin="0,2,0,6" />
+                            <ItemsControl ItemsSource="{Binding PendingChecks}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid Margin="0,2">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="26" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="{Binding Glyph}" />
+                                            <TextBlock Grid.Column="1" Text="{Binding Text}" TextWrapping="Wrap" />
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <CheckBox IsChecked="{Binding CopyJournals}" Content="{infra:Str FolderCopyJournals}" Margin="0,8,0,0" />
+                            <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                                <Button Content="{infra:Str FolderApply}" Command="{Binding ApplyDataFolderCommand}" IsEnabled="{Binding CanApplyDataFolder}"
+                                        Style="{StaticResource AccentButtonStyle}" Margin="0,0,8,0" />
+                                <Button Content="{infra:Str Cancel}" Command="{Binding CancelDataFolderCommand}" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
 
                     <TextBlock Text="{infra:Str SyncDetailsLocal}" Opacity="0.7" Margin="0,16,0,0" />
                     <TextBlock Text="{Binding LocalFolder}" TextWrapping="Wrap" />
-                    <Button Content="{infra:Str SyncOpenFolder}" Command="{Binding OpenLocalFolderCommand}" Margin="0,6,0,0" />
+                    <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                        <Button Content="{infra:Str SyncOpenFolder}" Command="{Binding OpenLocalFolderCommand}" Margin="0,0,8,0" />
+                        <Button Content="{infra:Str FolderChange}" Command="{Binding ChangeLocalFolderCommand}" />
+                    </StackPanel>
+
+                    <TextBlock Text="{Binding FolderMessage}" TextWrapping="Wrap" Margin="0,10,0,0" Foreground="{DynamicResource SystemControlForegroundAccentBrush}" />
+                    <StackPanel Orientation="Horizontal" Margin="0,6,0,0" Visibility="{Binding RestartNeeded, Converter={x:Static infra:BoolToVisibilityConverter.Visible}}">
+                        <Button Content="{infra:Str FolderRestartNow}" Command="{Binding RestartNowCommand}" Style="{StaticResource AccentButtonStyle}" />
+                    </StackPanel>
 
                     <TextBlock Text="{infra:Str SyncDetailsThisDevice}" Opacity="0.7" Margin="0,16,0,0" />
                     <TextBlock Text="{Binding DeviceName}" />
                     <TextBlock Text="{Binding DeviceId}" Opacity="0.6" />
+
+                    <TextBlock Text="{infra:Str SettingsTablesHeading}" FontSize="18" FontWeight="SemiBold" Margin="0,28,0,8" />
+                    <CheckBox IsChecked="{Binding Preferences.AutoFitColumns, Mode=TwoWay}" Content="{infra:Str SettingsAutoFit}" />
+                    <TextBlock Text="{infra:Str SettingsTablesHint}" TextWrapping="Wrap" Opacity="0.7" Margin="0,4,0,0" />
 
                     <TextBlock Text="{infra:Str SettingsBackgroundHeading}" FontSize="18" FontWeight="SemiBold" Margin="0,28,0,8" />
                     <CheckBox IsChecked="{Binding BackgroundMode, Mode=TwoWay}" Content="{infra:Str SettingsBackgroundOption}" />
@@ -112,6 +156,23 @@
                             <TextBox Grid.Column="2" Text="{Binding EditColor, UpdateSourceTrigger=PropertyChanged}" MaxLength="7"
                                      ui:ControlHelper.Header="{infra:Str CategoryColor}" ui:ControlHelper.PlaceholderText="#RRGGBB" />
                         </Grid>
+                        <TextBlock Text="{infra:Str CategoryPickIcon}" Opacity="0.7" Margin="0,12,0,4" />
+                        <ItemsControl ItemsSource="{Binding IconChoices}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Button Width="34" Height="34" Margin="0,0,4,4" Padding="0" MinWidth="0" MinHeight="0" Content="{Binding}" FontSize="17"
+                                            Command="{Binding DataContext.PickIconCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                            CommandParameter="{Binding}" />
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <Button Content="{infra:Str CategoryNoIcon}" Command="{Binding PickIconCommand}" CommandParameter="" Margin="0,2,0,0" />
+
                         <ItemsControl ItemsSource="{Binding Palette}" Margin="0,10,0,0">
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
@@ -155,11 +216,6 @@
                     </WrapPanel>
                 </StackPanel>
             </ScrollViewer>
-        </TabItem>
-
-        <!-- Recurring entries -->
-        <TabItem Header="{infra:Str SettingsRecurring}">
-            <local:RecurringView DataContext="{Binding Recurring}" />
         </TabItem>
 
         <!-- Diagnostics -->

@@ -3,6 +3,7 @@ using System.Globalization;
 using BudzetDomowy.App.Infrastructure;
 using BudzetDomowy.Core;
 using BudzetDomowy.Core.Domain;
+using BudzetDomowy.Core.Services;
 using BudzetDomowy.Core.Sync;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -14,7 +15,9 @@ public sealed record TypeFilterOption(TransactionType? Type, string Label)
     public override string ToString() => Label;
 }
 
-public sealed partial class TransactionsViewModel : ObservableObject
+public enum ViewMode { Week, Month, Year, Range }
+
+public sealed partial class TransactionsViewModel : ObservableObject, IPeriodNavigable
 {
     public static readonly TypeChoice ExpenseChoice = new(false, Res.Get("TypeExpense"));
     public static readonly TypeChoice IncomeChoice = new(true, Res.Get("TypeIncome"));
@@ -44,19 +47,35 @@ public sealed partial class TransactionsViewModel : ObservableObject
     [ObservableProperty] private IReadOnlyList<EventOption> _filterEvents = [];
     [ObservableProperty] private IReadOnlyList<EventOption> _eventChoices = [];
 
-    [ObservableProperty] private DateTime? _from = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
+    // what period the table shows: a week, month or year around the anchor date, or a free range
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(IsWeekMode)), NotifyPropertyChangedFor(nameof(IsMonthMode)),
+        NotifyPropertyChangedFor(nameof(IsYearMode)), NotifyPropertyChangedFor(nameof(IsRangeMode))] private ViewMode _mode = ViewMode.Month;
+    [ObservableProperty] private DateOnly _anchor = DateOnly.FromDateTime(DateTime.Today);
+    [ObservableProperty] private string _periodTitle = "";
+    [ObservableProperty] private DateTime? _from;
     [ObservableProperty] private DateTime? _to;
     [ObservableProperty] private Guid? _categoryFilter;
     [ObservableProperty] private Guid _eventFilter = Guid.Empty;
     [ObservableProperty] private TypeFilterOption? _typeFilter;
     [ObservableProperty] private string _search = "";
-    [ObservableProperty] private string _summaryLabel = "";
-    [ObservableProperty] private string _expenseText = "";
-    [ObservableProperty] private string _incomeText = "";
-    [ObservableProperty] private string _balanceText = "";
+    // totals of everything the filters let through, and separately of the selected rows
+    [ObservableProperty] private string _allLabel = "";
+    [ObservableProperty] private string _allExpenseText = "";
+    [ObservableProperty] private string _allIncomeText = "";
+    [ObservableProperty] private string _allBalanceText = "";
+    [ObservableProperty] private bool _hasSelection;
+    [ObservableProperty] private string _selectionLabel = "";
+    [ObservableProperty] private string _selectionExpenseText = "";
+    [ObservableProperty] private string _selectionIncomeText = "";
+    [ObservableProperty] private string _selectionBalanceText = "";
     [ObservableProperty] private bool _isEmpty;
 
     public int ChoicesVersion { get; private set; }
+
+    public bool IsWeekMode => Mode == ViewMode.Week;
+    public bool IsMonthMode => Mode == ViewMode.Month;
+    public bool IsYearMode => Mode == ViewMode.Year;
+    public bool IsRangeMode => Mode == ViewMode.Range;
 
     public TransactionsViewModel(BudgetCore core, DataHub hub, ToastService toast, ExportActions exports)
     {
@@ -68,6 +87,8 @@ public sealed partial class TransactionsViewModel : ObservableObject
         Reload();
     }
 
+    partial void OnModeChanged(ViewMode value) => Reload();
+    partial void OnAnchorChanged(DateOnly value) => Reload();
     partial void OnFromChanged(DateTime? value) => Reload();
     partial void OnToChanged(DateTime? value) => Reload();
     partial void OnCategoryFilterChanged(Guid? value) => Reload();
@@ -115,8 +136,8 @@ public sealed partial class TransactionsViewModel : ObservableObject
             .Select(o => o.Category.IsArchived ? o with { DisplayName = o.DisplayName + " " + Res.Get("ArchivedSuffix") } : o)
             .ToList();
 
-        var from = From is { } f ? DateOnly.FromDateTime(f) : (DateOnly?)null;
-        var to = To is { } t ? DateOnly.FromDateTime(t) : (DateOnly?)null;
+        var (from, to) = CurrentRange();
+        PeriodTitle = TitleOf();
         IEnumerable<Transaction> query = _core.Reader.GetTransactions(from, to);
 
         if (CategoryFilter is { } cat)
@@ -169,16 +190,81 @@ public sealed partial class TransactionsViewModel : ObservableObject
         while (Rows.Count > target.Count) Rows.RemoveAt(Rows.Count - 1);
     }
 
+    /// <summary>The dates the table covers (either end may be open in the free-range mode).</summary>
+    private (DateOnly? From, DateOnly? To) CurrentRange()
+    {
+        if (Mode == ViewMode.Range)
+            return (From is { } f ? DateOnly.FromDateTime(f) : null, To is { } t ? DateOnly.FromDateTime(t) : null);
+        var kind = Mode switch { ViewMode.Week => PeriodKind.Week, ViewMode.Year => PeriodKind.Year, _ => PeriodKind.Month };
+        var (a, b) = PeriodRanges.Range(kind, Anchor);
+        return (a, b);
+    }
+
+    private string TitleOf()
+    {
+        switch (Mode)
+        {
+            case ViewMode.Week:
+                var (a, b) = PeriodRanges.WeekOf(Anchor);
+                return Res.Format("PeriodWeekTitle", a.ToString("d.MM", CultureInfo.CurrentCulture), b.ToString("d.MM.yyyy", CultureInfo.CurrentCulture), PeriodRanges.IsoWeek(Anchor));
+            case ViewMode.Year:
+                return Anchor.Year.ToString(CultureInfo.CurrentCulture);
+            case ViewMode.Range:
+                return Res.Format("PeriodRangeTitle",
+                    From is { } f ? f.ToString("d", CultureInfo.CurrentCulture) : "…",
+                    To is { } t ? t.ToString("d", CultureInfo.CurrentCulture) : "…");
+            default:
+                var m = Anchor.ToString("MMMM yyyy", CultureInfo.CurrentCulture);
+                return char.ToUpper(m[0], CultureInfo.CurrentCulture) + m[1..];
+        }
+    }
+
+    public void PreviousPeriod() => Step(-1);
+    public void NextPeriod() => Step(+1);
+
+    private void Step(int direction)
+    {
+        if (Mode == ViewMode.Range) return;
+        var kind = Mode switch { ViewMode.Week => PeriodKind.Week, ViewMode.Year => PeriodKind.Year, _ => PeriodKind.Month };
+        Anchor = PeriodRanges.Shift(kind, Anchor, direction);
+    }
+
+    [RelayCommand] private void Previous() => PreviousPeriod();
+    [RelayCommand] private void Next() => NextPeriod();
+    [RelayCommand] private void Today() => Anchor = DateOnly.FromDateTime(DateTime.Today);
+
+    [RelayCommand]
+    private void SetMode(string? key)
+    {
+        if (Enum.TryParse<ViewMode>(key, out var mode)) Mode = mode;
+    }
+
+    /// <summary>Esc in the table: deselect everything.</summary>
+    public event Action? SelectionClearRequested;
+    public void ClearSelection() => SelectionClearRequested?.Invoke();
+
     private void UpdateSummary()
     {
-        var rows = _selected.Count > 0 ? _selected : Rows.ToList();
-        var expense = rows.Where(r => !r.IsIncome).Sum(r => r.Model.AmountPln);
-        var income = rows.Where(r => r.IsIncome).Sum(r => r.Model.AmountPln);
         string Money(decimal v) => v.ToString("C2", CultureInfo.CurrentCulture);
-        SummaryLabel = Res.Format(_selected.Count > 0 ? "SummarySelected" : "SummaryVisible", rows.Count);
-        ExpenseText = Res.Format("SummaryExpenses", Money(expense));
-        IncomeText = Res.Format("SummaryIncome", Money(income));
-        BalanceText = Res.Format("SummaryBalance", Money(income - expense));
+        void Fill(IReadOnlyList<TransactionRowViewModel> rows, string labelKey, out string label, out string expense, out string income, out string balance)
+        {
+            var e = rows.Where(r => !r.IsIncome).Sum(r => r.Model.AmountPln);
+            var i = rows.Where(r => r.IsIncome).Sum(r => r.Model.AmountPln);
+            label = Res.Format(labelKey, rows.Count);
+            expense = Res.Format("SummaryExpenses", Money(e));
+            income = Res.Format("SummaryIncome", Money(i));
+            balance = Res.Format("SummaryBalance", Money(i - e));
+        }
+
+        Fill(Rows.ToList(), "SummaryAll", out var l, out var ex, out var inc, out var bal);
+        AllLabel = l; AllExpenseText = ex; AllIncomeText = inc; AllBalanceText = bal;
+
+        HasSelection = _selected.Count > 0;
+        if (HasSelection)
+        {
+            Fill(_selected.ToList(), "SummarySelectedLabel", out l, out ex, out inc, out bal);
+            SelectionLabel = l; SelectionExpenseText = ex; SelectionIncomeText = inc; SelectionBalanceText = bal;
+        }
     }
 
     public string CategoryPath(Guid? id) => CategoryHelpers.PathOf(id, _categoriesById);
@@ -255,29 +341,18 @@ public sealed partial class TransactionsViewModel : ObservableObject
         _toast.Show(Res.Format("CategoryChangedCount", ids.Count), () => _core.Transactions.Restore(before));
     }
 
-    /// <summary>Exports what the table shows right now (the current filters apply).</summary>
+    /// <summary>Exports what the table shows right now (the period and the filters apply).</summary>
     [RelayCommand]
     private void ExportXlsx() => _exports.Transactions(Rows.Select(r => r.Model).ToList(), csv: false);
 
     [RelayCommand]
-    private void ExportCsv() => _exports.Transactions(Rows.Select(r => r.Model).ToList(), csv: true);
-
-    [RelayCommand]
     private void ClearFilters()
     {
-        From = null;
-        To = null;
         CategoryFilter = null;
         EventFilter = Guid.Empty;
         TypeFilter = TypeFilters[0];
         Search = "";
     }
 
-    [RelayCommand]
-    private void ThisMonth()
-    {
-        var today = DateTime.Today;
-        From = new DateTime(today.Year, today.Month, 1);
-        To = null;
-    }
+
 }

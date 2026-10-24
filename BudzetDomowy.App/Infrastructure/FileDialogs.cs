@@ -11,10 +11,22 @@ public interface IFileDialogs
     string? OpenFile(string title, string filter);
 
     string? SaveFile(string title, string filter, string defaultFileName);
+
+    string? PickFolder(string title, string? initialFolder);
 }
 
 public sealed class WpfFileDialogs : IFileDialogs
 {
+    public string? PickFolder(string title, string? initialFolder)
+    {
+        var dialog = new OpenFolderDialog
+        {
+            Title = title,
+            InitialDirectory = initialFolder is { Length: > 0 } f && Directory.Exists(f) ? f : Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+        };
+        return dialog.ShowDialog() == true ? dialog.FolderName : null;
+    }
+
     public string? OpenFile(string title, string filter)
     {
         var dialog = new OpenFileDialog { Title = title, Filter = filter, CheckFileExists = true };
@@ -35,7 +47,7 @@ public sealed class ImportMappingStore
 
     private readonly string _path;
 
-    public ImportMappingStore(string? path = null) => _path = path ?? Path.Combine(AppPaths.LocalDir, "import-mapping.json");
+    public ImportMappingStore(string? path = null) => _path = path ?? Path.Combine(AppPaths.SettingsDir, "import-mapping.json");
 
     public IReadOnlyDictionary<string, CategoryChoice> Load()
     {

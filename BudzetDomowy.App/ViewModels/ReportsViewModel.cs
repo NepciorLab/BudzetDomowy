@@ -19,10 +19,23 @@ public sealed record BreakdownNode(string Name, string Color, string AmountText,
 
 public sealed record EventRow(string Name, string Dates, string Spent, string PerDay, string Plan);
 
-public sealed partial class ReportsViewModel : ObservableObject
+public enum ReportTab { Overview, Compare, Places }
+
+public sealed partial class ReportsViewModel : ObservableObject, IPeriodNavigable
 {
     private readonly BudgetCore _core;
     private readonly ExportActions _exports;
+
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(IsOverview)), NotifyPropertyChangedFor(nameof(IsCompare)),
+        NotifyPropertyChangedFor(nameof(IsPlaces)), NotifyPropertyChangedFor(nameof(ShowPeriod))] private ReportTab _tab;
+
+    public bool IsOverview => Tab == ReportTab.Overview;
+    public bool IsCompare => Tab == ReportTab.Compare;
+    public bool IsPlaces => Tab == ReportTab.Places;
+    public bool ShowPeriod => Tab != ReportTab.Compare;
+
+    public CompareViewModel Compare { get; }
+    public PlacesViewModel Places { get; }
 
     [ObservableProperty, NotifyPropertyChangedFor(nameof(IsMonth))] private bool _isYear;
     [ObservableProperty] private DateOnly _anchor = BudgetMath.MonthStart(DateOnly.FromDateTime(DateTime.Today));
@@ -52,7 +65,12 @@ public sealed partial class ReportsViewModel : ObservableObject
     [ObservableProperty] private string _avgPerDay = "";
     [ObservableProperty] private string _avgPerWeek = "";
     [ObservableProperty] private string _avgPerMonth = "";
-    [ObservableProperty] private string _avgIncomePerMonth = "";
+    [ObservableProperty] private string _avgTotal = "";
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(AvgIsIncome))] private bool _avgIsExpense = true;
+    [ObservableProperty] private IReadOnlyList<CategoryPick> _avgChoices = [];
+    [ObservableProperty] private CategoryPick? _avgCategory;
+
+    public bool AvgIsIncome => !AvgIsExpense;
     [ObservableProperty] private string _avgMethod = "";
 
     [ObservableProperty] private IReadOnlyList<EventRow> _events = [];
@@ -66,10 +84,17 @@ public sealed partial class ReportsViewModel : ObservableObject
     {
         _core = core;
         _exports = exports;
+        Compare = new CompareViewModel(core);
+        Places = new PlacesViewModel(core);
         var today = DateTime.Today;
         _avgFrom = new DateTime(today.Year, 1, 1);
         _avgTo = today;
-        hub.Changed += (_, _) => Reload();
+        hub.Changed += (_, _) =>
+        {
+            Reload();
+            Compare.Refresh();
+            Places.Reload();
+        };
         Reload();
     }
 
@@ -78,12 +103,35 @@ public sealed partial class ReportsViewModel : ObservableObject
     partial void OnAvgFromChanged(DateTime? value) => ReloadAverages();
     partial void OnAvgToChanged(DateTime? value) => ReloadAverages();
     partial void OnAvgProrateChanged(bool value) => ReloadAverages();
+    partial void OnAvgIsExpenseChanged(bool value) => RebuildAvgChoices();
+    partial void OnAvgCategoryChanged(CategoryPick? value) => ReloadAverages();
 
     [RelayCommand]
-    private void Previous() => Anchor = IsYear ? Anchor.AddYears(-1) : Anchor.AddMonths(-1);
+    private void SetTab(string? key)
+    {
+        if (Enum.TryParse<ReportTab>(key, out var tab)) Tab = tab;
+    }
 
     [RelayCommand]
-    private void Next() => Anchor = IsYear ? Anchor.AddYears(1) : Anchor.AddMonths(1);
+    private void SetAvgType(string? key) => AvgIsExpense = key != "Income";
+
+    private void RebuildAvgChoices()
+    {
+        var type = AvgIsExpense ? TransactionType.Expense : TransactionType.Income;
+        var previous = AvgCategory?.Id;
+        AvgChoices = CategoryPick.Build(_core.Reader.GetCategories(), type, Res.Get("CompareAllCategories"));
+        AvgCategory = AvgChoices.FirstOrDefault(c => c.Id == previous) ?? AvgChoices[0];
+        ReloadAverages();
+    }
+
+    public void PreviousPeriod() => Anchor = IsYear ? Anchor.AddYears(-1) : Anchor.AddMonths(-1);
+    public void NextPeriod() => Anchor = IsYear ? Anchor.AddYears(1) : Anchor.AddMonths(1);
+
+    [RelayCommand]
+    private void Previous() => PreviousPeriod();
+
+    [RelayCommand]
+    private void Next() => NextPeriod();
 
     [RelayCommand]
     private void Export() => _exports.Report(IsYear ? ReportScope.Year : ReportScope.Month, Anchor);
@@ -152,7 +200,8 @@ public sealed partial class ReportsViewModel : ObservableObject
         Breakdown = roots.Select((b, i) => ToNode(b, i, NameOf, Money)).ToList();
         HasBreakdown = roots.Count > 0;
 
-        ReloadAverages();
+        Places.SetPeriod(from, to);
+        if (AvgChoices.Count == 0) RebuildAvgChoices(); else ReloadAverages();
         BuildEvents(all, cats);
     }
 
@@ -191,14 +240,16 @@ public sealed partial class ReportsViewModel : ObservableObject
         if (AvgFrom is not { } f || AvgTo is not { } t) return;
         var mode = AvgProrate ? IncompleteMonthMode.Prorate : IncompleteMonthMode.ExcludeIncomplete;
         var today = DateOnly.FromDateTime(DateTime.Today);
-        var a = PeriodReports.Average(_core.Reader.GetTransactions(), DateOnly.FromDateTime(f), DateOnly.FromDateTime(t), today, mode);
+        var type = AvgIsExpense ? TransactionType.Expense : TransactionType.Income;
+        var a = ComparisonReports.Average(_core.Reader.GetTransactions(), _core.Reader.GetCategories(),
+            DateOnly.FromDateTime(f), DateOnly.FromDateTime(t), today, mode, type, AvgCategory?.Id);
         string Money(decimal? v) => v is { } m ? m.ToString("C2", CultureInfo.CurrentCulture) : "—";
 
         AvgDays = a.Days.ToString(CultureInfo.CurrentCulture);
-        AvgPerDay = Money(a.ExpensePerDay);
-        AvgPerWeek = Money(a.ExpensePerWeek);
-        AvgPerMonth = Money(a.ExpensePerMonth);
-        AvgIncomePerMonth = Money(a.IncomePerMonth);
+        AvgPerDay = Money(a.PerDay);
+        AvgPerWeek = Money(a.PerWeek);
+        AvgPerMonth = Money(a.PerMonth);
+        AvgTotal = Money(a.Total);
         var months = a.Months.ToString("0.##", CultureInfo.CurrentCulture);
         AvgMethod = Res.Get("AvgMethodBase") + " " + (mode == IncompleteMonthMode.Prorate
             ? Res.Format("AvgMethodProrate", a.Days, months)

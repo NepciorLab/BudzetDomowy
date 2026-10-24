@@ -4,7 +4,6 @@ using System.Windows.Input;
 using System.Windows.Threading;
 using BudzetDomowy.App.ViewModels;
 using ModernWpf.Controls;
-using ModernWpf.Controls.Primitives;
 
 namespace BudzetDomowy.App.Views;
 
@@ -12,7 +11,17 @@ public partial class TransactionsView : UserControl
 {
     private TransactionsViewModel? Vm => DataContext as TransactionsViewModel;
 
-    public TransactionsView() => InitializeComponent();
+    public TransactionsView()
+    {
+        InitializeComponent();
+        DataContextChanged += (_, e) =>
+        {
+            if (e.OldValue is TransactionsViewModel old) old.SelectionClearRequested -= ClearSelection;
+            if (e.NewValue is TransactionsViewModel vm) vm.SelectionClearRequested += ClearSelection;
+        };
+    }
+
+    private void ClearSelection() => Grid.UnselectAll();
 
     private void OnLoaded(object sender, RoutedEventArgs e) => Vm?.Reload();
 
@@ -29,10 +38,21 @@ public partial class TransactionsView : UserControl
 
     private void Grid_PreviewKeyDown(object sender, KeyEventArgs e)
     {
-        if (e.Key == Key.Delete && Vm is { } vm && !IsEditing())
+        if (Vm is not { } vm || IsEditing()) return;
+        switch (e.Key)
         {
-            vm.DeleteSelected();
-            e.Handled = true;
+            case Key.Delete:
+                vm.DeleteSelected();
+                e.Handled = true;
+                break;
+            case Key.Escape when Grid.SelectedItems.Count > 0:
+                Grid.UnselectAll();                       // Esc deselects
+                e.Handled = true;
+                break;
+            case Key.K when (Keyboard.Modifiers & ModifierKeys.Control) != 0 && Grid.SelectedItems.Count > 0:
+                ShowCategoryFlyout();                     // Ctrl+K changes the category of the selected rows
+                e.Handled = true;
+                break;
         }
     }
 
@@ -41,8 +61,9 @@ public partial class TransactionsView : UserControl
 
     private void MenuDelete_Click(object sender, RoutedEventArgs e) => Vm?.DeleteSelected();
 
-    private void MenuChangeCategory_Click(object sender, RoutedEventArgs e) =>
-        FlyoutService.GetFlyout(BulkButton)?.ShowAt(BulkButton);
+    private void MenuChangeCategory_Click(object sender, RoutedEventArgs e) => ShowCategoryFlyout();
+
+    private void ShowCategoryFlyout() => BulkFlyout.ShowAt(FlyoutAnchor);
 
     private void BulkFlyout_Opening(object? sender, object e)
     {

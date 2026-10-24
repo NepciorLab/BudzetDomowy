@@ -427,10 +427,71 @@ Del – usuń zaznaczone transakcje</value></data>
   <data name="KeyF4" xml:space="preserve"><value>Przejdź do pola kursu (gdy wybrana jest waluta obca)</value></data>
   <data name="KeyCtrlL" xml:space="preserve"><value>Przejdź do pola Kwota</value></data>
   <data name="KeyCtrlZ" xml:space="preserve"><value>Cofnij ostatnią operację, gdy widać komunikat z przyciskiem „Cofnij”</value></data>
-  <data name="KeyCtrlDigits" xml:space="preserve"><value>Przełącz ekrany: Pulpit, Transakcje, Budżety, Wydarzenia, Raporty, Ustawienia</value></data>
+  <data name="KeyCtrlDigits" xml:space="preserve"><value>Przełącz ekrany: Pulpit, Transakcje, Budżety, Wydarzenia, Wpisy cykliczne, Raporty, Ustawienia</value></data>
   <data name="KeyDel" xml:space="preserve"><value>Usuń zaznaczone transakcje (na ekranie Transakcje)</value></data>
   <data name="KeyF1" xml:space="preserve"><value>Pokaż tę listę skrótów</value></data>
   <data name="KeyGlobal" xml:space="preserve"><value>Szybkie dodanie z dowolnego programu (po włączeniu w Ustawieniach → Ogólne)</value></data>
   <data name="EventPlannedField" xml:space="preserve"><value>Plan (zł)</value></data>
   <data name="EventPlannedHint" xml:space="preserve"><value>np. 5000 (opcjonalnie)</value></data>
+  <data name="CategoryPickIcon" xml:space="preserve"><value>Wybierz ikonę z listy (albo wpisz własną powyżej):</value></data>
+  <data name="CategoryNoIcon" xml:space="preserve"><value>Bez ikony</value></data>
+  <data name="ColumnsMenuTitle" xml:space="preserve"><value>Widoczne kolumny</value></data>
+  <data name="ColumnsUnnamed" xml:space="preserve"><value>(kolumna bez nazwy)</value></data>
+  <data name="ColumnsReset" xml:space="preserve"><value>Pokaż wszystkie kolumny</value></data>
+  <data name="FolderChange" xml:space="preserve"><value>Zmień…</value></data>
+  <data name="FolderApply" xml:space="preserve"><value>Użyj tego folderu</value></data>
+  <data name="FolderPendingTitle" xml:space="preserve"><value>Nowy folder danych</value></data>
+  <data name="FolderCopyJournals" xml:space="preserve"><value>Skopiuj do nowego folderu dotychczasowe pliki zapisów (dzienniki)</value></data>
+  <data name="FolderSameAsNow" xml:space="preserve"><value>To jest już bieżący folder.</value></data>
+  <data name="FolderChangedRestart" xml:space="preserve"><value>Folder danych zmieniony (skopiowano plików: {0}). Zrestartuj program, aby zaczął z niego korzystać.</value></data>
+  <data name="FolderChangeFailed" xml:space="preserve"><value>Nie udało się zmienić folderu: {0}</value></data>
+  <data name="FolderRestartNow" xml:space="preserve"><value>Zrestartuj teraz</value></data>
+  <data name="LocalFolderPickTitle" xml:space="preserve"><value>Wybierz folder lokalnej pamięci podręcznej</value></data>
+  <data name="LocalFolderNotInOneDrive" xml:space="preserve"><value>Folder lokalny musi być na tym komputerze, poza OneDrive.</value></data>
+  <data name="LocalFolderChangedRestart" xml:space="preserve"><value>Folder lokalny zmieniony. Zrestartuj program; baza zostanie odbudowana z dzienników.</value></data>
+  <data name="SettingsTablesHeading" xml:space="preserve"><value>Tabele</value></data>
+  <data name="SettingsAutoFit" xml:space="preserve"><value>Automatycznie dopasuj szerokość kolumn do zawartości</value></data>
+  <data name="SettingsTablesHint" xml:space="preserve"><value>Kolumny, które chcesz widzieć, wybierzesz klikając prawym przyciskiem myszy nagłówek tabeli.</value></data>
+  <data name="NavRecurring" xml:space="preserve"><value>Wpisy cykliczne</value></data>
+  <data name="SummaryAll" xml:space="preserve"><value>Wszystkie pasujące: {0}</value></data>
+  <data name="SummarySelectedLabel" xml:space="preserve"><value>Zaznaczone: {0}</value></data>
+  <data name="PeriodWeek" xml:space="preserve"><value>Tydzień</value></data>
+  <data name="PeriodMonth" xml:space="preserve"><value>Miesiąc</value></data>
+  <data name="PeriodYear" xml:space="preserve"><value>Rok</value></data>
+  <data name="PeriodRange" xml:space="preserve"><value>Zakres</value></data>
+  <data name="PeriodPrevious" xml:space="preserve"><value>Poprzedni okres (Alt + ←)</value></data>
+  <data name="PeriodNext" xml:space="preserve"><value>Następny okres (Alt + →)</value></data>
+  <data name="PeriodWeekTitle" xml:space="preserve"><value>Tydzień {0} · {1} – {2}</value></data>
+  <data name="PeriodRangeTitle" xml:space="preserve"><value>{0} – {1}</value></data>
+  <data name="KeyAltArrows" xml:space="preserve"><value>Poprzedni / następny tydzień, miesiąc lub rok na ekranie, który to pokazuje</value></data>
+  <data name="KeyCtrlK" xml:space="preserve"><value>Zmień kategorię zaznaczonych transakcji</value></data>
+  <data name="KeyEscTable" xml:space="preserve"><value>Odznacz zaznaczone pozycje w tabeli transakcji</value></data>
+  <data name="ReportTabOverview" xml:space="preserve"><value>Przegląd</value></data>
+  <data name="ReportTabCompare" xml:space="preserve"><value>Porównania</value></data>
+  <data name="ReportTabPlaces" xml:space="preserve"><value>Miejsca</value></data>
+  <data name="CompareYears" xml:space="preserve"><value>Lata obok siebie (miesiąc po miesiącu)</value></data>
+  <data name="CompareMonths" xml:space="preserve"><value>Miesiące obok siebie (kategoria po kategorii)</value></data>
+  <data name="CompareExpenses" xml:space="preserve"><value>Wydatki</value></data>
+  <data name="CompareIncome" xml:space="preserve"><value>Przychody</value></data>
+  <data name="CompareAllCategories" xml:space="preserve"><value>Wszystkie kategorie</value></data>
+  <data name="CompareTopLevel" xml:space="preserve"><value>Kategorie główne</value></data>
+  <data name="CompareCategoryYears" xml:space="preserve"><value>Kategoria (razem z podkategoriami)</value></data>
+  <data name="CompareCategoryMonths" xml:space="preserve"><value>Pokaż podkategorie kategorii</value></data>
+  <data name="CompareYearsPick" xml:space="preserve"><value>Lata do porównania:</value></data>
+  <data name="CompareMonthsPick" xml:space="preserve"><value>Miesiące do porównania:</value></data>
+  <data name="CompareAverage" xml:space="preserve"><value>średnio {0} miesięcznie</value></data>
+  <data name="CompareOthers" xml:space="preserve"><value>Pozostałe</value></data>
+  <data name="CompareNoData" xml:space="preserve"><value>Brak danych dla wybranych lat, miesięcy i kategorii.</value></data>
+  <data name="CompareTitleYears" xml:space="preserve"><value>{0} – {1} – kolejne miesiące</value></data>
+  <data name="CompareTitleMonths" xml:space="preserve"><value>{0} – {1} – kategorie</value></data>
+  <data name="PlacesTitle" xml:space="preserve"><value>Sumy według miejsc w wybranym okresie</value></data>
+  <data name="PlacesNone" xml:space="preserve"><value>(bez miejsca)</value></data>
+  <data name="PlacesSearch" xml:space="preserve"><value>Szukaj miejsca</value></data>
+  <data name="PlacesSummary" xml:space="preserve"><value>Razem {0} w {1} miejscach (wpisów: {2})</value></data>
+  <data name="PlacesColName" xml:space="preserve"><value>Miejsce</value></data>
+  <data name="PlacesColCount" xml:space="preserve"><value>Wpisów</value></data>
+  <data name="PlacesColAmount" xml:space="preserve"><value>Suma</value></data>
+  <data name="PlacesColShare" xml:space="preserve"><value>Udział</value></data>
+  <data name="AvgCategory" xml:space="preserve"><value>Kategoria (z podkategoriami)</value></data>
+  <data name="AvgTotal" xml:space="preserve"><value>Suma w okresie</value></data>
 </root>

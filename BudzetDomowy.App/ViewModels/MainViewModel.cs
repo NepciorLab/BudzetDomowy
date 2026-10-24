@@ -45,7 +45,7 @@ public sealed partial class MainViewModel : ObservableObject
 
     public MainViewModel(BudgetCore core, QuickAddViewModel quickAdd, TransactionsViewModel transactions,
         SettingsViewModel settings, EventsViewModel events, DashboardViewModel dashboard, BudgetsViewModel budgets,
-        ReportsViewModel reports, ToastService toast)
+        ReportsViewModel reports, RecurringViewModel recurring, ToastService toast)
     {
         Core = core;
         QuickAdd = quickAdd;
@@ -60,8 +60,9 @@ public sealed partial class MainViewModel : ObservableObject
             new("transactions", Res.Get("NavTransactions"), "", "Ctrl+2"),
             new("budgets", Res.Get("NavBudgets"), "", "Ctrl+3"),
             new("events", Res.Get("NavEvents"), "", "Ctrl+4"),
-            new("reports", Res.Get("NavReports"), "", "Ctrl+5"),
-            new("settings", Res.Get("NavSettings"), "", "Ctrl+6"),
+            new("recurring", Res.Get("NavRecurring"), "", "Ctrl+5"),
+            new("reports", Res.Get("NavReports"), "", "Ctrl+6"),
+            new("settings", Res.Get("NavSettings"), "", "Ctrl+7"),
         ];
 
         _pages = new Dictionary<string, object>
@@ -70,6 +71,7 @@ public sealed partial class MainViewModel : ObservableObject
             ["transactions"] = transactions,
             ["budgets"] = budgets,
             ["events"] = events,
+            ["recurring"] = recurring,
             ["reports"] = reports,
             ["settings"] = settings,
         };
@@ -123,6 +125,13 @@ public sealed partial class MainViewModel : ObservableObject
 
     [RelayCommand]
     private void Undo() => Toast.TryUndoLast();
+
+    /// <summary>Alt + arrows: the screen on show moves to the previous or next week, month or year.</summary>
+    [RelayCommand]
+    private void PreviousPeriod() => (CurrentPage as IPeriodNavigable)?.PreviousPeriod();
+
+    [RelayCommand]
+    private void NextPeriod() => (CurrentPage as IPeriodNavigable)?.NextPeriod();
 
     private void ShowStatus(SyncStatus s)
     {

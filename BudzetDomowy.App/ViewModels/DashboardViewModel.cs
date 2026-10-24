@@ -17,7 +17,7 @@ public sealed record BudgetBar(string Path, string Text, double Fraction, string
 
 public sealed record RecentRow(DateTime Date, string Place, string Category, string CategoryColor, string AmountText, bool IsIncome);
 
-public sealed partial class DashboardViewModel : ObservableObject
+public sealed partial class DashboardViewModel : ObservableObject, IPeriodNavigable
 {
     private readonly BudgetCore _core;
     private Guid? _drillRoot;
@@ -62,6 +62,9 @@ public sealed partial class DashboardViewModel : ObservableObject
         _drillRoot = null;
         Reload();
     }
+
+    public void PreviousPeriod() => Month = Month.AddMonths(-1);
+    public void NextPeriod() => Month = Month.AddMonths(1);
 
     [RelayCommand] private void PreviousMonth() => Month = Month.AddMonths(-1);
     [RelayCommand] private void NextMonth() => Month = Month.AddMonths(1);

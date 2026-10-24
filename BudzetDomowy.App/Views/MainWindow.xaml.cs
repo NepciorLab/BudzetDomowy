@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Input;
+using BudzetDomowy.App.Infrastructure;
 using BudzetDomowy.App.ViewModels;
 using CommunityToolkit.Mvvm.Input;
 
@@ -15,7 +16,7 @@ public partial class MainWindow : Window
     public ICommand FocusRateCommand { get; }
     public ICommand ShowShortcutsCommand { get; }
 
-    public MainWindow(MainViewModel vm)
+    public MainWindow(MainViewModel vm, SettingsStore store)
     {
         _vm = vm;
         FocusAmountCommand = new RelayCommand(() => QuickBar.FocusAmount());
@@ -30,6 +31,8 @@ public partial class MainWindow : Window
         DataContext = vm;
         InitializeComponent();
 
+        WindowPlacement.Apply(this, store.Current);
+        Closing += (_, _) => store.Update(s => WindowPlacement.Capture(this, s));
         vm.SyncDetailsRequested += ShowSyncDetails;
         Loaded += (_, _) => QuickBar.FocusAmount();
     }

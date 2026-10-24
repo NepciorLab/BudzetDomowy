@@ -17,7 +17,8 @@ public static class AppPaths
         }
     }
 
-    public static string LocalDir
+    /// <summary>Where settings.json and the logs live: fixed, so the program can always find them before it knows anything else.</summary>
+    public static string SettingsDir
     {
         get
         {
@@ -26,7 +27,16 @@ public static class AppPaths
         }
     }
 
-    public static string SettingsFile => Path.Combine(LocalDir, "settings.json");
+    private static string? _customLocalDir;
+
+    /// <summary>Local working data (database cache, device identity): the folder chosen in Settings, else <see cref="SettingsDir"/>. Never inside OneDrive.</summary>
+    public static string LocalDir => string.IsNullOrWhiteSpace(_customLocalDir) ? SettingsDir : _customLocalDir;
+
+    public static void UseLocalFolder(string? custom) => _customLocalDir = string.IsNullOrWhiteSpace(custom) ? null : Path.GetFullPath(custom);
+
+    public static string LogDir => Path.Combine(SettingsDir, "logs");
+
+    public static string SettingsFile => Path.Combine(SettingsDir, "settings.json");
 
     private static string Sanitize(string name)
     {

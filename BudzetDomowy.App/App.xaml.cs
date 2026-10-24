@@ -30,7 +30,12 @@ public partial class App : Application
         InstallErrorHandlers();
 
         // two copies on the same profile would share one database and one journal: refuse politely
-        _instanceLock = new Mutex(true, @"Local\BudzetDomowy-" + (AppPaths.Profile ?? "default"), out var firstInstance);
+        // after a restart the previous copy may still be closing: wait for it instead of refusing
+        var restarted = e.Args.Contains(AppRestarter.RestartedFlag);
+        _instanceLock = new Mutex(false, @"Local\BudzetDomowy-" + (AppPaths.Profile ?? "default"));
+        bool firstInstance;
+        try { firstInstance = _instanceLock.WaitOne(restarted ? TimeSpan.FromSeconds(15) : TimeSpan.Zero); }
+        catch (AbandonedMutexException) { firstInstance = true; }
         if (!firstInstance)
         {
             MessageBox.Show(Res.Get("AlreadyRunning"), Res.Get("AppTitle"), MessageBoxButton.OK, MessageBoxImage.Information);
@@ -42,6 +47,7 @@ public partial class App : Application
 
         var settings = AppSettings.Load();
         ThemeService.Apply(settings.Theme);
+        UseConfiguredLocalFolder(settings);
 
         if (!string.IsNullOrWhiteSpace(settings.DataFolder))
         {
@@ -70,9 +76,20 @@ public partial class App : Application
             settings = wizard.ResultSettings!;
         }
 
+        if (settings.ResetLocalDatabase)
+        {
+            // the data folder was changed: forget what was built from the old one, it is rebuilt from the new journals
+            _core.Database.ClearMaterializedData();
+            settings = settings with { ResetLocalDatabase = false };
+            settings.Save();
+        }
+
+        var store = new SettingsStore(settings);
+        UiPreferences.Instance.Initialize(store);
+
         var services = new ServiceCollection()
             .AddSingleton(_core)
-            .AddSingleton(new SettingsStore(settings))
+            .AddSingleton(store)
             .AddSingleton<DataHub>()
             .AddSingleton<ToastService>()
             .AddSingleton<QuickAddViewModel>()
@@ -85,6 +102,7 @@ public partial class App : Application
             .AddSingleton<RecurringViewModel>()
             .AddSingleton<DiagnosticsViewModel>()
             .AddSingleton<IBackgroundHost, TrayHotkeyHost>()
+            .AddSingleton<IAppRestarter, AppRestarter>()
             .AddSingleton<IFileDialogs, WpfFileDialogs>()
             .AddSingleton<ImportMappingStore>()
             .AddSingleton<ExportActions>()
@@ -101,6 +119,21 @@ public partial class App : Application
         ShutdownMode = ShutdownMode.OnMainWindowClose;
         StartBackgroundMode(settings, services);
         main.Show();
+    }
+
+    private static void UseConfiguredLocalFolder(AppSettings settings)
+    {
+        if (string.IsNullOrWhiteSpace(settings.LocalDataFolder)) return;
+        try
+        {
+            Directory.CreateDirectory(settings.LocalDataFolder);
+            AppPaths.UseLocalFolder(settings.LocalDataFolder);
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
+        {
+            // e.g. a removed drive: carry on with the default folder; the database is rebuilt from the journals anyway
+            AppLog.Warn($"Local folder '{settings.LocalDataFolder}' is not usable: {e.Message}");
+        }
     }
 
     private void StartBackgroundMode(AppSettings settings, ServiceProvider services)

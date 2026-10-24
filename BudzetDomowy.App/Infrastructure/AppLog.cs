@@ -5,7 +5,7 @@ namespace BudzetDomowy.App.Infrastructure;
 /// <summary>The program's log: %LocalAppData%\BudzetDomowy[\Profiles\X]\logs, one file per day, two weeks kept.</summary>
 public static class AppLog
 {
-    private static readonly Lazy<FileLog> Log = new(() => new FileLog(Path.Combine(AppPaths.LocalDir, "logs")));
+    private static readonly Lazy<FileLog> Log = new(() => new FileLog(AppPaths.LogDir));
 
     public static FileLog Instance => Log.Value;
 

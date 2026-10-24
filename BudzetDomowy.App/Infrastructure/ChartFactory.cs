@@ -55,6 +55,38 @@ public static class ChartFactory
         },
     ];
 
+    /// <summary>One column series per year, twelve months each.</summary>
+    public static IReadOnlyList<ISeries> YearColumns(IReadOnlyList<YearSeries> years) =>
+        years.Select((y, i) => (ISeries)new ColumnSeries<double>
+        {
+            Name = y.Year.ToString(System.Globalization.CultureInfo.CurrentCulture),
+            Values = y.Months.Select(m => (double)m).ToArray(),
+            Fill = new SolidColorPaint(ParseColor(Palette[i % Palette.Length])),
+            MaxBarWidth = 22,
+        }).ToList();
+
+    /// <summary>One column series per month, one column per category.</summary>
+    public static IReadOnlyList<ISeries> MonthColumns(IReadOnlyList<MonthSeries> months, Func<DateOnly, string> name) =>
+        months.Select((m, i) => (ISeries)new ColumnSeries<double>
+        {
+            Name = name(m.Month),
+            Values = m.Values.Select(v => (double)v).ToArray(),
+            Fill = new SolidColorPaint(ParseColor(Palette[i % Palette.Length])),
+            MaxBarWidth = 26,
+        }).ToList();
+
+    public static IReadOnlyList<Axis> LabelAxes(IEnumerable<string> labels, double rotation = 0) =>
+    [
+        new Axis
+        {
+            Labels = labels.ToArray(),
+            LabelsPaint = TextPaint(),
+            LabelsRotation = rotation,
+            TextSize = 12,
+            SeparatorsPaint = null,
+        },
+    ];
+
     public static IReadOnlyList<Axis> MonthAxes(IReadOnlyList<MonthPoint> points, string format) =>
     [
         new Axis

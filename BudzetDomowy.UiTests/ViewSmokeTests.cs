@@ -1,3 +1,5 @@
+using BudzetDomowy.App;
+using BudzetDomowy.App.Infrastructure;
 using BudzetDomowy.App.ViewModels;
 using BudzetDomowy.App.Views;
 
@@ -46,6 +48,9 @@ public class ViewSmokeTests
     {
         var vm = app.Get<TransactionsViewModel>();
         vm.ClearFiltersCommand.Execute(null);
+        vm.SetModeCommand.Execute("Range");   // the sample data spans three months; the default is the current month only
+        vm.From = DateTime.Today.AddMonths(-4);
+        vm.To = DateTime.Today.AddDays(1);
         vm.Reload();
         var view = new TransactionsView { DataContext = vm };
         UiHost.Layout(view, 1080, 640);
@@ -55,7 +60,7 @@ public class ViewSmokeTests
         Assert.Equal(9, vm.Rows.Count);
         Assert.Contains(texts, t => t.Contains("Lewiatan"));
         Assert.Contains(texts, t => t.Contains("Orlen"));
-        Assert.Contains(texts, t => t.StartsWith("Widoczne wpisy: 9"));
+        Assert.Contains(texts, t => t.StartsWith("Wszystkie pasujące: 9"));
     });
 
     [Fact]
@@ -176,25 +181,25 @@ public class ViewSmokeTests
     });
 
     [Fact]
-    public void SettingsView_ShowsTheRecurringEntriesTab() => WithApp(app =>
+    public void RecurringView_ShowsTheEntriesAsAPageOfItsOwn() => WithApp(app =>
     {
-        var vm = app.Get<SettingsViewModel>();
-        var view = new SettingsView { DataContext = vm };
-        UiHost.Layout(view, 1100, 700);
-        Assert.Single(vm.Recurring.Items);
+        var vm = app.Get<MainViewModel>();
+        vm.Navigate("recurring");
+        var page = Assert.IsType<RecurringViewModel>(vm.CurrentPage);
+        Assert.Single(page.Items);
 
-        var recurring = new RecurringView { DataContext = vm.Recurring };
-        vm.Recurring.Selected = vm.Recurring.Items[0];
+        var recurring = new RecurringView { DataContext = page };
+        page.Selected = page.Items[0];
         UiHost.Layout(recurring, 1050, 650);
         UiHost.Render(recurring, 1050, 650, "recurring");
-        Assert.Equal("1200", vm.Recurring.EditAmount);
+        Assert.Equal("1200", page.EditAmount);
     });
 
     [Fact]
     public void MainWindow_Builds_WithoutBeingShown() => WithApp(app =>
     {
         var vm = app.Get<MainViewModel>();
-        var window = new MainWindow(vm);
+        var window = new MainWindow(vm, app.Get<SettingsStore>());
         var content = (System.Windows.FrameworkElement)window.Content;
         UiHost.Layout(content, 1280, 800);
         window.Content = null;

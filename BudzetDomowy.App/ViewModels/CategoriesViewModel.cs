@@ -54,6 +54,19 @@ public sealed partial class CategoriesViewModel : ObservableObject
         "#7CB342", "#FFB300", "#FB8C00", "#8D6E63", "#546E7A", "#78909C", "#D4AF37", "#6D4C41",
     ];
 
+    /// <summary>Pictures to choose from; any other emoji can still be typed in.</summary>
+    public IReadOnlyList<string> IconChoices { get; } =
+    [
+        "🛒", "🍞", "🥩", "🥦", "🍎", "🥛", "🍰", "🍕", "🍔", "☕", "🍷", "🍺",
+        "🏠", "🛋", "🔧", "💡", "🚿", "🧹", "🧴", "🛏", "📺", "🔌",
+        "🚗", "⛽", "🚌", "🚆", "🚲", "✈", "🚕", "🅿",
+        "💊", "🏥", "🦷", "👓", "💉", "🧸", "👶", "🎒", "📚", "🎓",
+        "👕", "👗", "👟", "🧥", "💍", "👜",
+        "🎬", "🎮", "🎵", "🎁", "🎉", "🏖", "⛷", "⚽", "🏊", "🎨", "📷", "🎫",
+        "💼", "💰", "💵", "💳", "🏦", "📈", "🧾", "🏛",
+        "📦", "📱", "💻", "🐶", "🐱", "🌱", "✂", "🔑", "⛪", "🕯",
+    ];
+
     [ObservableProperty, NotifyPropertyChangedFor(nameof(HasSelection))] private CategoryNode? _selectedNode;
     [ObservableProperty] private IReadOnlyList<ParentOption> _parentChoices = [];
 
@@ -243,6 +256,12 @@ public sealed partial class CategoriesViewModel : ObservableObject
             _core.Categories.Move(node.Model.Id, direction);
             Select(node.Model.Id);
         });
+    }
+
+    [RelayCommand]
+    private void PickIcon(string? icon)
+    {
+        if (icon is not null) EditIcon = icon;
     }
 
     [RelayCommand]

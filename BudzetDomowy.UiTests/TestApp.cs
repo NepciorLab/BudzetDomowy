@@ -46,6 +46,15 @@ public sealed class FakeDialogs : IFileDialogs
     public string? NextSave { get; set; }
     public string? OpenFile(string title, string filter) => NextOpen;
     public string? SaveFile(string title, string filter, string defaultFileName) => NextSave;
+    public string? NextFolder { get; set; }
+    public string? PickFolder(string title, string? initialFolder) => NextFolder;
+}
+
+/// <summary>Counts restarts instead of starting a new process.</summary>
+public sealed class FakeRestarter : IAppRestarter
+{
+    public int Restarts { get; private set; }
+    public void Restart() => Restarts++;
 }
 
 /// <summary>A complete application object graph on temporary folders, with some sample data.</summary>
@@ -80,6 +89,7 @@ public sealed class TestApp : IDisposable
             .AddSingleton<DiagnosticsViewModel>()
             .AddSingleton<IBackgroundHost, FakeHost>()
             .AddSingleton<IFileDialogs, FakeDialogs>()
+            .AddSingleton<IAppRestarter, FakeRestarter>()
             .AddSingleton(new ImportMappingStore(Path.Combine(_root, "import-mapping.json")))
             .AddSingleton<ExportActions>()
             .AddTransient<ImportViewModel>()

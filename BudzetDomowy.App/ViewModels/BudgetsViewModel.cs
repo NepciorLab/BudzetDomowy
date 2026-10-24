@@ -67,7 +67,7 @@ public sealed partial class BudgetRowViewModel : ObservableObject
     }
 }
 
-public sealed partial class BudgetsViewModel : ObservableObject
+public sealed partial class BudgetsViewModel : ObservableObject, IPeriodNavigable
 {
     private readonly BudgetCore _core;
     private readonly ToastService _toast;
@@ -89,6 +89,9 @@ public sealed partial class BudgetsViewModel : ObservableObject
     }
 
     partial void OnMonthChanged(DateOnly value) => Reload();
+
+    public void PreviousPeriod() => Month = Month.AddMonths(-1);
+    public void NextPeriod() => Month = Month.AddMonths(1);
 
     [RelayCommand] private void PreviousMonth() => Month = Month.AddMonths(-1);
     [RelayCommand] private void NextMonth() => Month = Month.AddMonths(1);

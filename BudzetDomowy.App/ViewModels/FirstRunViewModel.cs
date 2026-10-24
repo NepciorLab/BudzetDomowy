@@ -56,30 +56,7 @@ public sealed partial class FirstRunViewModel : ObservableObject
             return;
         }
 
-        var c = Check;
-        if (!c.Exists)
-        {
-            CheckLines.Add(new CheckLine(CheckLevel.Error, Res.Get("CheckFolderMissing")));
-        }
-        else
-        {
-            CheckLines.Add(new CheckLine(CheckLevel.Ok, Res.Get("CheckFolderExists")));
-            CheckLines.Add(c.Writable
-                ? new CheckLine(CheckLevel.Ok, Res.Get("CheckWritable"))
-                : new CheckLine(CheckLevel.Error, Res.Get("CheckNotWritable")));
-            CheckLines.Add(c.InOneDrive
-                ? new CheckLine(CheckLevel.Ok, Res.Get("CheckOneDrive"))
-                : new CheckLine(CheckLevel.Warning, Res.Get("CheckNoOneDrive")));
-            CheckLines.Add(c.HasExistingData
-                ? new CheckLine(CheckLevel.Info, Res.Format("CheckExistingData", c.JournalDevices.Count))
-                : new CheckLine(CheckLevel.Info, Res.Get("CheckEmptyFolder")));
-            if (c.CloudOnlyJournals > 0)
-                CheckLines.Add(new CheckLine(CheckLevel.Warning, Res.Format("CheckCloudOnly", c.CloudOnlyJournals)));
-            if (c.ConflictCopies > 0)
-                CheckLines.Add(new CheckLine(CheckLevel.Warning, Res.Format("CheckConflicts", c.ConflictCopies)));
-            if (c.Error is not null)
-                CheckLines.Add(new CheckLine(CheckLevel.Error, c.Error));
-        }
+        foreach (var line in FolderChecks.Describe(Check)) CheckLines.Add(line);
         OnPropertyChanged(nameof(CanGoNext));
     }
 

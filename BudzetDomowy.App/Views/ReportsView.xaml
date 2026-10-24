@@ -23,16 +23,30 @@
 
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel Margin="16,12,4,12">
+            <!-- Which report: overview, comparisons, places -->
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                <RadioButton Content="{infra:Str ReportTabOverview}" GroupName="tab" IsChecked="{Binding IsOverview, Mode=OneWay}"
+                             Command="{Binding SetTabCommand}" CommandParameter="Overview" MinWidth="0" />
+                <RadioButton Content="{infra:Str ReportTabCompare}" GroupName="tab" IsChecked="{Binding IsCompare, Mode=OneWay}"
+                             Command="{Binding SetTabCommand}" CommandParameter="Compare" MinWidth="0" Margin="8,0,0,0" />
+                <RadioButton Content="{infra:Str ReportTabPlaces}" GroupName="tab" IsChecked="{Binding IsPlaces, Mode=OneWay}"
+                             Command="{Binding SetTabCommand}" CommandParameter="Places" MinWidth="0" Margin="8,0,0,0" />
+            </StackPanel>
+
             <!-- Period -->
-            <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,12" Visibility="{Binding ShowPeriod, Converter={StaticResource BoolToVis}}">
                 <RadioButton Content="{infra:Str ReportMonth}" IsChecked="{Binding IsMonth, Mode=OneWay}" GroupName="scope" Click="MonthScope_Click" MinWidth="0" />
                 <RadioButton Content="{infra:Str ReportYear}" IsChecked="{Binding IsYear, Mode=OneWay}" GroupName="scope" Click="YearScope_Click" MinWidth="0" Margin="8,0,24,0" />
-                <Button Content="◀" Command="{Binding PreviousCommand}" Width="40" />
+                <Button Content="◀" Command="{Binding PreviousCommand}" Width="40" ToolTip="{infra:Str PeriodPrevious}" />
                 <TextBlock Text="{Binding Title}" FontSize="24" FontWeight="SemiBold" Width="240" TextAlignment="Center" VerticalAlignment="Center" />
-                <Button Content="▶" Command="{Binding NextCommand}" Width="40" />
+                <Button Content="▶" Command="{Binding NextCommand}" Width="40" ToolTip="{infra:Str PeriodNext}" />
                 <Button Content="{infra:Str DashToday}" Command="{Binding CurrentCommand}" Margin="12,0,0,0" />
-                <Button Content="{infra:Str ExportReportButton}" Command="{Binding ExportCommand}" Margin="24,0,0,0" ToolTip="{infra:Str ExportReportTip}" />
+                <Button Content="{infra:Str ExportReportButton}" Command="{Binding ExportCommand}" Margin="24,0,0,0" ToolTip="{infra:Str ExportReportTip}"
+                        Visibility="{Binding IsOverview, Converter={StaticResource BoolToVis}}" />
             </StackPanel>
+
+            <!-- ================= overview ================= -->
+            <StackPanel Visibility="{Binding IsOverview, Converter={StaticResource BoolToVis}}">
 
             <!-- Summary and comparison -->
             <Border Style="{StaticResource Card}">
@@ -161,6 +175,14 @@
             <Border Style="{StaticResource Card}">
                 <StackPanel>
                     <TextBlock Text="{infra:Str AvgTitle}" Style="{StaticResource Heading}" />
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                        <RadioButton Content="{infra:Str CompareExpenses}" GroupName="avgtype" IsChecked="{Binding AvgIsExpense, Mode=OneWay}"
+                                     Command="{Binding SetAvgTypeCommand}" CommandParameter="Expense" MinWidth="0" />
+                        <RadioButton Content="{infra:Str CompareIncome}" GroupName="avgtype" IsChecked="{Binding AvgIsIncome, Mode=OneWay}"
+                                     Command="{Binding SetAvgTypeCommand}" CommandParameter="Income" MinWidth="0" Margin="8,0,20,0" />
+                        <ComboBox ItemsSource="{Binding AvgChoices}" SelectedItem="{Binding AvgCategory, Mode=TwoWay}" DisplayMemberPath="Name"
+                                  Width="300" ui:ControlHelper.Header="{infra:Str AvgCategory}" />
+                    </StackPanel>
                     <StackPanel Orientation="Horizontal">
                         <DatePicker SelectedDate="{Binding AvgFrom, Mode=TwoWay}" Width="150" ui:ControlHelper.Header="{infra:Str FilterFrom}" Margin="0,0,12,0" />
                         <DatePicker SelectedDate="{Binding AvgTo, Mode=TwoWay}" Width="150" ui:ControlHelper.Header="{infra:Str FilterTo}" Margin="0,0,16,0" />
@@ -180,8 +202,8 @@
                             <TextBlock Text="{Binding AvgPerMonth}" FontSize="20" FontWeight="Bold" />
                         </StackPanel>
                         <StackPanel Margin="0,0,32,8">
-                            <TextBlock Text="{infra:Str AvgIncomePerMonth}" Opacity="0.7" />
-                            <TextBlock Text="{Binding AvgIncomePerMonth}" FontSize="20" FontWeight="Bold" Foreground="{StaticResource IncomeBrush}" />
+                            <TextBlock Text="{infra:Str AvgTotal}" Opacity="0.7" />
+                            <TextBlock Text="{Binding AvgTotal}" FontSize="20" FontWeight="Bold" />
                         </StackPanel>
                     </WrapPanel>
                     <TextBlock Text="{Binding AvgMethod}" TextWrapping="Wrap" Opacity="0.7" />
@@ -228,6 +250,142 @@
                     </ItemsControl>
                 </StackPanel>
             </Border>
+            </StackPanel>
+
+            <!-- ================= comparisons ================= -->
+            <Grid Visibility="{Binding IsCompare, Converter={StaticResource BoolToVis}}">
+            <StackPanel DataContext="{Binding Compare}">
+                <Border Style="{StaticResource Card}">
+                    <StackPanel>
+                        <WrapPanel>
+                            <RadioButton Content="{infra:Str CompareYears}" GroupName="kind" IsChecked="{Binding IsYears, Mode=OneWay}"
+                                         Command="{Binding SetKindCommand}" CommandParameter="Years" MinWidth="0" />
+                            <RadioButton Content="{infra:Str CompareMonths}" GroupName="kind" IsChecked="{Binding IsMonths, Mode=OneWay}"
+                                         Command="{Binding SetKindCommand}" CommandParameter="Months" MinWidth="0" Margin="8,0,28,0" />
+                            <RadioButton Content="{infra:Str CompareExpenses}" GroupName="ctype" IsChecked="{Binding IsExpense, Mode=OneWay}"
+                                         Command="{Binding SetTypeCommand}" CommandParameter="Expense" MinWidth="0" />
+                            <RadioButton Content="{infra:Str CompareIncome}" GroupName="ctype" IsChecked="{Binding IsIncome, Mode=OneWay}"
+                                         Command="{Binding SetTypeCommand}" CommandParameter="Income" MinWidth="0" Margin="8,0,0,0" />
+                        </WrapPanel>
+                        <ComboBox ItemsSource="{Binding Choices}" SelectedItem="{Binding Category, Mode=TwoWay}" DisplayMemberPath="Name"
+                                  Width="360" HorizontalAlignment="Left" Margin="0,10,0,0" ui:ControlHelper.Header="{Binding CategoryLabel}" />
+                        <TextBlock Text="{Binding PickLabel}" Opacity="0.7" Margin="0,10,0,4" />
+                        <ItemsControl ItemsSource="{Binding Picks}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <CheckBox Content="{Binding Label}" IsChecked="{Binding IsSelected, Mode=TwoWay}" MinWidth="0" Margin="0,0,16,4" />
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource Card}">
+                    <StackPanel>
+                        <TextBlock Text="{Binding Title}" Style="{StaticResource Heading}" />
+                        <TextBlock Text="{infra:Str CompareNoData}" Opacity="0.6">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding HasData}" Value="False">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                        <lvc:CartesianChart Series="{Binding Series}" XAxes="{Binding XAxes}" YAxes="{Binding YAxes}"
+                                            LegendPosition="Bottom" LegendTextPaint="{Binding LegendTextPaint}" Height="340"
+                                            Visibility="{Binding HasData, Converter={StaticResource BoolToVis}}" />
+                        <ItemsControl ItemsSource="{Binding Totals}" Margin="0,12,0,0" MaxWidth="620" HorizontalAlignment="Left">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Margin="0,3">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="20" />
+                                            <ColumnDefinition Width="140" />
+                                            <ColumnDefinition Width="150" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <Ellipse Width="12" Height="12" Fill="{Binding Color, Converter={StaticResource HexToBrush}}" HorizontalAlignment="Left" />
+                                        <TextBlock Grid.Column="1" Text="{Binding Name}" FontWeight="SemiBold" />
+                                        <TextBlock Grid.Column="2" Text="{Binding Total}" TextAlignment="Right" FontWeight="SemiBold" />
+                                        <TextBlock Grid.Column="3" Text="{Binding Average}" Margin="16,0,0,0" Opacity="0.7" />
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+            </Grid>
+
+            <!-- ================= places ================= -->
+            <Grid Visibility="{Binding IsPlaces, Converter={StaticResource BoolToVis}}">
+            <StackPanel DataContext="{Binding Places}">
+                <Border Style="{StaticResource Card}">
+                    <StackPanel>
+                        <TextBlock Text="{infra:Str PlacesTitle}" Style="{StaticResource Heading}" />
+                        <WrapPanel>
+                            <DatePicker SelectedDate="{Binding From, Mode=TwoWay}" Width="150" ui:ControlHelper.Header="{infra:Str FilterFrom}" Margin="0,0,12,8" />
+                            <DatePicker SelectedDate="{Binding To, Mode=TwoWay}" Width="150" ui:ControlHelper.Header="{infra:Str FilterTo}" Margin="0,0,20,8" />
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Bottom" Margin="0,0,20,8">
+                                <RadioButton Content="{infra:Str CompareExpenses}" GroupName="ptype" IsChecked="{Binding IsExpense, Mode=OneWay}"
+                                             Command="{Binding SetTypeCommand}" CommandParameter="Expense" MinWidth="0" />
+                                <RadioButton Content="{infra:Str CompareIncome}" GroupName="ptype" IsChecked="{Binding IsIncome, Mode=OneWay}"
+                                             Command="{Binding SetTypeCommand}" CommandParameter="Income" MinWidth="0" Margin="8,0,0,0" />
+                            </StackPanel>
+                            <TextBox Text="{Binding Search, UpdateSourceTrigger=PropertyChanged}" Width="220" VerticalAlignment="Bottom" Margin="0,0,0,8"
+                                     ui:ControlHelper.PlaceholderText="{infra:Str PlacesSearch}" />
+                        </WrapPanel>
+                        <TextBlock Text="{Binding Summary}" FontWeight="SemiBold" Margin="0,0,0,8" />
+                        <DataGrid ItemsSource="{Binding Rows}" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False"
+                                  CanUserDeleteRows="False" SelectionMode="Extended" SelectionUnit="FullRow" HeadersVisibility="Column"
+                                  GridLinesVisibility="Horizontal" MaxHeight="440" MaxWidth="760" HorizontalAlignment="Left"
+                                  AlternationCount="2" AlternatingRowBackground="{DynamicResource SystemControlBackgroundListLowBrush}"
+                                  infra:GridBehaviors.ColumnChooserKey="places"
+                                  infra:GridBehaviors.AutoFit="{Binding AutoFitColumns, Source={x:Static infra:UiPreferences.Instance}}"
+                                  Visibility="{Binding HasRows, Converter={StaticResource BoolToVis}}">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="{infra:Str PlacesColName}" Binding="{Binding Name}" Width="260" />
+                                <DataGridTextColumn Header="{infra:Str PlacesColCount}" Binding="{Binding Count}" Width="90">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="TextAlignment" Value="Right" />
+                                            <Setter Property="VerticalAlignment" Value="Center" />
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn Header="{infra:Str PlacesColAmount}" Binding="{Binding Amount, StringFormat=C2}" Width="150">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="TextAlignment" Value="Right" />
+                                            <Setter Property="VerticalAlignment" Value="Center" />
+                                            <Setter Property="FontWeight" Value="SemiBold" />
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn Header="{infra:Str PlacesColShare}" Binding="{Binding Share, StringFormat=P1}" Width="90">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="TextAlignment" Value="Right" />
+                                            <Setter Property="VerticalAlignment" Value="Center" />
+                                            <Setter Property="Opacity" Value="0.7" />
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+            </Grid>
         </StackPanel>
     </ScrollViewer>
 </UserControl>

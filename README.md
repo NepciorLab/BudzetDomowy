@@ -2,7 +2,7 @@
 
 Program dla Windows 11 do wpisywania przychodów i wydatków oraz pilnowania budżetu domowego. Pracują w nim dwie osoby na dwóch komputerach na wspólnych danych. Interfejs jest po polsku, walutą bazową jest złoty.
 
-Wersja **0.1.0**.
+Wersja **0.2.0**.
 
 ## Uruchomienie
 
@@ -39,9 +39,23 @@ Pasek **szybkiego dodawania** u góry jest widoczny na każdym ekranie: Data, Kw
 * Wpisz **Miejsce** (np. „Lewiatan”): program zapamiętuje, do jakiej kategorii je przypisałeś, i następnym razem podpowie ją sam.
 * Kwotę w obcej walucie wpisz z kodem, np. `12,50 EUR`. Kurs średni NBP (tabela A) z ostatniego dnia roboczego przed datą wpisu pobierze się sam; możesz go zmienić ręcznie (F4). Bez internetu program użyje ostatniego znanego kursu albo poprosi o kurs.
 * Po zapisie pojawia się komunikat z przyciskiem **Cofnij** (też Ctrl+Z).
+* **Alt+←** i **Alt+→** przesuwają ekran Transakcje, Pulpit, Budżety i Raporty do poprzedniego i następnego tygodnia, miesiąca lub roku.
+* W tabeli Transakcje: **Esc** odznacza zaznaczone wpisy, **Del** je usuwa, **Ctrl+K** zmienia kategorię zaznaczonych (to samo jest pod prawym przyciskiem myszy).
 * Pełna lista skrótów: **F1** albo Ustawienia → Skróty klawiszowe.
 
-Ekrany: **Pulpit** (miesiąc, kafelki, wykres kategorii z podkategoriami, paski budżetów, ostatnie wpisy, trwające wydarzenie), **Transakcje** (edycja w miejscu, filtry, zmiana kategorii wielu wpisów, eksport), **Budżety** (limity miesięczne z historią zmian), **Wydarzenia** (np. wakacje: koszty osobno, koszt na dzień, porównanie z planem), **Raporty** (miesiąc i rok, porównanie, trend, średnie), **Ustawienia** (kategorie, wpisy cykliczne, import i eksport, diagnostyka).
+Ekrany: **Pulpit** (miesiąc, kafelki, wykres kategorii z podkategoriami, paski budżetów, ostatnie wpisy, trwające wydarzenie), **Transakcje** (edycja w miejscu, filtry, przeglądanie tygodniowe, miesięczne, roczne albo w dowolnym zakresie, domyślnie bieżący miesiąc; na dole sumy wszystkich pasujących wpisów i osobno zaznaczonych; ikona Excela w prawym górnym rogu eksportuje to, co widać), **Budżety** (limity miesięczne z historią zmian), **Wydarzenia** (np. wakacje: koszty osobno, koszt na dzień, porównanie z planem), **Wpisy cykliczne** (osobny ekran: dodawanie i edycja), **Raporty** (zakładki: *Przegląd* – miesiąc lub rok, porównanie z poprzednim okresem, trend, średnie na dzień, tydzień i miesiąc dla wybranej kategorii; *Porównania* – lata obok siebie miesiąc po miesiącu albo wybrane miesiące obok siebie kategoria po kategorii, osobno dla wydatków i przychodów; *Miejsca* – sumy według miejsc w wybranym okresie), **Ustawienia** (kategorie z wyborem ikony z listy, import i eksport, diagnostyka).
+
+Skróty ekranów: Ctrl+1 … Ctrl+7 (Pulpit, Transakcje, Budżety, Wydarzenia, Wpisy cykliczne, Raporty, Ustawienia).
+
+### Tabele i okno
+
+* Okno programu pamięta położenie i rozmiar (także stan zmaksymalizowany) i startuje z ostatnimi; jeśli monitor zniknął, okno wraca na widoczny ekran.
+* Prawy przycisk myszy na nagłówku tabeli pozwala wybrać, które kolumny są widoczne (wybór jest zapamiętywany osobno dla każdej tabeli).
+* Ustawienia → Ogólne → *Automatycznie dopasuj szerokość kolumn* dopasowuje kolumny do zawartości.
+
+### Zmiana folderów
+
+Ustawienia → Ogólne → **Folder danych** / **Folder lokalny** → *Zmień…*. Nowy folder danych jest sprawdzany tak jak w kreatorze pierwszego uruchomienia; można skopiować do niego dotychczasowe pliki zapisów (istniejących plików nie nadpisuje). Po zmianie program proponuje restart, a lokalna baza jest odbudowywana z dzienników nowego folderu. Folder lokalny (baza podręczna) musi leżeć poza OneDrive.
 
 Transakcje z wydarzeniem są normalnie wliczane do podsumowań miesięcznych według kategorii; wydarzenie to dodatkowy sposób ich oglądania.
 
@@ -51,7 +65,7 @@ Ustawienia → **Import i eksport** → *Importuj z Excela*. Kreator wczytuje pl
 
 ### Eksport
 
-Transakcje do **Excela** lub **CSV** (z uwzględnieniem filtrów ekranu Transakcje albo wszystkie), raport miesiąca lub roku do Excela.
+Transakcje do **Excela** (ikona w prawym górnym rogu ekranu Transakcje: wpisy pasujące do filtrów i okresu; w Ustawieniach – wszystkie), raport miesiąca lub roku do Excela.
 
 ### Szybkie dodawanie spoza programu (opcjonalne)
 
@@ -77,7 +91,7 @@ Ustawienia → **Diagnostyka** pokazuje urządzenia, liczbę zdarzeń i rozmiary
 | Dane wyglądają na niepełne albo dziwne | Diagnostyka → **Odbuduj bazę z dzienników** (bezpieczne; dziennik się nie zmienia). Przycisk jest zablokowany, dopóki są pliki tylko w chmurze lub folder jest niedostępny. |
 | Błąd, którego nie rozumiesz | Komunikat jest krótki, szczegóły są w pliku dziennika: `%LocalAppData%\BudzetDomowy\logs` (przycisk w Diagnostyce). Przechowywane jest 14 dni. |
 
-## Znane ograniczenia (0.1.0)
+## Znane ograniczenia
 
 * Plik `.exe` nie jest podpisany cyfrowo (ostrzeżenie SmartScreen), nie ma instalatora ani automatycznych aktualizacji.
 * Synchronizacja była sprawdzana testami na dwóch folderach i na dwóch kopiach programu na jednym komputerze, nie na prawdziwych dwóch maszynach z OneDrive.

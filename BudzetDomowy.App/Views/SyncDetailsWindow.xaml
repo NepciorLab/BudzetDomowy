@@ -39,7 +39,7 @@
         </ListBox>
 
         <TextBlock Grid.Row="4" Text="{infra:Str SyncDetailsDevices}" FontWeight="SemiBold" Margin="0,16,0,6" />
-        <DataGrid Grid.Row="5" ItemsSource="{Binding Devices}" AutoGenerateColumns="False" IsReadOnly="True"
+        <DataGrid infra:GridBehaviors.ColumnChooserKey="sync-devices" infra:GridBehaviors.AutoFit="{Binding AutoFitColumns, Source={x:Static infra:UiPreferences.Instance}}" Grid.Row="5" ItemsSource="{Binding Devices}" AutoGenerateColumns="False" IsReadOnly="True"
                   HeadersVisibility="Column" CanUserAddRows="False" MinHeight="70">
             <DataGrid.Columns>
                 <DataGridTextColumn Header="{infra:Str SyncColDevice}" Binding="{Binding Name}" Width="*" />

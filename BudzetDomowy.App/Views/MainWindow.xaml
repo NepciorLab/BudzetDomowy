@@ -23,6 +23,11 @@
         <DataTemplate DataType="{x:Type vm:ReportsViewModel}">
             <views:ReportsView />
         </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:RecurringViewModel}">
+            <Grid Margin="16,12,16,8">
+                <views:RecurringView />
+            </Grid>
+        </DataTemplate>
         <DataTemplate DataType="{x:Type vm:EventsViewModel}">
             <views:EventsView />
         </DataTemplate>
@@ -48,8 +53,11 @@
         <KeyBinding Key="D2" Modifiers="Ctrl" Command="{Binding GoCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="transactions" />
         <KeyBinding Key="D3" Modifiers="Ctrl" Command="{Binding GoCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="budgets" />
         <KeyBinding Key="D4" Modifiers="Ctrl" Command="{Binding GoCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="events" />
-        <KeyBinding Key="D5" Modifiers="Ctrl" Command="{Binding GoCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="reports" />
-        <KeyBinding Key="D6" Modifiers="Ctrl" Command="{Binding GoCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="settings" />
+        <KeyBinding Key="D5" Modifiers="Ctrl" Command="{Binding GoCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="recurring" />
+        <KeyBinding Key="D6" Modifiers="Ctrl" Command="{Binding GoCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="reports" />
+        <KeyBinding Key="D7" Modifiers="Ctrl" Command="{Binding GoCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="settings" />
+        <KeyBinding Key="Left" Modifiers="Alt" Command="{Binding PreviousPeriodCommand}" />
+        <KeyBinding Key="Right" Modifiers="Alt" Command="{Binding NextPeriodCommand}" />
     </Window.InputBindings>
 
     <Grid>
