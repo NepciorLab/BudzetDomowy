@@ -2,7 +2,7 @@
 
 Program dla Windows 11 do wpisywania przychodów i wydatków oraz pilnowania budżetu domowego. Pracują w nim dwie osoby na dwóch komputerach na wspólnych danych. Interfejs jest po polsku, walutą bazową jest złoty.
 
-Wersja **0.3.0**.
+Wersja **0.3.1**.
 
 ## Uruchomienie
 
@@ -51,7 +51,7 @@ Skróty ekranów: Ctrl+1 … Ctrl+7 (Pulpit, Transakcje, Budżety, Wydarzenia, W
 
 ### Wygląd
 
-Ustawienia → **Wygląd**: motyw, skala interfejsu (mały / średni / duży, działa od razu), symbol koloru kategorii (kółko, kwadrat albo pionowa kreska), pokazywanie znaku „−” przy wydatkach i kolorowanie kwot (czerwone wydatki, zielone przychody). W palecie kolorów kategorii ptaszkiem są oznaczone kolory, które już ma jakaś kategoria.
+Ustawienia → **Wygląd**: motyw, skala interfejsu (mały / średni / duży, działa od razu), symbol koloru kategorii (kółko, kwadrat albo pionowa kreska), pokazywanie znaków „+” i „−” przy kwotach, kolorowanie kwot (czerwone wydatki, zielone przychody; po wyłączeniu kwoty mają zwykły kolor tekstu motywu) oraz karta pokazywana po uruchomieniu programu (domyślnie Pulpit, albo *Ostatnio wybrana*). W palecie kolorów kategorii ptaszkiem są oznaczone kolory, które już ma jakaś kategoria.
 
 ### Aktualizacje
 

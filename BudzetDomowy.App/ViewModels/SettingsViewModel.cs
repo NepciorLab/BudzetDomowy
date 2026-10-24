@@ -15,6 +15,11 @@ public sealed record ThemeOption(ThemeChoice Choice, string Label)
     public override string ToString() => Label;
 }
 
+public sealed record StartPageOption(string Key, string Label)
+{
+    public override string ToString() => Label;
+}
+
 public sealed record ScaleOption(UiScaleChoice Choice, string Label)
 {
     public override string ToString() => Label;
@@ -237,6 +242,17 @@ public sealed partial class SettingsViewModel : ObservableObject
         new(MarkerShape.Bar, Res.Get("MarkerBar")),
     ];
 
+    /// <summary>"Last used" first, then every screen in the order of the navigation list.</summary>
+    public IReadOnlyList<StartPageOption> StartPages { get; } =
+    [
+        new("last", Res.Get("StartPageLast")),
+        .. ShortcutMap.Pages.Select(p => new StartPageOption(p, Res.Get("Nav" + char.ToUpperInvariant(p[0]) + p[1..]))),
+    ];
+
+    [ObservableProperty] private StartPageOption _selectedStartPage;
+
+    partial void OnSelectedStartPageChanged(StartPageOption value) => _store.Update(s => s with { StartPage = value.Key });
+
     [ObservableProperty] private ScaleOption _selectedScale;
     [ObservableProperty] private MarkerOption _selectedMarker;
 
@@ -269,6 +285,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         Diagnostics = diagnostics;
         _backgroundMode = store.Current.BackgroundMode && background.IsActive;
         _selectedTheme = Themes.First(t => t.Choice == store.Current.Theme);
+        _selectedStartPage = StartPages.FirstOrDefault(p => p.Key == store.Current.StartPage) ?? StartPages[1];
         _selectedScale = Scales.First(s => s.Choice == store.Current.UiScale);
         _selectedMarker = Markers.First(m => m.Choice == store.Current.CategoryMarker);
         UiPreferences.Instance.OnAppearanceChanged(this, self =>

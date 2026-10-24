@@ -104,6 +104,9 @@
                     <ComboBox ItemsSource="{Binding Themes}" SelectedItem="{Binding SelectedTheme, Mode=TwoWay}" Width="260"
                               ui:ControlHelper.Header="{infra:Str SettingsTheme}" />
 
+                    <ComboBox ItemsSource="{Binding StartPages}" SelectedItem="{Binding SelectedStartPage, Mode=TwoWay}" Width="260" Margin="0,16,0,0"
+                              ui:ControlHelper.Header="{infra:Str SettingsStartPage}" />
+
                     <ComboBox ItemsSource="{Binding Scales}" SelectedItem="{Binding SelectedScale, Mode=TwoWay}" Width="260" Margin="0,16,0,0"
                               ui:ControlHelper.Header="{infra:Str SettingsScale}" />
                     <TextBlock Text="{infra:Str SettingsScaleHint}" TextWrapping="Wrap" Opacity="0.7" Margin="0,4,0,0" />
@@ -123,22 +126,8 @@
                     <CheckBox IsChecked="{Binding Preferences.ShowMinus, Mode=TwoWay}" Content="{infra:Str SettingsShowMinus}" />
                     <CheckBox IsChecked="{Binding Preferences.ColorAmounts, Mode=TwoWay}" Content="{infra:Str SettingsColorAmounts}" Margin="0,4,0,0" />
                     <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
-                        <TextBlock Text="{Binding SampleExpense}" FontWeight="SemiBold" Margin="0,0,24,0">
-                            <TextBlock.Foreground>
-                                <MultiBinding Converter="{x:Static infra:AmountBrushConverter.Instance}">
-                                    <Binding Source="False" Converter="{x:Static infra:StringToBoolConverter.Instance}" />
-                                    <Binding Path="ColorAmounts" Source="{x:Static infra:UiPreferences.Instance}" />
-                                </MultiBinding>
-                            </TextBlock.Foreground>
-                        </TextBlock>
-                        <TextBlock Text="{Binding SampleIncome}" FontWeight="SemiBold">
-                            <TextBlock.Foreground>
-                                <MultiBinding Converter="{x:Static infra:AmountBrushConverter.Instance}">
-                                    <Binding Source="True" Converter="{x:Static infra:StringToBoolConverter.Instance}" />
-                                    <Binding Path="ColorAmounts" Source="{x:Static infra:UiPreferences.Instance}" />
-                                </MultiBinding>
-                            </TextBlock.Foreground>
-                        </TextBlock>
+                        <TextBlock Text="{Binding SampleExpense}" FontWeight="SemiBold" Margin="0,0,24,0" Style="{StaticResource AmountExpenseSample}" />
+                        <TextBlock Text="{Binding SampleIncome}" FontWeight="SemiBold" Style="{StaticResource AmountIncomeSample}" />
                     </StackPanel>
                 </StackPanel>
             </ScrollViewer>

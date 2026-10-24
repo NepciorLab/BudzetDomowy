@@ -52,10 +52,11 @@ public sealed partial class MainViewModel : ObservableObject
 
     public MainViewModel(BudgetCore core, QuickAddViewModel quickAdd, TransactionsViewModel transactions,
         SettingsViewModel settings, EventsViewModel events, DashboardViewModel dashboard, BudgetsViewModel budgets,
-        ReportsViewModel reports, RecurringViewModel recurring, ToastService toast, RecurringRunner runner)
+        ReportsViewModel reports, RecurringViewModel recurring, ToastService toast, RecurringRunner runner, SettingsStore store)
     {
         Core = core;
         _runner = runner;
+        _store = store;
         QuickAdd = quickAdd;
         Settings = settings;
         VersionLabel = "v" + (typeof(MainViewModel).Assembly.GetCustomAttributes(typeof(System.Reflection.AssemblyInformationalVersionAttribute), false)
@@ -96,7 +97,7 @@ public sealed partial class MainViewModel : ObservableObject
         {
             foreach (var item in NavItems) item.Shortcut = ShortcutMap.Instance.DisplayOf(ShortcutMap.GoPrefix + item.Key);
         };
-        SelectedNav = NavItems[1];
+        SelectedNav = NavItems.FirstOrDefault(n => n.Key == StartPageKey(store.Current)) ?? NavItems[0];
         core.Sync.StatusChanged += (_, s) => Application.Current.Dispatcher.BeginInvoke(() => ShowStatus(s));
         ShowStatus(core.Sync.Status);
         core.Sync.Start();
@@ -110,6 +111,7 @@ public sealed partial class MainViewModel : ObservableObject
 
     private readonly System.Windows.Threading.DispatcherTimer _recurringTimer;
     private readonly RecurringRunner _runner;
+    private readonly SettingsStore _store;
 
     private async Task GenerateRecurringAsync()
     {
@@ -126,9 +128,14 @@ public sealed partial class MainViewModel : ObservableObject
     private void UpdateToday() =>
         TodayText = DateTime.Now.ToString("dddd, d MMMM yyyy", CultureInfo.CurrentCulture).ToUpper(CultureInfo.CurrentCulture);
 
+    /// <summary>The page to open at startup: the chosen one, or the one used last.</summary>
+    public static string StartPageKey(AppSettings s) => s.StartPage == "last" ? s.LastPage : s.StartPage;
+
     partial void OnSelectedNavChanged(NavItem? value)
     {
-        if (value is not null) CurrentPage = _pages[value.Key];
+        if (value is null) return;
+        CurrentPage = _pages[value.Key];
+        if (_store.Current.LastPage != value.Key) _store.Update(s => s with { LastPage = value.Key });
     }
 
     public void Navigate(string key) => SelectedNav = NavItems.First(n => n.Key == key);

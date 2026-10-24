@@ -29,7 +29,13 @@ public sealed record AppSettings
     public UiScaleChoice UiScale { get; init; } = UiScaleChoice.Medium;
     public MarkerShape CategoryMarker { get; init; } = MarkerShape.Circle;
 
-    /// <summary>Show "−" in front of expenses.</summary>
+    /// <summary>The screen shown at startup: a page key ("dashboard", "transactions"…) or "last" for the one used last.</summary>
+    public string StartPage { get; init; } = "dashboard";
+
+    /// <summary>The screen that was open when the program was last used.</summary>
+    public string LastPage { get; init; } = "dashboard";
+
+    /// <summary>Show "+" and "−" in front of amounts.</summary>
     public bool ShowMinus { get; init; } = true;
 
     /// <summary>Expenses in red and income in green.</summary>

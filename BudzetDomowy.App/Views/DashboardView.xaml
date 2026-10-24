@@ -218,14 +218,8 @@
                                         <controls:CategoryMarker Size="10" Color="{Binding CategoryColor}" Margin="0,0,8,0" />
                                         <TextBlock Text="{Binding Category}" TextTrimming="CharacterEllipsis" />
                                     </StackPanel>
-                                    <TextBlock Grid.Column="3" Text="{Binding AmountText}" TextAlignment="Right" FontWeight="SemiBold">
-                                        <TextBlock.Foreground>
-                                            <MultiBinding Converter="{x:Static infra:AmountBrushConverter.Instance}">
-                                                <Binding Path="IsIncome" />
-                                                <Binding Path="ColorAmounts" Source="{x:Static infra:UiPreferences.Instance}" />
-                                            </MultiBinding>
-                                        </TextBlock.Foreground>
-                                    </TextBlock>
+                                    <TextBlock Grid.Column="3" Text="{Binding AmountText}" TextAlignment="Right" FontWeight="SemiBold"
+                                               Style="{StaticResource AmountText}" />
                                 </Grid>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>

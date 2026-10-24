@@ -507,7 +507,7 @@ Del – usuń zaznaczone transakcje</value></data>
   <data name="MarkerSquare" xml:space="preserve"><value>Kwadrat</value></data>
   <data name="MarkerBar" xml:space="preserve"><value>Pionowa kreska</value></data>
   <data name="SettingsAmounts" xml:space="preserve"><value>Kwoty</value></data>
-  <data name="SettingsShowMinus" xml:space="preserve"><value>Pokazuj znak „−” przy wydatkach</value></data>
+  <data name="SettingsShowMinus" xml:space="preserve"><value>Pokazuj znaki „+” i „−” przy kwotach</value></data>
   <data name="SettingsColorAmounts" xml:space="preserve"><value>Koloruj kwoty (wydatki na czerwono, przychody na zielono)</value></data>
   <data name="KeyGoTo" xml:space="preserve"><value>Przejdź do ekranu: {0}</value></data>
   <data name="KeyPrevPeriod" xml:space="preserve"><value>Poprzedni tydzień, miesiąc lub rok na ekranie, który to pokazuje</value></data>
@@ -560,6 +560,8 @@ Pobrać i zainstalować ją teraz? Program uruchomi się ponownie.</value></data
   <data name="UpdateTokenSave" xml:space="preserve"><value>Zapisz token</value></data>
   <data name="UpdateTokenSaved" xml:space="preserve"><value>Token zapisany.</value></data>
   <data name="UpdateTokenRemoved" xml:space="preserve"><value>Token usunięty.</value></data>
+  <data name="SettingsStartPage" xml:space="preserve"><value>Karta po uruchomieniu programu</value></data>
+  <data name="StartPageLast" xml:space="preserve"><value>Ostatnio wybrana</value></data>
   <data name="PeriodAll" xml:space="preserve"><value>Wszystko</value></data>
   <data name="PeriodAllTitle" xml:space="preserve"><value>Wszystkie wpisy</value></data>
 </root>

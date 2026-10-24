@@ -130,21 +130,98 @@ public class V3UiTests
 
         prefs.ShowMinus = false;
         Assert.DoesNotContain("−", expense.AmountDisplay);
-        Assert.StartsWith("+", income.AmountDisplay);              // only the minus is optional
+        Assert.DoesNotContain("+", income.AmountDisplay);          // both signs go together
         Assert.Equal("", prefs.SignOf(false));
+        Assert.Equal("", prefs.SignOf(true));
 
         // screens that already built their text rebuild it
         var dashboard = app.Get<DashboardViewModel>();
         Assert.All(dashboard.Recent, r => Assert.DoesNotContain("−", r.AmountText));
+        Assert.All(dashboard.Recent, r => Assert.DoesNotContain("+", r.AmountText));
 
-        var convert = AmountBrushConverter.Instance;
-        Assert.NotEqual(convert.Convert([true, true], typeof(object), null!, null!), convert.Convert([false, true], typeof(object), null!, null!));
-        Assert.Same(DependencyProperty.UnsetValue, convert.Convert([true, false], typeof(object), null!, null!));   // colouring off: plain text colour
-        Assert.True(app.Get<SettingsStore>().Current.ColorAmounts);
         prefs.ColorAmounts = false;
         Assert.False(app.Get<SettingsStore>().Current.ShowMinus);
         Assert.False(app.Get<SettingsStore>().Current.ColorAmounts);
     }));
+
+    private sealed record SampleAmount(bool IsIncome);
+
+    private static System.Windows.Media.Color ForegroundOf(bool isIncome)
+    {
+        var box = new TextBlock { Text = "1,00", Style = (Style)Application.Current.FindResource("AmountText"), DataContext = new SampleAmount(isIncome) };
+        UiHost.Layout(box, 100, 30);
+        return ((System.Windows.Media.SolidColorBrush)box.Foreground).Color;
+    }
+
+    [Fact]
+    public void Appearance_AmountsKeepTheThemeTextColourWhenColouringIsOff() => WithApp(app => WithPreferences(app, prefs =>
+    {
+        var red = ((System.Windows.Media.SolidColorBrush)Application.Current.FindResource("ExpenseBrush")).Color;
+        var green = ((System.Windows.Media.SolidColorBrush)Application.Current.FindResource("IncomeBrush")).Color;
+        var text = ((System.Windows.Media.SolidColorBrush)Application.Current.FindResource("SystemControlForegroundBaseHighBrush")).Color;
+
+        Assert.Equal(green, ForegroundOf(true));
+        Assert.Equal(red, ForegroundOf(false));
+
+        prefs.ColorAmounts = false;
+        Assert.Equal(text, ForegroundOf(true));                    // the theme's own text colour (white on the dark theme), not black
+        Assert.Equal(text, ForegroundOf(false));
+        Assert.NotEqual(System.Windows.Media.Colors.Black, text);   // the test theme is the dark one
+    }));
+
+    [Fact]
+    public void Start_TheChosenPageOpensAtStartup_OrTheLastOne() => WithApp(app =>
+    {
+        var store = app.Get<SettingsStore>();
+        Assert.Equal("dashboard", store.Current.StartPage);                    // default
+        Assert.Equal("dashboard", MainViewModel.StartPageKey(store.Current));
+
+        var settings = app.Get<SettingsViewModel>();
+        Assert.Equal(8, settings.StartPages.Count);
+        Assert.Equal("Ostatnio wybrana", settings.StartPages[0].Label);
+        Assert.Equal("Pulpit", settings.SelectedStartPage.Label);
+
+        settings.SelectedStartPage = settings.StartPages.First(p => p.Key == "reports");
+        Assert.Equal("reports", store.Current.StartPage);
+        Assert.Equal("reports", MainViewModel.StartPageKey(store.Current));
+
+        settings.SelectedStartPage = settings.StartPages[0];                   // "last"
+        var main = app.Get<MainViewModel>();
+        main.Navigate("budgets");
+        Assert.Equal("budgets", store.Current.LastPage);
+        Assert.Equal("budgets", MainViewModel.StartPageKey(store.Current));
+    });
+
+    [Fact]
+    public void Start_ANewMainViewModelOpensOnThePageFromTheSettings() => WithApp(app =>
+    {
+        var store = app.Get<SettingsStore>();
+        store.Update(s => s with { StartPage = "last", LastPage = "events" });
+        var main = new MainViewModel(app.Core, app.Get<QuickAddViewModel>(), app.Get<TransactionsViewModel>(), app.Get<SettingsViewModel>(),
+            app.Get<EventsViewModel>(), app.Get<DashboardViewModel>(), app.Get<BudgetsViewModel>(), app.Get<ReportsViewModel>(),
+            app.Get<RecurringViewModel>(), app.Get<ToastService>(), app.Get<RecurringRunner>(), store);
+        Assert.Equal("events", main.SelectedNav!.Key);
+
+        store.Update(s => s with { StartPage = "settings" });
+        var other = new MainViewModel(app.Core, app.Get<QuickAddViewModel>(), app.Get<TransactionsViewModel>(), app.Get<SettingsViewModel>(),
+            app.Get<EventsViewModel>(), app.Get<DashboardViewModel>(), app.Get<BudgetsViewModel>(), app.Get<ReportsViewModel>(),
+            app.Get<RecurringViewModel>(), app.Get<ToastService>(), app.Get<RecurringRunner>(), store);
+        Assert.Equal("settings", other.SelectedNav!.Key);
+    });
+
+    [Fact]
+    public void Settings_TheQuickAddOptionStaysCheckedWhenTheHostIsRunning() => WithApp(app =>
+    {
+        var host = (FakeHost)app.Services.GetService(typeof(IBackgroundHost))!;
+        var store = app.Get<SettingsStore>();
+        store.Update(s => s with { BackgroundMode = true });
+        host.Start(out _);                                                    // the program starts the host before it builds the screens
+
+        var vm = new SettingsViewModel(app.Core, store, app.Get<CategoriesViewModel>(), () => app.Get<ImportViewModel>(), app.Get<ExportActions>(),
+            app.Get<DiagnosticsViewModel>(), host, app.Get<IFileDialogs>(), app.Get<IAppRestarter>(), app.Get<UpdateService>());
+        Assert.True(vm.BackgroundMode);
+        Assert.True(store.Current.BackgroundMode);                            // and the setting itself is still on
+    });
 
     [Fact]
     public void Appearance_ScaleAndSymbolAreChosenInSettings() => WithApp(app => WithPreferences(app, prefs =>

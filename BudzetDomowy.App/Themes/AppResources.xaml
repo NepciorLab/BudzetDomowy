@@ -1,6 +1,7 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                    xmlns:ui="http://schemas.modernwpf.com/2019">
+                    xmlns:ui="http://schemas.modernwpf.com/2019"
+                    xmlns:infra="clr-namespace:BudzetDomowy.App.Infrastructure">
     <ResourceDictionary.MergedDictionaries>
         <ui:ThemeResources>
             <ui:ThemeResources.ThemeDictionaries>
@@ -25,6 +26,45 @@
     <SolidColorBrush x:Key="ExpenseBrush" Color="#E53935" />
     <SolidColorBrush x:Key="IncomeBrush" Color="#43A047" />
     <SolidColorBrush x:Key="WarningBrush" Color="#F9A825" />
+
+    <!-- An amount that has an IsIncome property: red / green when colouring is on, the normal text colour of the theme otherwise -->
+    <Style x:Key="AmountText" TargetType="TextBlock">
+        <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}" />
+        <Style.Triggers>
+            <MultiDataTrigger>
+                <MultiDataTrigger.Conditions>
+                    <Condition Binding="{Binding ColorAmounts, Source={x:Static infra:UiPreferences.Instance}}" Value="True" />
+                    <Condition Binding="{Binding IsIncome}" Value="True" />
+                </MultiDataTrigger.Conditions>
+                <Setter Property="Foreground" Value="{StaticResource IncomeBrush}" />
+            </MultiDataTrigger>
+            <MultiDataTrigger>
+                <MultiDataTrigger.Conditions>
+                    <Condition Binding="{Binding ColorAmounts, Source={x:Static infra:UiPreferences.Instance}}" Value="True" />
+                    <Condition Binding="{Binding IsIncome}" Value="False" />
+                </MultiDataTrigger.Conditions>
+                <Setter Property="Foreground" Value="{StaticResource ExpenseBrush}" />
+            </MultiDataTrigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- The same for fixed samples (Settings) -->
+    <Style x:Key="AmountExpenseSample" TargetType="TextBlock">
+        <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}" />
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding ColorAmounts, Source={x:Static infra:UiPreferences.Instance}}" Value="True">
+                <Setter Property="Foreground" Value="{StaticResource ExpenseBrush}" />
+            </DataTrigger>
+        </Style.Triggers>
+    </Style>
+    <Style x:Key="AmountIncomeSample" TargetType="TextBlock">
+        <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}" />
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding ColorAmounts, Source={x:Static infra:UiPreferences.Instance}}" Value="True">
+                <Setter Property="Foreground" Value="{StaticResource IncomeBrush}" />
+            </DataTrigger>
+        </Style.Triggers>
+    </Style>
     <LinearGradientBrush x:Key="HeaderBrush" StartPoint="0,0" EndPoint="1,0">
         <GradientStop Color="#FB8C00" Offset="0" />
         <GradientStop Color="#F4511E" Offset="1" />

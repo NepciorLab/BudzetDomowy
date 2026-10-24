@@ -109,8 +109,8 @@ public sealed partial class UiPreferences : ObservableObject
         Appearance();
     }
 
-    /// <summary>"+" for income, "−" for an expense unless the user turned the minus off.</summary>
-    public string SignOf(bool isIncome) => isIncome ? "+" : ShowMinus ? "−" : "";
+    /// <summary>"+" for income and "−" for an expense, or nothing at all when the user turned the signs off.</summary>
+    public string SignOf(bool isIncome) => !ShowMinus ? "" : isIncome ? "+" : "−";
 
     /// <summary>Indexes of the columns of a table the user chose to hide.</summary>
     public IReadOnlyList<int> HiddenColumns(string tableKey) =>

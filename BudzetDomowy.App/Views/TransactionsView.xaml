@@ -144,14 +144,7 @@
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <TextBlock Text="{Binding AmountDisplay}" TextAlignment="Right" VerticalAlignment="Center"
-                                       Margin="8,0" FontWeight="SemiBold">
-                                <TextBlock.Foreground>
-                                    <MultiBinding Converter="{x:Static infra:AmountBrushConverter.Instance}">
-                                        <Binding Path="IsIncome" />
-                                        <Binding Path="ColorAmounts" Source="{x:Static infra:UiPreferences.Instance}" />
-                                    </MultiBinding>
-                                </TextBlock.Foreground>
-                            </TextBlock>
+                                       Margin="8,0" FontWeight="SemiBold" Style="{StaticResource AmountText}" />
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                     <DataGridTemplateColumn.CellEditingTemplate>

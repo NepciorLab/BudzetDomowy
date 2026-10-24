@@ -57,30 +57,6 @@ public sealed class HexToBrushConverter : IValueConverter
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => throw new NotSupportedException();
 }
 
-/// <summary>"True"/"False" text to bool (lets XAML pass a constant to a multi-binding).</summary>
-public sealed class StringToBoolConverter : IValueConverter
-{
-    public static readonly StringToBoolConverter Instance = new();
-    public object Convert(object value, Type targetType, object parameter, CultureInfo culture) => string.Equals(value as string, "True", StringComparison.OrdinalIgnoreCase);
-    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => throw new NotSupportedException();
-}
-
-/// <summary>(isIncome, colourAmounts) to the income or expense brush; plain text colour when colouring is off.</summary>
-public sealed class AmountBrushConverter : IMultiValueConverter
-{
-    public static readonly AmountBrushConverter Instance = new();
-
-    public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
-    {
-        var income = values.Length > 0 && values[0] is true;
-        var colour = values.Length < 2 || values[1] is not false;
-        if (!colour) return DependencyProperty.UnsetValue;
-        return Application.Current?.TryFindResource(income ? "IncomeBrush" : "ExpenseBrush") ?? DependencyProperty.UnsetValue;
-    }
-
-    public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture) => throw new NotSupportedException();
-}
-
 /// <summary>true = fully visible, false = dimmed.</summary>
 public sealed class DimConverter : IValueConverter
 {

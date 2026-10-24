@@ -122,10 +122,11 @@ public partial class App : Application
             .BuildServiceProvider();
 
         _services = services;
+        // the quick-add host first: the Settings screen reads whether it is running when it is built
+        StartBackgroundMode(settings, services);
         var main = services.GetRequiredService<MainWindow>();
         MainWindow = main;
         ShutdownMode = ShutdownMode.OnMainWindowClose;
-        StartBackgroundMode(settings, services);
         main.Show();
         StartUpdateCheck(services);
     }
