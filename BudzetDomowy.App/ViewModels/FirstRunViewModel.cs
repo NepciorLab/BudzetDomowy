@@ -109,7 +109,7 @@ public sealed partial class FirstRunViewModel : ObservableObject
             var core = await Task.Run(() =>
             {
                 Directory.CreateDirectory(AppPaths.LocalDir);
-                var created = BudgetCore.Create(AppPaths.LocalDir, folder, name);
+                var created = BudgetCore.Create(AppPaths.LocalDir, folder, name, log: AppLog.Instance);
                 try
                 {
                     // The local database is only a view of the journals: start from a clean one.

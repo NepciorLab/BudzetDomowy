@@ -24,6 +24,8 @@ public sealed partial class MainViewModel : ObservableObject
 
     public BudgetCore Core { get; }
     public QuickAddViewModel QuickAdd { get; }
+    public SettingsViewModel Settings { get; }
+    public string VersionLabel { get; }
     public ToastService Toast { get; }
     public IReadOnlyList<NavItem> NavItems { get; }
     public string WindowTitle { get; }
@@ -47,6 +49,9 @@ public sealed partial class MainViewModel : ObservableObject
     {
         Core = core;
         QuickAdd = quickAdd;
+        Settings = settings;
+        VersionLabel = "v" + (typeof(MainViewModel).Assembly.GetCustomAttributes(typeof(System.Reflection.AssemblyInformationalVersionAttribute), false)
+            .OfType<System.Reflection.AssemblyInformationalVersionAttribute>().FirstOrDefault()?.InformationalVersion?.Split('+')[0] ?? "?");
         Toast = toast;
 
         NavItems =

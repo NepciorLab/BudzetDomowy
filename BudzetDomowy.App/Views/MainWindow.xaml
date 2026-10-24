@@ -39,6 +39,7 @@
 
     <Window.InputBindings>
         <KeyBinding Key="F2" Command="{Binding QuickAdd.ToggleTypeCommand}" />
+        <KeyBinding Key="F1" Command="{Binding ShowShortcutsCommand, RelativeSource={RelativeSource AncestorType=Window}}" />
         <KeyBinding Key="Z" Modifiers="Ctrl" Command="{Binding UndoCommand}" />
         <KeyBinding Key="F3" Command="{Binding FocusCurrencyCommand, RelativeSource={RelativeSource AncestorType=Window}}" />
         <KeyBinding Key="F4" Command="{Binding FocusRateCommand, RelativeSource={RelativeSource AncestorType=Window}}" />
@@ -107,7 +108,10 @@
                             <TextBlock Text="{Binding SyncText}" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
-                    <TextBlock Text="{Binding DeviceLabel}" HorizontalAlignment="Right" VerticalAlignment="Center" Opacity="0.6" />
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Opacity="0.6">
+                        <TextBlock Text="{Binding DeviceLabel}" />
+                        <TextBlock Text="{Binding VersionLabel}" Margin="14,0,0,0" ToolTip="{infra:Str FooterVersionTip}" />
+                    </StackPanel>
                 </Grid>
             </Border>
         </Grid>

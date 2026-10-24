@@ -1,6 +1,7 @@
 using BudzetDomowy.Core.Currency;
 using BudzetDomowy.Core.Excel;
 using BudzetDomowy.Core.Journal;
+using BudzetDomowy.Core.Logging;
 using BudzetDomowy.Core.Services;
 using BudzetDomowy.Core.Storage;
 using BudzetDomowy.Core.Sync;
@@ -55,8 +56,13 @@ public sealed class BudgetCore : IDisposable
     /// <param name="localDataDir">Per-installation folder (outside OneDrive): device.json and the SQLite database.</param>
     /// <param name="dataFolder">The shared (OneDrive-synchronised) folder with the journals.</param>
     public static BudgetCore Create(string localDataDir, string dataFolder, string? deviceName = null, SyncOptions? syncOptions = null,
-        IExchangeRateSource? rateSource = null)
+        IExchangeRateSource? rateSource = null, ILog? log = null)
     {
+        if (log is not null)
+        {
+            var options = syncOptions ?? new SyncOptions();
+            syncOptions = options.Log is null ? options.WithLog(log) : options;
+        }
         var device = DeviceIdentity.LoadOrCreate(localDataDir, deviceName);
         var db = new LocalDatabase(Path.Combine(localDataDir, DatabaseFileName));
         return new BudgetCore(device, dataFolder, db, syncOptions, rateSource);

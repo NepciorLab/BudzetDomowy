@@ -10,7 +10,7 @@
         <infra:BoolToVisibilityConverter x:Key="BoolToVis" />
         <infra:HexToBrushConverter x:Key="HexToBrush" />
     </UserControl.Resources>
-    <TabControl Margin="16,8,16,8" Background="Transparent">
+    <TabControl Margin="16,8,16,8" Background="Transparent" SelectedIndex="{Binding SelectedTab, Mode=TwoWay}">
         <!-- General -->
         <TabItem Header="{infra:Str SettingsGeneral}">
             <ScrollViewer VerticalScrollBarVisibility="Auto">
@@ -31,8 +31,10 @@
                     <TextBlock Text="{Binding DeviceName}" />
                     <TextBlock Text="{Binding DeviceId}" Opacity="0.6" />
 
-                    <TextBlock Text="{infra:Str SettingsShortcuts}" FontSize="18" FontWeight="SemiBold" Margin="0,28,0,8" />
-                    <TextBlock Text="{infra:Str SettingsShortcutsText}" TextWrapping="Wrap" />
+                    <TextBlock Text="{infra:Str SettingsBackgroundHeading}" FontSize="18" FontWeight="SemiBold" Margin="0,28,0,8" />
+                    <CheckBox IsChecked="{Binding BackgroundMode, Mode=TwoWay}" Content="{infra:Str SettingsBackgroundOption}" />
+                    <TextBlock Text="{infra:Str SettingsBackgroundHint}" TextWrapping="Wrap" Opacity="0.7" Margin="0,4,0,0" />
+                    <TextBlock Text="{Binding BackgroundMessage}" TextWrapping="Wrap" Foreground="{StaticResource ExpenseBrush}" Margin="0,6,0,0" />
                 </StackPanel>
             </ScrollViewer>
         </TabItem>
@@ -158,6 +160,37 @@
         <!-- Recurring entries -->
         <TabItem Header="{infra:Str SettingsRecurring}">
             <local:RecurringView DataContext="{Binding Recurring}" />
+        </TabItem>
+
+        <!-- Diagnostics -->
+        <TabItem Header="{infra:Str SettingsDiagnostics}">
+            <local:DiagnosticsView DataContext="{Binding Diagnostics}" />
+        </TabItem>
+
+        <!-- Keyboard shortcuts -->
+        <TabItem Header="{infra:Str SettingsShortcuts}">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <StackPanel Margin="0,16,0,0" MaxWidth="760" HorizontalAlignment="Left">
+                    <TextBlock Text="{infra:Str ShortcutsIntro}" TextWrapping="Wrap" Opacity="0.8" Margin="0,0,0,12" />
+                    <ItemsControl ItemsSource="{Binding Shortcuts}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Margin="0,4">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="210" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <Border CornerRadius="5" Padding="10,3" HorizontalAlignment="Left"
+                                            Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}">
+                                        <TextBlock Text="{Binding Keys}" FontFamily="Consolas" FontWeight="SemiBold" />
+                                    </Border>
+                                    <TextBlock Grid.Column="1" Text="{Binding Description}" TextWrapping="Wrap" VerticalAlignment="Center" />
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </ScrollViewer>
         </TabItem>
     </TabControl>
 </UserControl>

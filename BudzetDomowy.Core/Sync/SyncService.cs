@@ -1,4 +1,5 @@
 using BudzetDomowy.Core.Journal;
+using BudzetDomowy.Core.Logging;
 using BudzetDomowy.Core.Storage;
 
 namespace BudzetDomowy.Core.Sync;
@@ -10,6 +11,11 @@ public sealed class SyncOptions
     public TimeSpan Debounce { get; init; } = TimeSpan.FromMilliseconds(500);
     /// <summary>Overridable for tests; the default checks the OneDrive "recall" attributes.</summary>
     public Func<FileInfo, bool> IsCloudOnly { get; init; } = CloudFiles.IsCloudOnly;
+
+    /// <summary>Where sync problems are recorded (new problems and recoveries, not every pass).</summary>
+    public ILog? Log { get; init; }
+
+    public SyncOptions WithLog(ILog log) => new() { PollInterval = PollInterval, Debounce = Debounce, IsCloudOnly = IsCloudOnly, Log = log };
 }
 
 public static class CloudFiles
@@ -49,6 +55,7 @@ public sealed class SyncService : IDisposable
     private Timer? _debounceTimer;
     private bool _disposed;
     private volatile SyncStatus _status = new();
+    private string _lastIssueSignature = "";
 
     public event EventHandler<SyncStatus>? StatusChanged;
 
@@ -238,6 +245,8 @@ public sealed class SyncService : IDisposable
         try { devices = _reader.GetJournalInfos(); }
         catch (Exception) { devices = _status.Devices; }
 
+        LogChanges(issues, applied);
+
         var status = new SyncStatus
         {
             State = issues.Count == 0 ? SyncState.Synced : SyncState.Problem,
@@ -248,6 +257,21 @@ public sealed class SyncService : IDisposable
         };
         Publish(status);
         return status;
+    }
+
+    private void LogChanges(List<SyncIssue> issues, ApplyResult applied)
+    {
+        var log = _options.Log;
+        if (log is null) return;
+
+        var signature = string.Join('|', issues.Select(i => $"{i.Kind}:{i.FileName}:{i.Count}").OrderBy(x => x, StringComparer.Ordinal));
+        if (signature != _lastIssueSignature)
+        {
+            if (issues.Count == 0) log.Info("Synchronization problems are resolved.");
+            foreach (var i in issues) log.Warn($"Sync issue {i.Kind}: {i.Message}");
+            _lastIssueSignature = signature;
+        }
+        if (applied.Applied > 0) log.Info($"Synchronization applied {applied.Applied} event(s) from journals ({applied.Ignored} already known, {applied.Failed} failed).");
     }
 
     private void Publish(SyncStatus status)

@@ -38,6 +38,12 @@ public static class UiHost
             };
 
             dispatcher = Dispatcher.CurrentDispatcher;
+            // an error raised by queued UI work (timers, bindings) must fail the test that caused it, not kill the whole test host
+            dispatcher.UnhandledException += (_, e) =>
+            {
+                lock (UiErrors) UiErrors.Add(e.Exception);
+                e.Handled = true;
+            };
             ready.Set();
             Dispatcher.Run();
         })
@@ -48,12 +54,40 @@ public static class UiHost
         return dispatcher!;
     }
 
-    public static void Run(Action action) => UiDispatcher.Invoke(action);
+    private static readonly List<Exception> UiErrors = [];
 
-    public static T Run<T>(Func<T> func) => UiDispatcher.Invoke(func);
+    /// <summary>Throws what the UI thread's queued work failed with since the last call.</summary>
+    private static void ThrowQueuedErrors()
+    {
+        Pump();
+        lock (UiErrors)
+        {
+            if (UiErrors.Count == 0) return;
+            var errors = UiErrors.ToArray();
+            UiErrors.Clear();
+            throw new AggregateException("UI thread work failed", errors);
+        }
+    }
+
+    public static void Run(Action action)
+    {
+        UiDispatcher.Invoke(action);
+        UiDispatcher.Invoke(ThrowQueuedErrors);
+    }
+
+    public static T Run<T>(Func<T> func)
+    {
+        var result = UiDispatcher.Invoke(func);
+        UiDispatcher.Invoke(ThrowQueuedErrors);
+        return result;
+    }
 
     /// <summary>Runs async code on the UI thread and waits for it from the calling (test) thread, which leaves the UI thread free to continue the awaits.</summary>
-    public static void RunAsync(Func<Task> work) => UiDispatcher.InvokeAsync(work).Task.Unwrap().GetAwaiter().GetResult();
+    public static void RunAsync(Func<Task> work)
+    {
+        UiDispatcher.InvokeAsync(work).Task.Unwrap().GetAwaiter().GetResult();
+        UiDispatcher.Invoke(ThrowQueuedErrors);
+    }
 
     public static string OutputDir
     {

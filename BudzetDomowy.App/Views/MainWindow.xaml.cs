@@ -13,6 +13,7 @@ public partial class MainWindow : Window
     public ICommand GoCommand { get; }
     public ICommand FocusCurrencyCommand { get; }
     public ICommand FocusRateCommand { get; }
+    public ICommand ShowShortcutsCommand { get; }
 
     public MainWindow(MainViewModel vm)
     {
@@ -20,6 +21,11 @@ public partial class MainWindow : Window
         FocusAmountCommand = new RelayCommand(() => QuickBar.FocusAmount());
         FocusCurrencyCommand = new RelayCommand(() => QuickBar.FocusCurrency());
         FocusRateCommand = new RelayCommand(() => QuickBar.FocusRate());
+        ShowShortcutsCommand = new RelayCommand(() =>
+        {
+            vm.Navigate("settings");
+            vm.Settings.SelectedTab = SettingsViewModel.ShortcutsTab;
+        });
         GoCommand = new RelayCommand<string>(key => { if (key is not null) vm.Navigate(key); });
         DataContext = vm;
         InitializeComponent();

@@ -25,8 +25,7 @@
   <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
   <data name="AppTitle" xml:space="preserve"><value>Budżet domowy</value></data>
   <data name="ProfileSuffix" xml:space="preserve"><value> [profil {0}]</value></data>
-  <data name="StartupFailed" xml:space="preserve"><value>Nie udało się uruchomić programu:
-{0}</value></data>
+  <data name="StartupFailed" xml:space="preserve"><value>Program nie mógł się uruchomić. Szczegóły zapisano w dzienniku (folder %LOCALAPPDATA%\BudzetDomowy\logs).</value></data>
   <data name="Cancel" xml:space="preserve"><value>Anuluj</value></data>
   <data name="Close" xml:space="preserve"><value>Zamknij</value></data>
   <data name="Undo" xml:space="preserve"><value>Cofnij</value></data>
@@ -395,6 +394,43 @@ Del – usuń zaznaczone transakcje</value></data>
   <data name="ImportDoImport" xml:space="preserve"><value>Importuj</value></data>
   <data name="ImportResult" xml:space="preserve"><value>Dodano wpisów: {0}. Pominięto duplikatów: {1}. Wierszy z błędami: {2}. Nowych kategorii: {3}.</value></data>
   <data name="ImportFailed" xml:space="preserve"><value>Import przerwany: {0}</value></data>
+  <data name="AlreadyRunning" xml:space="preserve"><value>Program już działa (sprawdź pasek zadań lub zasobnik systemowy). Aby uruchomić drugą kopię jako drugi komputer do prób, użyj parametru --profile B.</value></data>
+  <data name="UnexpectedError" xml:space="preserve"><value>Coś poszło nie tak, ale program działa dalej. Szczegóły zapisano w dzienniku (Ustawienia → Diagnostyka).</value></data>
+  <data name="FatalError" xml:space="preserve"><value>Program musi się zamknąć z powodu nieoczekiwanego błędu. Twoje dane są bezpieczne – wpisy zapisują się od razu. Szczegóły zapisano w dzienniku.</value></data>
+  <data name="SettingsDiagnostics" xml:space="preserve"><value>Diagnostyka</value></data>
+  <data name="DiagVersion" xml:space="preserve"><value>Wersja programu</value></data>
+  <data name="DiagDatabase" xml:space="preserve"><value>Lokalna baza (można ją w każdej chwili odbudować)</value></data>
+  <data name="DiagLogs" xml:space="preserve"><value>Folder dzienników</value></data>
+  <data name="DiagJournalSize" xml:space="preserve"><value>Rozmiar dziennika</value></data>
+  <data name="DiagRebuild" xml:space="preserve"><value>Odbuduj bazę z dzienników</value></data>
+  <data name="DiagRebuildTip" xml:space="preserve"><value>Usuwa lokalną bazę i buduje ją od nowa z plików dzienników w folderze danych. Dane w dziennikach się nie zmieniają.</value></data>
+  <data name="DiagOpenLogs" xml:space="preserve"><value>Otwórz folder dzienników</value></data>
+  <data name="DiagRebuildBlocked" xml:space="preserve"><value>Najpierw rozwiąż problemy z synchronizacją (np. pliki tylko w chmurze lub niedostępny folder) – inaczej odbudowana baza byłaby niepełna.</value></data>
+  <data name="DiagRebuildDone" xml:space="preserve"><value>Baza odbudowana z dzienników. Wczytano zdarzeń: {0}.</value></data>
+  <data name="DiagRebuildFailed" xml:space="preserve"><value>Nie udało się odbudować bazy. Szczegóły zapisano w dzienniku.</value></data>
+  <data name="SettingsBackgroundHeading" xml:space="preserve"><value>Szybkie dodawanie spoza programu</value></data>
+  <data name="SettingsBackgroundOption" xml:space="preserve"><value>Włącz skrót Ctrl+Alt+B i ikonę w zasobniku systemowym</value></data>
+  <data name="SettingsBackgroundHint" xml:space="preserve"><value>Skrót lub kliknięcie ikony otwiera małe okno szybkiego dodania. Domyślnie wyłączone.</value></data>
+  <data name="BackgroundHotkeyTaken" xml:space="preserve"><value>Nie udało się zarejestrować skrótu Ctrl+Alt+B – prawdopodobnie używa go inny program ({0}).</value></data>
+  <data name="TrayQuickAdd" xml:space="preserve"><value>Szybkie dodanie (Ctrl+Alt+B)</value></data>
+  <data name="TrayOpen" xml:space="preserve"><value>Otwórz program</value></data>
+  <data name="TrayExit" xml:space="preserve"><value>Zakończ</value></data>
+  <data name="QuickWindowTitle" xml:space="preserve"><value>Szybkie dodanie</value></data>
+  <data name="FooterVersionTip" xml:space="preserve"><value>Wersja programu</value></data>
+  <data name="ShortcutsIntro" xml:space="preserve"><value>Cały program da się obsłużyć z klawiatury. Skróty działają w całym oknie, o ile nie zaznaczono inaczej.</value></data>
+  <data name="KeyEnter" xml:space="preserve"><value>Przejdź do następnego pola paska dodawania; na przycisku „Dodaj” zapisuje wpis</value></data>
+  <data name="KeyCtrlEnter" xml:space="preserve"><value>Zapisz wpis z dowolnego pola paska dodawania</value></data>
+  <data name="KeyTab" xml:space="preserve"><value>Następne / poprzednie pole</value></data>
+  <data name="KeyEsc" xml:space="preserve"><value>Wyczyść pola paska dodawania (w małym oknie – zamknij je); zamyka też otwartą listę</value></data>
+  <data name="KeyF2" xml:space="preserve"><value>Przełącz Wydatek / Przychód</value></data>
+  <data name="KeyF3" xml:space="preserve"><value>Przejdź do wyboru waluty</value></data>
+  <data name="KeyF4" xml:space="preserve"><value>Przejdź do pola kursu (gdy wybrana jest waluta obca)</value></data>
+  <data name="KeyCtrlL" xml:space="preserve"><value>Przejdź do pola Kwota</value></data>
+  <data name="KeyCtrlZ" xml:space="preserve"><value>Cofnij ostatnią operację, gdy widać komunikat z przyciskiem „Cofnij”</value></data>
+  <data name="KeyCtrlDigits" xml:space="preserve"><value>Przełącz ekrany: Pulpit, Transakcje, Budżety, Wydarzenia, Raporty, Ustawienia</value></data>
+  <data name="KeyDel" xml:space="preserve"><value>Usuń zaznaczone transakcje (na ekranie Transakcje)</value></data>
+  <data name="KeyF1" xml:space="preserve"><value>Pokaż tę listę skrótów</value></data>
+  <data name="KeyGlobal" xml:space="preserve"><value>Szybkie dodanie z dowolnego programu (po włączeniu w Ustawieniach → Ogólne)</value></data>
   <data name="EventPlannedField" xml:space="preserve"><value>Plan (zł)</value></data>
   <data name="EventPlannedHint" xml:space="preserve"><value>np. 5000 (opcjonalnie)</value></data>
 </root>

@@ -12,6 +12,9 @@ public sealed record AppSettings
     public string? DeviceName { get; init; }
     public ThemeChoice Theme { get; init; } = ThemeChoice.System;
 
+    /// <summary>Global shortcut Ctrl+Alt+B and a tray icon for quick entries (off by default).</summary>
+    public bool BackgroundMode { get; init; }
+
     private static readonly JsonSerializerOptions Json = new()
     {
         WriteIndented = true,

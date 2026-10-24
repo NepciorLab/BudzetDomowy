@@ -65,6 +65,13 @@ public partial class QuickAddBar : UserControl
     /// </summary>
     private void OnPreviewKeyDown(object sender, KeyEventArgs e)
     {
+        if (e.Key == Key.Escape && _subscribed is not null && e.OriginalSource is DependencyObject origin
+            && FindAncestor<ComboBox>(origin) is not { IsDropDownOpen: true })
+        {
+            _subscribed.ClearCommand.Execute(null);   // Esc empties the fields (an open list is closed by the combo box first)
+            e.Handled = true;
+            return;
+        }
         if (e.Key != Key.Enter || _subscribed is null) return;
         var save = (Keyboard.Modifiers & ModifierKeys.Control) != 0;
 

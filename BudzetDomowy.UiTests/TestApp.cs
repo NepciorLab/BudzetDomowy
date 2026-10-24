@@ -16,6 +16,29 @@ public sealed class NoRates : IExchangeRateSource
             [new ExchangeRate { CurrencyCode = currencyCode, Date = to, Rate = 4.25m, Source = ExchangeRateSource.Nbp, FetchedAt = DateTimeOffset.UtcNow }]);
 }
 
+/// <summary>Stands in for the tray icon and global shortcut: no window, no system hook.</summary>
+public sealed class FakeHost : IBackgroundHost
+{
+    public bool IsActive { get; private set; }
+    public bool Refuse { get; set; }
+    public event Action? QuickAddRequested;
+    public event Action? OpenMainRequested;
+    public event Action? ExitRequested;
+
+    public bool Start(out string? error)
+    {
+        error = Refuse ? "taken" : null;
+        if (!Refuse) IsActive = true;
+        return !Refuse;
+    }
+
+    public void Stop() => IsActive = false;
+    public void Dispose() => Stop();
+    public void RaiseQuickAdd() => QuickAddRequested?.Invoke();
+    public void RaiseOpenMain() => OpenMainRequested?.Invoke();
+    public void RaiseExit() => ExitRequested?.Invoke();
+}
+
 /// <summary>File pickers that never open a window: they return the paths a test sets.</summary>
 public sealed class FakeDialogs : IFileDialogs
 {
@@ -54,6 +77,8 @@ public sealed class TestApp : IDisposable
             .AddSingleton<BudgetsViewModel>()
             .AddSingleton<ReportsViewModel>()
             .AddSingleton<RecurringViewModel>()
+            .AddSingleton<DiagnosticsViewModel>()
+            .AddSingleton<IBackgroundHost, FakeHost>()
             .AddSingleton<IFileDialogs, FakeDialogs>()
             .AddSingleton(new ImportMappingStore(Path.Combine(_root, "import-mapping.json")))
             .AddSingleton<ExportActions>()

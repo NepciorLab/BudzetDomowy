@@ -5,6 +5,7 @@ using BudzetDomowy.App.Infrastructure;
 using BudzetDomowy.App.ViewModels;
 using BudzetDomowy.App.Views;
 using BudzetDomowy.Core;
+using BudzetDomowy.Core.Logging;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace BudzetDomowy.App;
@@ -12,6 +13,11 @@ namespace BudzetDomowy.App;
 public partial class App : Application
 {
     private BudgetCore? _core;
+    private Mutex? _instanceLock;
+    private ServiceProvider? _services;
+    private IBackgroundHost? _host;
+    private QuickAddWindow? _quickWindow;
+    private DateTime _lastErrorToast = DateTime.MinValue;
 
     protected override void OnStartup(StartupEventArgs e)
     {
@@ -20,6 +26,19 @@ public partial class App : Application
         AppPaths.Initialize(e.Args);
         SetTaskbarIdentity();
         SetPolishCulture();
+        AppLog.Info($"Starting (profile: {AppPaths.Profile ?? "default"}).");
+        InstallErrorHandlers();
+
+        // two copies on the same profile would share one database and one journal: refuse politely
+        _instanceLock = new Mutex(true, @"Local\BudzetDomowy-" + (AppPaths.Profile ?? "default"), out var firstInstance);
+        if (!firstInstance)
+        {
+            MessageBox.Show(Res.Get("AlreadyRunning"), Res.Get("AppTitle"), MessageBoxButton.OK, MessageBoxImage.Information);
+            _instanceLock.Dispose();
+            _instanceLock = null;
+            Shutdown();
+            return;
+        }
 
         var settings = AppSettings.Load();
         ThemeService.Apply(settings.Theme);
@@ -28,11 +47,12 @@ public partial class App : Application
         {
             try
             {
-                _core = BudgetCore.Create(AppPaths.LocalDir, settings.DataFolder, settings.DeviceName);
+                _core = BudgetCore.Create(AppPaths.LocalDir, settings.DataFolder, settings.DeviceName, log: AppLog.Instance);
             }
             catch (Exception ex)
             {
-                MessageBox.Show(Res.Format("StartupFailed", ex.Message), Res.Get("AppTitle"), MessageBoxButton.OK, MessageBoxImage.Error);
+                AppLog.Error("Startup failed.", ex);
+                MessageBox.Show(Res.Get("StartupFailed"), Res.Get("AppTitle"), MessageBoxButton.OK, MessageBoxImage.Error);
                 Shutdown(1);
                 return;
             }
@@ -63,6 +83,8 @@ public partial class App : Application
             .AddSingleton<BudgetsViewModel>()
             .AddSingleton<ReportsViewModel>()
             .AddSingleton<RecurringViewModel>()
+            .AddSingleton<DiagnosticsViewModel>()
+            .AddSingleton<IBackgroundHost, TrayHotkeyHost>()
             .AddSingleton<IFileDialogs, WpfFileDialogs>()
             .AddSingleton<ImportMappingStore>()
             .AddSingleton<ExportActions>()
@@ -73,15 +95,78 @@ public partial class App : Application
             .AddSingleton<MainWindow>()
             .BuildServiceProvider();
 
+        _services = services;
         var main = services.GetRequiredService<MainWindow>();
         MainWindow = main;
         ShutdownMode = ShutdownMode.OnMainWindowClose;
+        StartBackgroundMode(settings, services);
         main.Show();
+    }
+
+    private void StartBackgroundMode(AppSettings settings, ServiceProvider services)
+    {
+        _host = services.GetRequiredService<IBackgroundHost>();
+        _host.QuickAddRequested += ShowQuickAdd;
+        _host.OpenMainRequested += () =>
+        {
+            if (MainWindow is not { } w) return;
+            w.Show();
+            if (w.WindowState == WindowState.Minimized) w.WindowState = WindowState.Normal;
+            w.Activate();
+        };
+        _host.ExitRequested += () => Shutdown();
+        if (settings.BackgroundMode && !_host.Start(out var error)) AppLog.Warn("Background mode could not start: " + error);
+    }
+
+    private void ShowQuickAdd()
+    {
+        if (_quickWindow is { IsLoaded: true })
+        {
+            _quickWindow.Activate();
+            return;
+        }
+        _quickWindow = new QuickAddWindow(_services!.GetRequiredService<QuickAddViewModel>());
+        _quickWindow.Closed += (_, _) => _quickWindow = null;
+        _quickWindow.Show();
+    }
+
+    // ----- no unhandled error ever reaches the user as a stack trace: it goes to the log, the user sees a short calm note -----
+
+    private void InstallErrorHandlers()
+    {
+        DispatcherUnhandledException += (_, e) =>
+        {
+            AppLog.Error("Unhandled error on the UI thread.", e.Exception);
+            ShowUnexpected();
+            e.Handled = true;
+        };
+        AppDomain.CurrentDomain.UnhandledException += (_, e) =>
+        {
+            AppLog.Error("Fatal unhandled error" + (e.IsTerminating ? " (the program is closing)." : "."), e.ExceptionObject as Exception);
+            if (e.IsTerminating)
+                MessageBox.Show(Res.Get("FatalError"), Res.Get("AppTitle"), MessageBoxButton.OK, MessageBoxImage.Warning);
+        };
+        TaskScheduler.UnobservedTaskException += (_, e) =>
+        {
+            AppLog.Error("Unobserved background task error.", e.Exception);
+            e.SetObserved();
+        };
+    }
+
+    private void ShowUnexpected()
+    {
+        if (DateTime.Now - _lastErrorToast < TimeSpan.FromSeconds(10)) return;   // a burst of errors is one note
+        _lastErrorToast = DateTime.Now;
+        if (_services?.GetService<ToastService>() is { } toast) toast.Show(Res.Get("UnexpectedError"));
     }
 
     protected override void OnExit(ExitEventArgs e)
     {
+        _host?.Dispose();
+        _instanceLock?.ReleaseMutex();
+        _instanceLock?.Dispose();
         _core?.Dispose();
+        AppLog.Info("Exit.");
         base.OnExit(e);
     }
 

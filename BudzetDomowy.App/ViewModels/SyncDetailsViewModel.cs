@@ -46,7 +46,7 @@ public sealed partial class SyncDetailsViewModel : ObservableObject
         };
 
         Issues.Clear();
-        foreach (var issue in s.Issues) Issues.Add(Describe(issue));
+        foreach (var issue in s.Issues) Issues.Add(SyncTexts.Describe(issue, _core.DataFolder));
         if (s.Issues.Count == 0) Issues.Add(Res.Get("SyncNoIssues"));
 
         Devices.Clear();

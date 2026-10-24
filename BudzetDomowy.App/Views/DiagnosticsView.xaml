@@ -1,0 +1,55 @@
+<UserControl x:Class="BudzetDomowy.App.Views.DiagnosticsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="http://schemas.modernwpf.com/2019"
+             xmlns:infra="clr-namespace:BudzetDomowy.App.Infrastructure">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="0,16,12,16" MaxWidth="860" HorizontalAlignment="Left">
+            <TextBlock Text="{Binding Summary}" FontSize="20" FontWeight="SemiBold" />
+
+            <StackPanel Margin="0,12,0,0">
+                <TextBlock Text="{infra:Str DiagVersion}" Opacity="0.7" />
+                <TextBlock Text="{Binding Version}" />
+                <TextBlock Text="{infra:Str SyncDetailsFolder}" Opacity="0.7" Margin="0,8,0,0" />
+                <TextBlock Text="{Binding DataFolder}" TextWrapping="Wrap" />
+                <TextBlock Text="{infra:Str SyncDetailsThisDevice}" Opacity="0.7" Margin="0,8,0,0" />
+                <TextBlock Text="{Binding ThisDevice}" TextWrapping="Wrap" />
+                <TextBlock Text="{infra:Str DiagDatabase}" Opacity="0.7" Margin="0,8,0,0" />
+                <TextBlock Text="{Binding DatabaseInfo}" TextWrapping="Wrap" />
+                <TextBlock Text="{infra:Str DiagLogs}" Opacity="0.7" Margin="0,8,0,0" />
+                <TextBlock Text="{Binding LogFolder}" TextWrapping="Wrap" />
+            </StackPanel>
+
+            <TextBlock Text="{infra:Str SyncDetailsDevices}" FontWeight="SemiBold" Margin="0,20,0,6" />
+            <DataGrid ItemsSource="{Binding Devices}" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column"
+                      CanUserAddRows="False" GridLinesVisibility="Horizontal" MinHeight="70" MaxHeight="220">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="{infra:Str SyncColDevice}" Binding="{Binding Name}" Width="*" />
+                    <DataGridTextColumn Header="{infra:Str SyncColEvents}" Binding="{Binding EventCount}" Width="Auto" />
+                    <DataGridTextColumn Header="{infra:Str DiagJournalSize}" Binding="{Binding JournalSize}" Width="Auto" />
+                    <DataGridTextColumn Header="{infra:Str SyncColLastRead}" Binding="{Binding LastRead}" Width="Auto" />
+                </DataGrid.Columns>
+            </DataGrid>
+
+            <TextBlock Text="{infra:Str SyncDetailsIssues}" FontWeight="SemiBold" Margin="0,20,0,6" />
+            <ItemsControl ItemsSource="{Binding Issues}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <TextBlock Text="{Binding}" TextWrapping="Wrap" Margin="0,3" />
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <WrapPanel Margin="0,20,0,0">
+                <Button Content="{infra:Str SyncNow}" Command="{Binding SyncNowCommand}" IsEnabled="{Binding CanRebuild}"
+                        Style="{StaticResource AccentButtonStyle}" Margin="0,0,8,8" />
+                <Button Content="{infra:Str DiagRebuild}" Command="{Binding RebuildCommand}" IsEnabled="{Binding CanRebuild}"
+                        ToolTip="{infra:Str DiagRebuildTip}" Margin="0,0,8,8" />
+                <Button Content="{infra:Str DiagOpenLogs}" Command="{Binding OpenLogsCommand}" Margin="0,0,8,8" />
+                <Button Content="{infra:Str SyncOpenFolder}" Command="{Binding OpenDataCommand}" Margin="0,0,8,8" />
+            </WrapPanel>
+            <TextBlock Text="{Binding Message}" TextWrapping="Wrap" Margin="0,4,0,0" Opacity="0.9" />
+            <ProgressBar IsIndeterminate="True" Margin="0,8,0,0" Visibility="{Binding IsBusy, Converter={x:Static infra:BoolToVisibilityConverter.Visible}}" />
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>
