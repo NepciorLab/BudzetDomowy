@@ -37,43 +37,44 @@ public static class ChartFactory
         }).ToList();
 
     /// <summary>Income (green) and expense (red) columns per month.</summary>
-    public static IReadOnlyList<ISeries> IncomeExpenseColumns(IReadOnlyList<MonthPoint> points, string incomeName, string expenseName) =>
+    public static IReadOnlyList<ISeries> IncomeExpenseColumns(IReadOnlyList<MonthPoint> points, string incomeName, string expenseName, bool lines = false) =>
     [
-        new ColumnSeries<double>
-        {
-            Name = incomeName,
-            Values = points.Select(p => (double)p.Income).ToArray(),
-            Fill = new SolidColorPaint(new SKColor(0x43, 0xA0, 0x47)),
-            MaxBarWidth = 22,
-        },
-        new ColumnSeries<double>
-        {
-            Name = expenseName,
-            Values = points.Select(p => (double)p.Expense).ToArray(),
-            Fill = new SolidColorPaint(new SKColor(0xE5, 0x39, 0x35)),
-            MaxBarWidth = 22,
-        },
+        Series(lines, incomeName, points.Select(p => p.Income), new SKColor(0x43, 0xA0, 0x47)),
+        Series(lines, expenseName, points.Select(p => p.Expense), new SKColor(0xE5, 0x39, 0x35)),
     ];
 
-    /// <summary>One column series per year, twelve months each.</summary>
-    public static IReadOnlyList<ISeries> YearColumns(IReadOnlyList<YearSeries> years) =>
-        years.Select((y, i) => (ISeries)new ColumnSeries<double>
-        {
-            Name = y.Year.ToString(System.Globalization.CultureInfo.CurrentCulture),
-            Values = y.Months.Select(m => (double)m).ToArray(),
-            Fill = new SolidColorPaint(ParseColor(Palette[i % Palette.Length])),
-            MaxBarWidth = 22,
-        }).ToList();
+    /// <summary>A line through the points, in the given colour (used instead of columns when the user prefers lines).</summary>
+    private static ISeries Line(string name, IEnumerable<decimal> values, SKColor color) => new LineSeries<double>
+    {
+        Name = name,
+        Values = values.Select(v => (double)v).ToArray(),
+        Fill = null,
+        LineSmoothness = 0,
+        Stroke = new SolidColorPaint(color) { StrokeThickness = 3 },
+        GeometrySize = 9,
+        GeometryFill = new SolidColorPaint(color),
+        GeometryStroke = new SolidColorPaint(color) { StrokeThickness = 3 },
+    };
 
-    /// <summary>One column series per month, one column per category.</summary>
-    public static IReadOnlyList<ISeries> MonthColumns(IReadOnlyList<MonthSeries> months, Func<DateOnly, string> name) =>
-        months.Select((m, i) => (ISeries)new ColumnSeries<double>
-        {
-            Name = name(m.Month),
-            Values = m.Values.Select(v => (double)v).ToArray(),
-            Fill = new SolidColorPaint(ParseColor(Palette[i % Palette.Length])),
-            MaxBarWidth = 26,
-        }).ToList();
+    private static ISeries Bars(string name, IEnumerable<decimal> values, SKColor color, double maxWidth) => new ColumnSeries<double>
+    {
+        Name = name,
+        Values = values.Select(v => (double)v).ToArray(),
+        Fill = new SolidColorPaint(color),
+        MaxBarWidth = maxWidth,
+    };
+
+    private static ISeries Series(bool lines, string name, IEnumerable<decimal> values, SKColor color, double maxWidth = 22) =>
+        lines ? Line(name, values, color) : Bars(name, values, color, maxWidth);
+
+    /// <summary>One series per year, twelve months each (columns or lines).</summary>
+    public static IReadOnlyList<ISeries> YearColumns(IReadOnlyList<YearSeries> years, bool lines = false) =>
+        years.Select((y, i) => Series(lines, y.Year.ToString(System.Globalization.CultureInfo.CurrentCulture), y.Months,
+            ParseColor(Palette[i % Palette.Length]))).ToList();
+
+    /// <summary>One series per month, one point or column per category.</summary>
+    public static IReadOnlyList<ISeries> MonthColumns(IReadOnlyList<MonthSeries> months, Func<DateOnly, string> name, bool lines = false) =>
+        months.Select((m, i) => Series(lines, name(m.Month), m.Values, ParseColor(Palette[i % Palette.Length]), 26)).ToList();
 
     public static IReadOnlyList<Axis> LabelAxes(IEnumerable<string> labels, double rotation = 0) =>
     [

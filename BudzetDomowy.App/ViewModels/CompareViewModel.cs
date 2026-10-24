@@ -66,6 +66,9 @@ public sealed partial class CompareViewModel : ObservableObject
     private CompareKind _kind = CompareKind.Years;
 
     [ObservableProperty, NotifyPropertyChangedFor(nameof(IsIncome))] private bool _isExpense = true;
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(IsColumns))] private bool _isLines;
+
+    public bool IsColumns => !IsLines;
 
     [ObservableProperty] private IReadOnlyList<CategoryPick> _choices = [];
     [ObservableProperty] private CategoryPick? _category;
@@ -96,6 +99,10 @@ public sealed partial class CompareViewModel : ObservableObject
 
     partial void OnKindChanged(CompareKind value) => RebuildAll();
     partial void OnIsExpenseChanged(bool value) => RebuildAll();
+    partial void OnIsLinesChanged(bool value) => Reload();
+
+    [RelayCommand]
+    private void SetChartStyle(string? key) => IsLines = key == "Lines";
 
     partial void OnCategoryChanged(CategoryPick? value)
     {
@@ -182,7 +189,7 @@ public sealed partial class CompareViewModel : ObservableObject
         {
             var years = Picks.Where(p => p.IsSelected).Select(p => (int)p.Key).ToList();
             var data = ComparisonReports.YearsByMonth(all, cats, years, Type, Category?.Id);
-            Series = ChartFactory.YearColumns(data);
+            Series = ChartFactory.YearColumns(data, IsLines);
             XAxes = ChartFactory.LabelAxes(CultureInfo.CurrentCulture.DateTimeFormat.AbbreviatedMonthNames.Take(12));
             Totals = data.Select((y, i) =>
             {
@@ -199,7 +206,7 @@ public sealed partial class CompareViewModel : ObservableObject
             var months = Picks.Where(p => p.IsSelected).Select(p => (DateOnly)p.Key).ToList();
             var cmp = ComparisonReports.MonthsByCategory(all, cats, months, Type, Category?.Id);
             var labels = cmp.Labels.Select(l => l == ComparisonReports.OthersLabel ? Res.Get("CompareOthers") : l.Length == 0 ? Res.Get("NoCategory") : l).ToList();
-            Series = ChartFactory.MonthColumns(cmp.Series, MonthText);
+            Series = ChartFactory.MonthColumns(cmp.Series, MonthText, IsLines);
             XAxes = ChartFactory.LabelAxes(labels, rotation: labels.Count > 5 ? 25 : 0);
             Totals = cmp.Series.Select((m, i) => new CompareTotal(MonthText(m.Month), ChartFactory.Palette[i % ChartFactory.Palette.Length],
                 Money(m.Total), "")).ToList();

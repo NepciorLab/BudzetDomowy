@@ -47,6 +47,8 @@ public sealed partial class ReportsViewModel : ObservableObject, IPeriodNavigabl
     [ObservableProperty] private string _balanceText = "";
     [ObservableProperty] private IReadOnlyList<ComparisonRow> _comparison = [];
 
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(TrendIsColumns))] private bool _trendLines;
+    public bool TrendIsColumns => !TrendLines;
     [ObservableProperty] private IEnumerable<ISeries> _trendSeries = [];
     [ObservableProperty] private IEnumerable<ICartesianAxis> _trendXAxes = [];
     [ObservableProperty] private IEnumerable<ICartesianAxis> _trendYAxes = [];
@@ -99,6 +101,10 @@ public sealed partial class ReportsViewModel : ObservableObject, IPeriodNavigabl
     }
 
     partial void OnIsYearChanged(bool value) => Reload();
+    partial void OnTrendLinesChanged(bool value) => Reload();
+
+    [RelayCommand]
+    private void SetTrendStyle(string? key) => TrendLines = key == "Lines";
     partial void OnAnchorChanged(DateOnly value) => Reload();
     partial void OnAvgFromChanged(DateTime? value) => ReloadAverages();
     partial void OnAvgToChanged(DateTime? value) => ReloadAverages();
@@ -184,7 +190,7 @@ public sealed partial class ReportsViewModel : ObservableObject, IPeriodNavigabl
         var firstMonth = IsYear ? new DateOnly(Anchor.Year, 1, 1) : Anchor.AddMonths(-11);
         var lastMonth = IsYear ? new DateOnly(Anchor.Year, 12, 1) : Anchor;
         var points = PeriodReports.MonthlyTrend(all, firstMonth, lastMonth);
-        TrendSeries = ChartFactory.IncomeExpenseColumns(points, Res.Get("ReportIncome"), Res.Get("ReportExpenses"));
+        TrendSeries = ChartFactory.IncomeExpenseColumns(points, Res.Get("ReportIncome"), Res.Get("ReportExpenses"), TrendLines);
         TrendXAxes = ChartFactory.MonthAxes(points, IsYear ? "MMM" : "MMM yy");
         TrendYAxes = ChartFactory.MoneyAxes();
         TrendTitle = IsYear ? Res.Format("ReportTrendYear", Anchor.Year) : Res.Get("ReportTrend12");

@@ -102,7 +102,15 @@
             <!-- Trend -->
             <Border Style="{StaticResource Card}">
                 <StackPanel>
-                    <TextBlock Text="{Binding TrendTitle}" Style="{StaticResource Heading}" />
+                    <Grid>
+                        <TextBlock Text="{Binding TrendTitle}" Style="{StaticResource Heading}" />
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,-4,0,0">
+                            <RadioButton Content="{infra:Str ChartColumns}" GroupName="trendstyle" IsChecked="{Binding TrendIsColumns, Mode=OneWay}"
+                                         Command="{Binding SetTrendStyleCommand}" CommandParameter="Columns" MinWidth="0" />
+                            <RadioButton Content="{infra:Str ChartLines}" GroupName="trendstyle" IsChecked="{Binding TrendLines, Mode=OneWay}"
+                                         Command="{Binding SetTrendStyleCommand}" CommandParameter="Lines" MinWidth="0" Margin="8,0,0,0" />
+                        </StackPanel>
+                    </Grid>
                     <lvc:CartesianChart Series="{Binding TrendSeries}" XAxes="{Binding TrendXAxes}" YAxes="{Binding TrendYAxes}"
                                         LegendPosition="Bottom" LegendTextPaint="{Binding LegendTextPaint}" Height="280" />
                 </StackPanel>
@@ -287,7 +295,15 @@
 
                 <Border Style="{StaticResource Card}">
                     <StackPanel>
-                        <TextBlock Text="{Binding Title}" Style="{StaticResource Heading}" />
+                        <Grid>
+                            <TextBlock Text="{Binding Title}" Style="{StaticResource Heading}" />
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,-4,0,0">
+                                <RadioButton Content="{infra:Str ChartColumns}" GroupName="cstyle" IsChecked="{Binding IsColumns, Mode=OneWay}"
+                                             Command="{Binding SetChartStyleCommand}" CommandParameter="Columns" MinWidth="0" />
+                                <RadioButton Content="{infra:Str ChartLines}" GroupName="cstyle" IsChecked="{Binding IsLines, Mode=OneWay}"
+                                             Command="{Binding SetChartStyleCommand}" CommandParameter="Lines" MinWidth="0" Margin="8,0,0,0" />
+                            </StackPanel>
+                        </Grid>
                         <TextBlock Text="{infra:Str CompareNoData}" Opacity="0.6">
                             <TextBlock.Style>
                                 <Style TargetType="TextBlock">

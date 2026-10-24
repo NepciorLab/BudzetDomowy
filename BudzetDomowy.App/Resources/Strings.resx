@@ -494,4 +494,6 @@ Del – usuń zaznaczone transakcje</value></data>
   <data name="PlacesColShare" xml:space="preserve"><value>Udział</value></data>
   <data name="AvgCategory" xml:space="preserve"><value>Kategoria (z podkategoriami)</value></data>
   <data name="AvgTotal" xml:space="preserve"><value>Suma w okresie</value></data>
+  <data name="ChartColumns" xml:space="preserve"><value>Słupkowy</value></data>
+  <data name="ChartLines" xml:space="preserve"><value>Liniowy</value></data>
 </root>

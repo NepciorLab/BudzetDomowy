@@ -155,6 +155,25 @@ public class V2UiTests
     });
 
     [Fact]
+    public void Reports_ChartsCanBeSwitchedFromColumnsToLines() => WithApp(app =>
+    {
+        var vm = app.Get<ReportsViewModel>();
+        Assert.All(vm.Compare.Series, x => Assert.IsType<LiveChartsCore.SkiaSharpView.ColumnSeries<double>>(x));
+        vm.Compare.SetChartStyleCommand.Execute("Lines");
+        Assert.True(vm.Compare.IsLines);
+        Assert.NotEmpty(vm.Compare.Series);
+        Assert.All(vm.Compare.Series, x => Assert.IsType<LiveChartsCore.SkiaSharpView.LineSeries<double>>(x));
+        vm.Compare.SetKindCommand.Execute("Months");
+        Assert.All(vm.Compare.Series, x => Assert.IsType<LiveChartsCore.SkiaSharpView.LineSeries<double>>(x));
+
+        Assert.All(vm.TrendSeries, x => Assert.IsType<LiveChartsCore.SkiaSharpView.ColumnSeries<double>>(x));
+        vm.SetTrendStyleCommand.Execute("Lines");
+        Assert.All(vm.TrendSeries, x => Assert.IsType<LiveChartsCore.SkiaSharpView.LineSeries<double>>(x));
+        vm.SetTrendStyleCommand.Execute("Columns");
+        Assert.All(vm.TrendSeries, x => Assert.IsType<LiveChartsCore.SkiaSharpView.ColumnSeries<double>>(x));
+    });
+
+    [Fact]
     public void Reports_CompareMonthsCategoryByCategory() => WithApp(app =>
     {
         var compare = app.Get<ReportsViewModel>().Compare;
