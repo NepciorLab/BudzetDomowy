@@ -34,6 +34,9 @@ public sealed partial class MainViewModel : ObservableObject
     [ObservableProperty] private string _syncText = "";
     [ObservableProperty] private Brush _syncBrush = Brushes.Gray;
     [ObservableProperty] private string _syncGlyph = "●";
+    [ObservableProperty] private string _todayText = "";
+
+    private readonly System.Windows.Threading.DispatcherTimer _clock = new() { Interval = TimeSpan.FromSeconds(20) };
 
     /// <summary>The window shows the details dialog.</summary>
     public event Action? SyncDetailsRequested;
@@ -69,11 +72,19 @@ public sealed partial class MainViewModel : ObservableObject
         WindowTitle = Res.Get("AppTitle") + profile;
         DeviceLabel = core.Device.DeviceName + profile;
 
+        UpdateToday();
+        _clock.Tick += (_, _) => UpdateToday();
+        _clock.Start();
+
         SelectedNav = NavItems[1];
         core.Sync.StatusChanged += (_, s) => Application.Current.Dispatcher.BeginInvoke(() => ShowStatus(s));
         ShowStatus(core.Sync.Status);
         core.Sync.Start();
     }
+
+    /// <summary>Weekday, day, month and year in capitals, e.g. SOBOTA, 24 PAŹDZIERNIKA 2026.</summary>
+    private void UpdateToday() =>
+        TodayText = DateTime.Now.ToString("dddd, d MMMM yyyy", CultureInfo.CurrentCulture).ToUpper(CultureInfo.CurrentCulture);
 
     partial void OnSelectedNavChanged(NavItem? value)
     {

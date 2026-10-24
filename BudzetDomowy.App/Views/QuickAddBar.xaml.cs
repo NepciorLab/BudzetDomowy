@@ -48,15 +48,19 @@ public partial class QuickAddBar : UserControl
         }, System.Windows.Threading.DispatcherPriority.Input);
     }
 
-    /// <summary>Enter in any field saves the entry; fields that need committing first (category, date) are resolved before.</summary>
+    /// <summary>
+    /// Enter moves to the next field (like Tab) after resolving what was typed; only Enter on the Add button saves.
+    /// Ctrl+Enter saves from any field.
+    /// </summary>
     private void OnPreviewKeyDown(object sender, KeyEventArgs e)
     {
         if (e.Key != Key.Enter || _subscribed is null) return;
+        var save = (Keyboard.Modifiers & ModifierKeys.Control) != 0;
 
         if (e.OriginalSource is DependencyObject source)
         {
-            if (FindAncestor<ButtonBase>(source) is not null) return; // let the button act
-            if (FindAncestor<ComboBox>(source) is { IsDropDownOpen: true } open && open is not FilterComboBox) return;
+            if (FindAncestor<ButtonBase>(source) is not null) return; // Enter on a button presses it
+            if (!save && FindAncestor<ComboBox>(source) is { IsDropDownOpen: true } open && open is not FilterComboBox) return;
 
             FindAncestor<FilterComboBox>(source)?.Commit();
             if (FindAncestor<DatePicker>(source) is { } picker && DateTime.TryParse(picker.Text, out var typed))
@@ -64,7 +68,8 @@ public partial class QuickAddBar : UserControl
         }
 
         e.Handled = true;
-        _subscribed.AddCommand.Execute(null);
+        if (save) _subscribed.AddCommand.Execute(null);
+        else (Keyboard.FocusedElement as UIElement)?.MoveFocus(new TraversalRequest(FocusNavigationDirection.Next));
     }
 
     private static T? FindAncestor<T>(DependencyObject start) where T : DependencyObject

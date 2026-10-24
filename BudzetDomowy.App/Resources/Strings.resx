@@ -71,7 +71,9 @@
   <data name="QuickType" xml:space="preserve"><value>Rodzaj</value></data>
   <data name="QuickAdd" xml:space="preserve"><value>Dodaj</value></data>
   <data name="QuickCategoryHint" xml:space="preserve"><value>wpisz, aby filtrować</value></data>
-  <data name="QuickNoteHint" xml:space="preserve"><value>np. Lewiatan</value></data>
+  <data name="QuickPlace" xml:space="preserve"><value>Miejsce</value></data>
+  <data name="QuickPlaceHint" xml:space="preserve"><value>np. Lewiatan</value></data>
+  <data name="QuickNoteHint" xml:space="preserve"><value>dowolna uwaga</value></data>
   <data name="QuickTypeTip" xml:space="preserve"><value>Wydatek / Przychód (F2)</value></data>
   <data name="QuickAddTip" xml:space="preserve"><value>Zapisz wpis (Enter)</value></data>
   <data name="QuickAddBadAmount" xml:space="preserve"><value>Wpisz poprawną kwotę, np. 12,50.</value></data>
@@ -109,6 +111,7 @@
   <data name="IssueCorrupt" xml:space="preserve"><value>Pominięto uszkodzone wiersze ({0}) w pliku {1}.</value></data>
   <data name="IssueFailedEvents" xml:space="preserve"><value>Nie udało się zastosować zdarzeń ({0}) z pliku {1}.</value></data>
   <data name="ColDate" xml:space="preserve"><value>Data</value></data>
+  <data name="ColPlace" xml:space="preserve"><value>Miejsce</value></data>
   <data name="ColType" xml:space="preserve"><value>Rodzaj</value></data>
   <data name="ColAmount" xml:space="preserve"><value>Kwota</value></data>
   <data name="ColCategory" xml:space="preserve"><value>Kategoria</value></data>
@@ -120,7 +123,7 @@
   <data name="FilterEvent" xml:space="preserve"><value>Wydarzenie</value></data>
   <data name="FilterType" xml:space="preserve"><value>Rodzaj</value></data>
   <data name="FilterSearch" xml:space="preserve"><value>Szukaj</value></data>
-  <data name="FilterSearchHint" xml:space="preserve"><value>notatka, kategoria, kwota</value></data>
+  <data name="FilterSearchHint" xml:space="preserve"><value>miejsce, notatka, kwota</value></data>
   <data name="FilterAllCategories" xml:space="preserve"><value>Wszystkie kategorie</value></data>
   <data name="FilterAllEvents" xml:space="preserve"><value>Wszystkie</value></data>
   <data name="FilterAllTypes" xml:space="preserve"><value>Wszystkie</value></data>
@@ -133,8 +136,12 @@
   <data name="BulkApply" xml:space="preserve"><value>Zastosuj</value></data>
   <data name="BulkDelete" xml:space="preserve"><value>Usuń zaznaczone</value></data>
   <data name="TransactionsEmpty" xml:space="preserve"><value>Brak transakcji dla wybranych filtrów.</value></data>
-  <data name="SummaryVisible" xml:space="preserve"><value>Widoczne: {0} · Wydatki: {1} · Przychody: {2} · Bilans: {3}</value></data>
-  <data name="SummarySelected" xml:space="preserve"><value>Zaznaczono: {0} · Wydatki: {1} · Przychody: {2} · Bilans: {3}</value></data>
+  <data name="SummaryVisible" xml:space="preserve"><value>Widoczne wpisy: {0}</value></data>
+  <data name="SummaryExpenses" xml:space="preserve"><value>Wydatki: {0}</value></data>
+  <data name="SummaryIncome" xml:space="preserve"><value>Przychody: {0}</value></data>
+  <data name="SummaryBalance" xml:space="preserve"><value>Bilans: {0}</value></data>
+  <data name="AppTitleUpper" xml:space="preserve"><value>BUDŻET DOMOWY</value></data>
+  <data name="SummarySelected" xml:space="preserve"><value>Zaznaczone wpisy: {0}</value></data>
   <data name="DeletedCount" xml:space="preserve"><value>Usunięto wpisów: {0}</value></data>
   <data name="CategoryChangedCount" xml:space="preserve"><value>Zmieniono kategorię wpisów: {0}</value></data>
   <data name="SettingsGeneral" xml:space="preserve"><value>Ogólne</value></data>
@@ -145,7 +152,8 @@
   <data name="ThemeDark" xml:space="preserve"><value>Ciemny</value></data>
   <data name="SettingsDataSection" xml:space="preserve"><value>Dane</value></data>
   <data name="SettingsShortcuts" xml:space="preserve"><value>Skróty klawiszowe</value></data>
-  <data name="SettingsShortcutsText" xml:space="preserve"><value>Enter – zapisz wpis z paska u góry
+  <data name="SettingsShortcutsText" xml:space="preserve"><value>Enter – przejdź do następnego pola (Enter na przycisku „Dodaj” zapisuje wpis)
+Ctrl+Enter – zapisz wpis z dowolnego pola
 Tab – następne pole
 F2 – przełącz Wydatek/Przychód
 Ctrl+L – przejdź do pola Kwota

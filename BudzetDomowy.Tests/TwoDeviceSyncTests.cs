@@ -191,7 +191,7 @@ public class TwoDeviceSyncTests : IDisposable
         b.Recorder.Save(ev);
         var tx = a.NewTransaction(12.34m, "chleb", cat.Id) with
         {
-            EventId = ev.Id, CurrencyCode = "EUR", ExchangeRateToPln = 4.2512m, AmountPln = Money.ToPln(12.34m, 4.2512m),
+            EventId = ev.Id, Place = "Lewiatan", CurrencyCode = "EUR", ExchangeRateToPln = 4.2512m, AmountPln = Money.ToPln(12.34m, 4.2512m),
             Lines = [new TransactionLine { Id = Guid.NewGuid(), CategoryId = cat.Id, Amount = 12.34m, Description = "line" }],
         };
         a.Recorder.Save(tx);
@@ -217,6 +217,7 @@ public class TwoDeviceSyncTests : IDisposable
 
         var restored = fresh.Reader.GetTransaction(tx.Id)!;
         Assert.Equal("EUR", restored.CurrencyCode);
+        Assert.Equal("Lewiatan", restored.Place);
         Assert.Equal(4.2512m, restored.ExchangeRateToPln);
         Assert.Equal(52.46m, restored.AmountPln);
         Assert.Equal(12.34m, restored.Amount);

@@ -154,6 +154,31 @@ public class CoreServiceTests : IDisposable
     }
 
     [Fact]
+    public void Place_IsStoredSeparatelyFromTheNote_AndSurvivesEditing()
+    {
+        var c = NewCore("a");
+        var t = c.Transactions.Add(new DateOnly(2026, 5, 2), TransactionType.Expense, 10m, null, "dla mamy", null, place: "  Lewiatan ");
+        var stored = c.Reader.GetTransaction(t.Id)!;
+        Assert.Equal("Lewiatan", stored.Place);
+        Assert.Equal("dla mamy", stored.Note);
+
+        c.Transactions.Update(stored with { Place = "Biedronka" });
+        var edited = c.Reader.GetTransaction(t.Id)!;
+        Assert.Equal("Biedronka", edited.Place);
+        Assert.Equal("dla mamy", edited.Note);
+    }
+
+    [Fact]
+    public void Database_IsAtTheLatestSchemaVersion()
+    {
+        var c = NewCore("a");
+        using var conn = c.Database.Open();
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = "PRAGMA user_version";
+        Assert.Equal((long)BudzetDomowy.Core.Storage.LocalDatabase.CurrentVersion, (long)cmd.ExecuteScalar()!);
+    }
+
+    [Fact]
     public void Add_RejectsNonPositiveAmounts()
     {
         var c = NewCore("a");

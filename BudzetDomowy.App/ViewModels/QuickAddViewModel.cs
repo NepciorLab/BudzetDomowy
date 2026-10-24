@@ -30,6 +30,7 @@ public sealed partial class QuickAddViewModel : ObservableObject
     [ObservableProperty] private DateTime? _date = DateTime.Today;
     [ObservableProperty] private string _amountText = "";
     [ObservableProperty] private Guid? _categoryId;
+    [ObservableProperty] private string _place = "";
     [ObservableProperty] private string _note = "";
     [ObservableProperty] private Guid _eventKey = Guid.Empty;
     [ObservableProperty, NotifyPropertyChangedFor(nameof(TypeLabel))] private bool _isIncome;
@@ -66,7 +67,8 @@ public sealed partial class QuickAddViewModel : ObservableObject
         ApplyDefaultEvent();
     }
 
-    partial void OnNoteChanged(string value)
+    /// <summary>The place (shop, service) is what the learned rules are keyed on; the note is free text.</summary>
+    partial void OnPlaceChanged(string value)
     {
         if (_applying) return;
         var s = CategoryRuleService.Suggest(value, _rules);
@@ -140,9 +142,9 @@ public sealed partial class QuickAddViewModel : ObservableObject
         Transaction saved;
         try
         {
-            saved = _core.Transactions.Add(date, type, amount, CategoryId, Note, eventId);
-            if (CategoryId is { } cat && !string.IsNullOrWhiteSpace(Note))
-                _core.Rules.Learn(Note, cat, _eventSource is EventSource.Manual or EventSource.Rule ? eventId : null);
+            saved = _core.Transactions.Add(date, type, amount, CategoryId, Note, eventId, place: Place);
+            if (CategoryId is { } cat && !string.IsNullOrWhiteSpace(Place))
+                _core.Rules.Learn(Place, cat, _eventSource is EventSource.Manual or EventSource.Rule ? eventId : null);
         }
         catch (UpdateRequiredException)
         {
@@ -160,6 +162,7 @@ public sealed partial class QuickAddViewModel : ObservableObject
     {
         _applying = true;
         AmountText = "";
+        Place = "";
         Note = "";
         CategoryId = null;
         IsIncome = false;

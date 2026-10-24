@@ -20,7 +20,7 @@ public sealed class LocalReader
         var where = new List<string>();
         if (from is not null) { where.Add("date >= $from"); cmd.Parameters.AddWithValue("$from", Materializer.Day(from.Value)); }
         if (to is not null) { where.Add("date <= $to"); cmd.Parameters.AddWithValue("$to", Materializer.Day(to.Value)); }
-        cmd.CommandText = "SELECT id, date, type, amount_cents, currency_code, exchange_rate, amount_pln_cents, category_id, note, event_id, created_at, created_by_device FROM transactions"
+        cmd.CommandText = "SELECT id, date, type, amount_cents, currency_code, exchange_rate, amount_pln_cents, category_id, note, event_id, created_at, created_by_device, place FROM transactions"
                           + (where.Count > 0 ? " WHERE " + string.Join(" AND ", where) : "")
                           + " ORDER BY date, created_at, id";
 
@@ -43,6 +43,7 @@ public sealed class LocalReader
                     EventId = Guid_(r, 9),
                     CreatedAt = DateTimeOffset.Parse(r.GetString(10), CultureInfo.InvariantCulture),
                     CreatedByDeviceId = r.GetString(11),
+                    Place = r.GetString(12),
                 });
             }
         }
@@ -109,7 +110,7 @@ public sealed class LocalReader
         });
 
     public IReadOnlyList<RecurringTransaction> GetRecurringTransactions() => Query(
-        "SELECT id, type, amount, currency_code, category_id, note, event_id, frequency, day, start_date, end_date, last_generated_date FROM recurring_transactions ORDER BY start_date, id",
+        "SELECT id, type, amount, currency_code, category_id, note, event_id, frequency, day, start_date, end_date, last_generated_date, place FROM recurring_transactions ORDER BY start_date, id",
         r => new RecurringTransaction
         {
             Id = Guid.Parse(r.GetString(0)),
@@ -124,6 +125,7 @@ public sealed class LocalReader
             StartDate = ParseDay(r.GetString(9)),
             EndDate = r.IsDBNull(10) ? null : ParseDay(r.GetString(10)),
             LastGeneratedDate = r.IsDBNull(11) ? null : ParseDay(r.GetString(11)),
+            Place = r.GetString(12),
         });
 
     public IReadOnlyList<CategoryRule> GetCategoryRules() => Query("SELECT id, pattern, category_id, event_id, use_count FROM category_rules ORDER BY pattern, id",

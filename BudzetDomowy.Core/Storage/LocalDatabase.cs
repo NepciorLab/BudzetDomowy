@@ -123,6 +123,11 @@ public sealed class LocalDatabase
             PRIMARY KEY (currency_code, date, source)
         );
         """,
+        // v2: "place" next to the note (where the money was spent)
+        """
+        ALTER TABLE transactions ADD COLUMN place TEXT NOT NULL DEFAULT '';
+        ALTER TABLE recurring_transactions ADD COLUMN place TEXT NOT NULL DEFAULT '';
+        """,
     ];
 
     public static int CurrentVersion => Migrations.Length;

@@ -49,7 +49,10 @@ public sealed partial class TransactionsViewModel : ObservableObject
     [ObservableProperty] private Guid _eventFilter = Guid.Empty;
     [ObservableProperty] private TypeFilterOption? _typeFilter;
     [ObservableProperty] private string _search = "";
-    [ObservableProperty] private string _summary = "";
+    [ObservableProperty] private string _summaryLabel = "";
+    [ObservableProperty] private string _expenseText = "";
+    [ObservableProperty] private string _incomeText = "";
+    [ObservableProperty] private string _balanceText = "";
     [ObservableProperty] private bool _isEmpty;
 
     public int ChoicesVersion { get; private set; }
@@ -127,6 +130,7 @@ public sealed partial class TransactionsViewModel : ObservableObject
         {
             query = query.Where(x =>
                 x.Note.Contains(needle, StringComparison.CurrentCultureIgnoreCase)
+                || x.Place.Contains(needle, StringComparison.CurrentCultureIgnoreCase)
                 || CategoryPath(x.CategoryId).Contains(needle, StringComparison.CurrentCultureIgnoreCase)
                 || x.Amount.ToString("N2", CultureInfo.CurrentCulture).Contains(needle, StringComparison.CurrentCultureIgnoreCase));
         }
@@ -169,11 +173,17 @@ public sealed partial class TransactionsViewModel : ObservableObject
         var expense = rows.Where(r => !r.IsIncome).Sum(r => r.Model.AmountPln);
         var income = rows.Where(r => r.IsIncome).Sum(r => r.Model.AmountPln);
         string Money(decimal v) => v.ToString("C2", CultureInfo.CurrentCulture);
-        Summary = Res.Format(_selected.Count > 0 ? "SummarySelected" : "SummaryVisible",
-            rows.Count, Money(expense), Money(income), Money(income - expense));
+        SummaryLabel = Res.Format(_selected.Count > 0 ? "SummarySelected" : "SummaryVisible", rows.Count);
+        ExpenseText = Res.Format("SummaryExpenses", Money(expense));
+        IncomeText = Res.Format("SummaryIncome", Money(income));
+        BalanceText = Res.Format("SummaryBalance", Money(income - expense));
     }
 
     public string CategoryPath(Guid? id) => CategoryHelpers.PathOf(id, _categoriesById);
+
+    public string CategoryColor(Guid? id) => id is { } c && _categoriesById.TryGetValue(c, out var cat) ? cat.Color : "";
+
+    public string CategoryIcon(Guid? id) => id is { } c && _categoriesById.TryGetValue(c, out var cat) ? cat.Icon : "";
 
     public string EventName(Guid? id) => id is { } e && _eventsById.TryGetValue(e, out var s) ? s.Name : "";
 
@@ -228,7 +238,7 @@ public sealed partial class TransactionsViewModel : ObservableObject
     {
         var ids = _selected.Select(r => r.Id).ToList();
         if (ids.Count == 0) return;
-        var notes = _selected.Select(r => r.Model.Note).Where(n => !string.IsNullOrWhiteSpace(n)).Distinct().ToList();
+        var notes = _selected.Select(r => r.Model.Place).Where(n => !string.IsNullOrWhiteSpace(n)).Distinct().ToList();
         IReadOnlyList<Transaction> before;
         try
         {

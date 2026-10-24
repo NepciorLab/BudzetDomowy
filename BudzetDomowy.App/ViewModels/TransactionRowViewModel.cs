@@ -65,6 +65,18 @@ public sealed class TransactionRowViewModel : ObservableObject
     public string AmountDisplay =>
         (IsIncome ? "+" : "−") + Model.AmountPln.ToString("C2", CultureInfo.CurrentCulture);
 
+    public string Place
+    {
+        get => Model.Place;
+        set
+        {
+            var v = (value ?? "").Trim();
+            if (v == Model.Place) return;
+            _owner.Edit(this, t => t with { Place = v });
+            if (Model.CategoryId is { } c) _owner.LearnRule(v, c);
+        }
+    }
+
     public Guid? CategoryId
     {
         get => Model.CategoryId;
@@ -72,11 +84,13 @@ public sealed class TransactionRowViewModel : ObservableObject
         {
             if (value == Model.CategoryId) return;
             _owner.Edit(this, t => t with { CategoryId = value });
-            if (value is { } c) _owner.LearnRule(Model.Note, c);
+            if (value is { } c) _owner.LearnRule(Model.Place, c);
         }
     }
 
     public string CategoryPath => _owner.CategoryPath(Model.CategoryId);
+    public string CategoryColor => _owner.CategoryColor(Model.CategoryId);
+    public string CategoryIcon => _owner.CategoryIcon(Model.CategoryId);
 
     public string Note
     {
@@ -129,5 +143,5 @@ public sealed class TransactionRowViewModel : ObservableObject
 
     private static bool SameVisible(Transaction a, Transaction b) =>
         a.Date == b.Date && a.Type == b.Type && a.Amount == b.Amount && a.AmountPln == b.AmountPln
-        && a.CurrencyCode == b.CurrencyCode && a.CategoryId == b.CategoryId && a.Note == b.Note && a.EventId == b.EventId;
+        && a.CurrencyCode == b.CurrencyCode && a.CategoryId == b.CategoryId && a.Place == b.Place && a.Note == b.Note && a.EventId == b.EventId;
 }

@@ -227,11 +227,11 @@ public sealed class Materializer
             case RecurringTransaction r:
                 Exec(conn, tx, """
                     INSERT OR REPLACE INTO recurring_transactions
-                        (id, type, amount, currency_code, category_id, note, event_id, frequency, day, start_date, end_date, last_generated_date)
-                    VALUES ($id, $type, $amt, $cur, $cat, $note, $ev, $freq, $day, $start, $end, $last)
+                        (id, type, amount, currency_code, category_id, place, note, event_id, frequency, day, start_date, end_date, last_generated_date)
+                    VALUES ($id, $type, $amt, $cur, $cat, $place, $note, $ev, $freq, $day, $start, $end, $last)
                     """,
                     ("$id", Id(r.Id)), ("$type", r.Type.ToString()), ("$amt", Dec(r.Amount)), ("$cur", r.CurrencyCode),
-                    ("$cat", Id(r.CategoryId)), ("$note", r.Note), ("$ev", Id(r.EventId)), ("$freq", r.Frequency.ToString()),
+                    ("$cat", Id(r.CategoryId)), ("$place", r.Place), ("$note", r.Note), ("$ev", Id(r.EventId)), ("$freq", r.Frequency.ToString()),
                     ("$day", r.Day), ("$start", Day(r.StartDate)), ("$end", Day(r.EndDate)), ("$last", Day(r.LastGeneratedDate)));
                 break;
             case CategoryRule k:
@@ -251,12 +251,12 @@ public sealed class Materializer
     {
         Exec(conn, tx, """
             INSERT OR REPLACE INTO transactions
-                (id, date, type, amount_cents, currency_code, exchange_rate, amount_pln_cents, category_id, note, event_id, created_at, created_by_device)
-            VALUES ($id, $date, $type, $amt, $cur, $rate, $pln, $cat, $note, $ev, $created, $dev)
+                (id, date, type, amount_cents, currency_code, exchange_rate, amount_pln_cents, category_id, place, note, event_id, created_at, created_by_device)
+            VALUES ($id, $date, $type, $amt, $cur, $rate, $pln, $cat, $place, $note, $ev, $created, $dev)
             """,
             ("$id", Id(t.Id)), ("$date", Day(t.Date)), ("$type", t.Type.ToString()), ("$amt", Money.ToCents(t.Amount)),
             ("$cur", t.CurrencyCode), ("$rate", Dec(t.ExchangeRateToPln)), ("$pln", Money.ToCents(t.AmountPln)),
-            ("$cat", Id(t.CategoryId)), ("$note", t.Note), ("$ev", Id(t.EventId)),
+            ("$cat", Id(t.CategoryId)), ("$place", t.Place), ("$note", t.Note), ("$ev", Id(t.EventId)),
             ("$created", t.CreatedAt.ToString("o", CultureInfo.InvariantCulture)), ("$dev", t.CreatedByDeviceId));
 
         Exec(conn, tx, "DELETE FROM transaction_lines WHERE transaction_id = $id", ("$id", Id(t.Id)));

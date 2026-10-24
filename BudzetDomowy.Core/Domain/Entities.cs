@@ -45,6 +45,9 @@ public sealed record Transaction
     /// <summary>Amount converted to PLN and stored at entry time; all reports use this value.</summary>
     public decimal AmountPln { get; init; }
     public Guid? CategoryId { get; init; }
+    /// <summary>Where the money was spent or received (shop, service); drives category suggestions.</summary>
+    public string Place { get; init; } = "";
+    /// <summary>Free note for other purposes.</summary>
     public string Note { get; init; } = "";
     public Guid? EventId { get; init; }
     public DateTimeOffset CreatedAt { get; init; }
@@ -92,6 +95,7 @@ public sealed record RecurringTransaction
     public decimal Amount { get; init; }
     public string CurrencyCode { get; init; } = "PLN";
     public Guid? CategoryId { get; init; }
+    public string Place { get; init; } = "";
     public string Note { get; init; } = "";
     public Guid? EventId { get; init; }
     public RecurrenceFrequency Frequency { get; init; } = RecurrenceFrequency.Monthly;

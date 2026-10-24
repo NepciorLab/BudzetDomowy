@@ -17,7 +17,8 @@
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="116" />
                 <ColumnDefinition Width="2*" MinWidth="170" />
-                <ColumnDefinition Width="2*" MinWidth="140" />
+                <ColumnDefinition Width="1.4*" MinWidth="120" />
+                <ColumnDefinition Width="1.6*" MinWidth="120" />
                 <ColumnDefinition Width="*" MinWidth="130" />
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="Auto" />
@@ -38,20 +39,25 @@
                                      ui:ControlHelper.Header="{infra:Str QuickCategory}"
                                      ui:ControlHelper.PlaceholderText="{infra:Str QuickCategoryHint}" />
 
-            <TextBox x:Name="NoteBox" Grid.Column="3" Margin="0,0,8,0"
+            <TextBox x:Name="PlaceBox" Grid.Column="3" Margin="0,0,8,0"
+                     Text="{Binding Place, UpdateSourceTrigger=PropertyChanged}"
+                     ui:ControlHelper.Header="{infra:Str QuickPlace}"
+                     ui:ControlHelper.PlaceholderText="{infra:Str QuickPlaceHint}" />
+
+            <TextBox x:Name="NoteBox" Grid.Column="4" Margin="0,0,8,0"
                      Text="{Binding Note, UpdateSourceTrigger=PropertyChanged}"
                      ui:ControlHelper.Header="{infra:Str QuickNote}"
                      ui:ControlHelper.PlaceholderText="{infra:Str QuickNoteHint}" />
 
-            <ComboBox x:Name="EventBox" Grid.Column="4" Margin="0,0,8,0" HorizontalAlignment="Stretch"
+            <ComboBox x:Name="EventBox" Grid.Column="5" Margin="0,0,8,0" HorizontalAlignment="Stretch"
                       ItemsSource="{Binding Events}" DisplayMemberPath="Name"
                       SelectedValuePath="Key" SelectedValue="{Binding EventKey, Mode=TwoWay}"
                       ui:ControlHelper.Header="{infra:Str QuickEvent}" />
 
-            <StackPanel Grid.Column="5" Margin="0,0,8,0">
+            <StackPanel Grid.Column="6" Margin="0,0,8,0">
                 <TextBlock Text="{infra:Str QuickType}" Margin="0,0,0,4" Opacity="0.85" />
                 <Button x:Name="TypeButton" Content="{Binding TypeLabel}" Command="{Binding ToggleTypeCommand}"
-                        MinWidth="100" ToolTip="{infra:Str QuickTypeTip}">
+                        MinWidth="100" IsTabStop="False" ToolTip="{infra:Str QuickTypeTip}">
                     <Button.Style>
                         <Style TargetType="Button" BasedOn="{StaticResource DefaultButtonStyle}">
                             <Setter Property="Foreground" Value="{StaticResource ExpenseBrush}" />
@@ -65,11 +71,11 @@
                 </Button>
             </StackPanel>
 
-            <Button Grid.Column="6" Content="{infra:Str QuickAdd}" Command="{Binding AddCommand}"
+            <Button x:Name="AddButton" Grid.Column="7" Content="{infra:Str QuickAdd}" Command="{Binding AddCommand}"
                     Style="{StaticResource AccentButtonStyle}" VerticalAlignment="Bottom" MinWidth="90"
                     ToolTip="{infra:Str QuickAddTip}" />
 
-            <TextBlock Grid.Row="1" Grid.ColumnSpan="7" Text="{Binding ErrorMessage}" Margin="0,6,0,0"
+            <TextBlock Grid.Row="1" Grid.ColumnSpan="8" Text="{Binding ErrorMessage}" Margin="0,6,0,0"
                        Foreground="{StaticResource ExpenseBrush}">
                 <TextBlock.Style>
                     <Style TargetType="TextBlock">

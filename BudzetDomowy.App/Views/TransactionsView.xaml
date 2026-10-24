@@ -7,6 +7,7 @@
              Loaded="OnLoaded">
     <UserControl.Resources>
         <infra:BoolToVisibilityConverter x:Key="BoolToVis" />
+        <infra:HexToBrushConverter x:Key="HexToBrush" />
     </UserControl.Resources>
     <Grid Margin="16,12,16,8">
         <Grid.RowDefinitions>
@@ -67,6 +68,7 @@
                   SelectionMode="Extended" SelectionUnit="FullRow" CanUserAddRows="False" CanUserDeleteRows="False"
                   CanUserResizeRows="False" GridLinesVisibility="Horizontal" HeadersVisibility="Column"
                   EnableRowVirtualization="True" RowHeight="34" ClipboardCopyMode="ExcludeHeader"
+                  AlternationCount="2" AlternatingRowBackground="{DynamicResource SystemControlBackgroundListLowBrush}"
                   BeginningEdit="Grid_BeginningEdit" CellEditEnding="Grid_CellEditEnding"
                   SelectionChanged="Grid_SelectionChanged" PreviewKeyDown="Grid_PreviewKeyDown">
             <DataGrid.ContextMenu>
@@ -126,7 +128,12 @@
                 <DataGridTemplateColumn Header="{infra:Str ColCategory}" Width="2*" SortMemberPath="CategoryPath">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
-                            <TextBlock Text="{Binding CategoryPath}" VerticalAlignment="Center" Margin="8,0" TextTrimming="CharacterEllipsis" />
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="8,0">
+                                <Ellipse Width="10" Height="10" Margin="0,0,8,0"
+                                         Fill="{Binding CategoryColor, Converter={StaticResource HexToBrush}}" />
+                                <TextBlock Text="{Binding CategoryIcon}" Margin="0,0,6,0" />
+                                <TextBlock Text="{Binding CategoryPath}" TextTrimming="CharacterEllipsis" />
+                            </StackPanel>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                     <DataGridTemplateColumn.CellEditingTemplate>
@@ -138,7 +145,18 @@
                     </DataGridTemplateColumn.CellEditingTemplate>
                 </DataGridTemplateColumn>
 
-                <DataGridTextColumn Header="{infra:Str ColNote}" Width="2*" Binding="{Binding Note}">
+                <DataGridTextColumn Header="{infra:Str ColPlace}" Width="1.3*" Binding="{Binding Place}">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="VerticalAlignment" Value="Center" />
+                            <Setter Property="Margin" Value="8,0" />
+                            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+                            <Setter Property="FontWeight" Value="SemiBold" />
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                </DataGridTextColumn>
+
+                <DataGridTextColumn Header="{infra:Str ColNote}" Width="1.7*" Binding="{Binding Note}">
                     <DataGridTextColumn.ElementStyle>
                         <Style TargetType="TextBlock">
                             <Setter Property="VerticalAlignment" Value="Center" />
@@ -168,6 +186,19 @@
                    Opacity="0.6" IsHitTestVisible="False"
                    Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVis}}" />
 
-        <TextBlock Grid.Row="3" Text="{Binding Summary}" Margin="0,8,0,0" FontWeight="SemiBold" />
+        <WrapPanel Grid.Row="3" Margin="0,10,0,0">
+            <Border CornerRadius="14" Padding="14,5" Margin="0,0,8,0" Background="{DynamicResource SystemControlBackgroundListLowBrush}">
+                <TextBlock Text="{Binding SummaryLabel}" FontWeight="SemiBold" />
+            </Border>
+            <Border CornerRadius="14" Padding="14,5" Margin="0,0,8,0" Background="#33E53935">
+                <TextBlock Text="{Binding ExpenseText}" FontWeight="SemiBold" Foreground="{StaticResource ExpenseBrush}" />
+            </Border>
+            <Border CornerRadius="14" Padding="14,5" Margin="0,0,8,0" Background="#3343A047">
+                <TextBlock Text="{Binding IncomeText}" FontWeight="SemiBold" Foreground="{StaticResource IncomeBrush}" />
+            </Border>
+            <Border CornerRadius="14" Padding="14,5" Background="#33F9A825">
+                <TextBlock Text="{Binding BalanceText}" FontWeight="Bold" />
+            </Border>
+        </WrapPanel>
     </Grid>
 </UserControl>

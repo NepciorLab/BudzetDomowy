@@ -21,7 +21,7 @@ public sealed class TransactionService
     }
 
     /// <summary>Adds a PLN transaction with a single position (foreign currencies arrive in a later phase).</summary>
-    public Transaction Add(DateOnly date, TransactionType type, decimal amount, Guid? categoryId, string? note, Guid? eventId)
+    public Transaction Add(DateOnly date, TransactionType type, decimal amount, Guid? categoryId, string? note, Guid? eventId, string? place = null)
     {
         if (amount <= 0) throw new ArgumentOutOfRangeException(nameof(amount), "Amount must be positive.");
 
@@ -36,6 +36,7 @@ public sealed class TransactionService
             ExchangeRateToPln = 1m,
             AmountPln = Money.ToPln(amount, 1m),
             CategoryId = categoryId,
+            Place = (place ?? "").Trim(),
             Note = (note ?? "").Trim(),
             EventId = eventId,
             CreatedAt = _now(),
@@ -54,6 +55,7 @@ public sealed class TransactionService
         var line = edited.Lines.Count == 1 ? edited.Lines[0] : null;
         var fixedUp = edited with
         {
+            Place = edited.Place.Trim(),
             Note = edited.Note.Trim(),
             AmountPln = Money.ToPln(edited.Amount, edited.ExchangeRateToPln),
             Lines = line is null
