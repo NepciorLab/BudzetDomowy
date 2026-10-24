@@ -42,23 +42,6 @@
         </DataTemplate>
     </Window.Resources>
 
-    <Window.InputBindings>
-        <KeyBinding Key="F2" Command="{Binding QuickAdd.ToggleTypeCommand}" />
-        <KeyBinding Key="F1" Command="{Binding ShowShortcutsCommand, RelativeSource={RelativeSource AncestorType=Window}}" />
-        <KeyBinding Key="Z" Modifiers="Ctrl" Command="{Binding UndoCommand}" />
-        <KeyBinding Key="F3" Command="{Binding FocusCurrencyCommand, RelativeSource={RelativeSource AncestorType=Window}}" />
-        <KeyBinding Key="F4" Command="{Binding FocusRateCommand, RelativeSource={RelativeSource AncestorType=Window}}" />
-        <KeyBinding Key="L" Modifiers="Ctrl" Command="{Binding FocusAmountCommand, RelativeSource={RelativeSource AncestorType=Window}}" />
-        <KeyBinding Key="D1" Modifiers="Ctrl" Command="{Binding GoCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="dashboard" />
-        <KeyBinding Key="D2" Modifiers="Ctrl" Command="{Binding GoCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="transactions" />
-        <KeyBinding Key="D3" Modifiers="Ctrl" Command="{Binding GoCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="budgets" />
-        <KeyBinding Key="D4" Modifiers="Ctrl" Command="{Binding GoCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="events" />
-        <KeyBinding Key="D5" Modifiers="Ctrl" Command="{Binding GoCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="recurring" />
-        <KeyBinding Key="D6" Modifiers="Ctrl" Command="{Binding GoCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="reports" />
-        <KeyBinding Key="D7" Modifiers="Ctrl" Command="{Binding GoCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="settings" />
-        <KeyBinding Key="Left" Modifiers="Alt" Command="{Binding PreviousPeriodCommand}" />
-        <KeyBinding Key="Right" Modifiers="Alt" Command="{Binding NextPeriodCommand}" />
-    </Window.InputBindings>
 
     <Grid>
         <Grid>

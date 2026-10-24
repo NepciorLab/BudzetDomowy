@@ -22,10 +22,9 @@ public interface IBackgroundHost : IDisposable
 
 public sealed class TrayHotkeyHost : IBackgroundHost
 {
-    private const uint ModAlt = 0x0001, ModControl = 0x0002, ModNoRepeat = 0x4000;
+    private const uint ModAlt = 0x0001, ModControl = 0x0002, ModShift = 0x0004, ModWin = 0x0008, ModNoRepeat = 0x4000;
     private const int WmHotkey = 0x0312;
     private const int HotkeyId = 0xB001;
-    private const uint VkB = 0x42;
     private static readonly IntPtr HwndMessage = new(-3);
 
     [DllImport("user32.dll", SetLastError = true)]
@@ -50,18 +49,25 @@ public sealed class TrayHotkeyHost : IBackgroundHost
 
         // a message-only window: it receives the hotkey without ever being visible
         var source = new HwndSource(new HwndSourceParameters("BudzetDomowyHotkey") { ParentWindow = HwndMessage, Width = 0, Height = 0 });
-        if (!RegisterHotKey(source.Handle, HotkeyId, ModControl | ModAlt | ModNoRepeat, VkB))
+        var (key, modifiers) = ShortcutMap.Instance.GestureOf(ShortcutMap.GlobalQuickAdd);
+        var winModifiers = ModNoRepeat
+            | ((modifiers & System.Windows.Input.ModifierKeys.Control) != 0 ? ModControl : 0)
+            | ((modifiers & System.Windows.Input.ModifierKeys.Alt) != 0 ? ModAlt : 0)
+            | ((modifiers & System.Windows.Input.ModifierKeys.Shift) != 0 ? ModShift : 0)
+            | ((modifiers & System.Windows.Input.ModifierKeys.Windows) != 0 ? ModWin : 0);
+        var shown = ShortcutMap.Instance.DisplayOf(ShortcutMap.GlobalQuickAdd);
+        if (!RegisterHotKey(source.Handle, HotkeyId, winModifiers, (uint)System.Windows.Input.KeyInterop.VirtualKeyFromKey(key)))
         {
-            error = Res.Format("BackgroundHotkeyTaken", new Win32Exception(Marshal.GetLastWin32Error()).Message);
+            error = Res.Format("BackgroundHotkeyTaken", shown, new Win32Exception(Marshal.GetLastWin32Error()).Message);
             source.Dispose();
-            AppLog.Warn("Could not register Ctrl+Alt+B: " + error);
+            AppLog.Warn($"Could not register {shown}: " + error);
             return false;
         }
 
         source.AddHook(OnMessage);
         _source = source;
         CreateTrayIcon();
-        AppLog.Info("Background mode started (Ctrl+Alt+B and tray icon).");
+        AppLog.Info($"Background mode started ({shown} and tray icon).");
         return true;
     }
 

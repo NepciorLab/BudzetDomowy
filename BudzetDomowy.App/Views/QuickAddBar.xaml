@@ -21,11 +21,11 @@
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="116" />
                 <ColumnDefinition Width="84" />
+                <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="2*" MinWidth="170" />
                 <ColumnDefinition Width="1.4*" MinWidth="110" />
                 <ColumnDefinition Width="1.6*" MinWidth="110" />
                 <ColumnDefinition Width="*" MinWidth="120" />
-                <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
 
@@ -50,28 +50,28 @@
                 </ComboBox.ItemContainerStyle>
             </ComboBox>
 
-            <controls:FilterComboBox x:Name="CategoryBox" Grid.Column="3" Margin="0,0,8,0" HorizontalAlignment="Stretch"
+            <controls:FilterComboBox x:Name="CategoryBox" Grid.Column="4" Margin="0,0,8,0" HorizontalAlignment="Stretch"
                                      Choices="{Binding Categories}" DisplayMemberPath="DisplayName"
                                      SelectedValuePath="Id" SelectedValue="{Binding CategoryId, Mode=TwoWay}"
                                      ui:ControlHelper.Header="{infra:Str QuickCategory}"
                                      ui:ControlHelper.PlaceholderText="{infra:Str QuickCategoryHint}" />
 
-            <TextBox x:Name="PlaceBox" Grid.Column="4" Margin="0,0,8,0"
+            <TextBox x:Name="PlaceBox" Grid.Column="5" Margin="0,0,8,0"
                      Text="{Binding Place, UpdateSourceTrigger=PropertyChanged}"
                      ui:ControlHelper.Header="{infra:Str QuickPlace}"
                      ui:ControlHelper.PlaceholderText="{infra:Str QuickPlaceHint}" />
 
-            <TextBox x:Name="NoteBox" Grid.Column="5" Margin="0,0,8,0"
+            <TextBox x:Name="NoteBox" Grid.Column="6" Margin="0,0,8,0"
                      Text="{Binding Note, UpdateSourceTrigger=PropertyChanged}"
                      ui:ControlHelper.Header="{infra:Str QuickNote}"
                      ui:ControlHelper.PlaceholderText="{infra:Str QuickNoteHint}" />
 
-            <ComboBox x:Name="EventBox" Grid.Column="6" Margin="0,0,8,0" HorizontalAlignment="Stretch"
+            <ComboBox x:Name="EventBox" Grid.Column="7" Margin="0,0,8,0" HorizontalAlignment="Stretch"
                       ItemsSource="{Binding Events}" DisplayMemberPath="Name"
                       SelectedValuePath="Key" SelectedValue="{Binding EventKey, Mode=TwoWay}"
                       ui:ControlHelper.Header="{infra:Str QuickEvent}" />
 
-            <StackPanel Grid.Column="7" Margin="0,0,8,0">
+            <StackPanel Grid.Column="3" Margin="0,0,8,0">
                 <TextBlock Text="{infra:Str QuickType}" Margin="0,0,0,4" Opacity="0.85" />
                 <Button x:Name="TypeButton" Content="{Binding TypeLabel}" Command="{Binding ToggleTypeCommand}"
                         MinWidth="100" IsTabStop="False" ToolTip="{infra:Str QuickTypeTip}">

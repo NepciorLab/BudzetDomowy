@@ -2,6 +2,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Threading;
+using BudzetDomowy.App.Infrastructure;
 using BudzetDomowy.App.ViewModels;
 using ModernWpf.Controls;
 
@@ -19,9 +20,21 @@ public partial class TransactionsView : UserControl
             if (e.OldValue is TransactionsViewModel old) old.SelectionClearRequested -= ClearSelection;
             if (e.NewValue is TransactionsViewModel vm) vm.SelectionClearRequested += ClearSelection;
         };
+        PreviewKeyDown += View_PreviewKeyDown;
     }
 
     private void ClearSelection() => Grid.UnselectAll();
+
+    /// <summary>Esc: first deselects the selected rows, then clears the filters (not while a cell or a drop-down list is being used).</summary>
+    private void View_PreviewKeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key != Key.Escape || Vm is not { } vm) return;
+        if (Grid.IsKeyboardFocusWithin && IsEditing()) return;
+        if (Keyboard.FocusedElement is ComboBox { IsDropDownOpen: true }) return;
+
+        if (Grid.SelectedItems.Count > 0) { Grid.UnselectAll(); e.Handled = true; }
+        else if (vm.ClearFiltersIfAny()) e.Handled = true;
+    }
 
     private void OnLoaded(object sender, RoutedEventArgs e) => Vm?.Reload();
 
@@ -39,20 +52,15 @@ public partial class TransactionsView : UserControl
     private void Grid_PreviewKeyDown(object sender, KeyEventArgs e)
     {
         if (Vm is not { } vm || IsEditing()) return;
-        switch (e.Key)
+        if (ShortcutMap.Instance.Matches(ShortcutMap.TxDelete, e))
         {
-            case Key.Delete:
-                vm.DeleteSelected();
-                e.Handled = true;
-                break;
-            case Key.Escape when Grid.SelectedItems.Count > 0:
-                Grid.UnselectAll();                       // Esc deselects
-                e.Handled = true;
-                break;
-            case Key.K when (Keyboard.Modifiers & ModifierKeys.Control) != 0 && Grid.SelectedItems.Count > 0:
-                ShowCategoryFlyout();                     // Ctrl+K changes the category of the selected rows
-                e.Handled = true;
-                break;
+            vm.DeleteSelected();
+            e.Handled = true;
+        }
+        else if (ShortcutMap.Instance.Matches(ShortcutMap.TxChangeCategory, e) && Grid.SelectedItems.Count > 0)
+        {
+            ShowCategoryFlyout();                         // changes the category of the selected rows
+            e.Handled = true;
         }
     }
 

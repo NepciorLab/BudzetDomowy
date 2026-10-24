@@ -27,6 +27,9 @@ public sealed partial class CategoryNode : ObservableObject
 
 public sealed record ParentOption(Guid Key, string Name);
 
+/// <param name="IsUsed">Some category already has this colour (it gets a tick).</param>
+public sealed record PaletteColor(string Hex, bool IsUsed);
+
 public sealed record CategoryTypeOption(CategoryType Type, string Label)
 {
     public override string ToString() => Label;
@@ -48,11 +51,13 @@ public sealed partial class CategoriesViewModel : ObservableObject
         new(CategoryType.Both, Res.Get("CategoryTypeBoth")),
     ];
 
-    public IReadOnlyList<string> Palette { get; } =
+    private static readonly string[] PaletteHexes =
     [
         "#E53935", "#EC407A", "#8E24AA", "#5C6BC0", "#1E88E5", "#26C6DA", "#00ACC1", "#43A047",
         "#7CB342", "#FFB300", "#FB8C00", "#8D6E63", "#546E7A", "#78909C", "#D4AF37", "#6D4C41",
     ];
+
+    [ObservableProperty] private IReadOnlyList<PaletteColor> _palette = [];
 
     /// <summary>Pictures to choose from; any other emoji can still be typed in.</summary>
     public IReadOnlyList<string> IconChoices { get; } =
@@ -108,7 +113,7 @@ public sealed partial class CategoriesViewModel : ObservableObject
         var all = _core.Reader.GetCategories();
         var excluded = CategoryHelpers.WithDescendants(c.Id, all);
         var options = new List<ParentOption> { new(Guid.Empty, Res.Get("NoParent")) };
-        options.AddRange(CategoryHelpers.Flatten(all, x => !excluded.Contains(x.Id)).Select(o => new ParentOption(o.Id, o.DisplayName)));
+        options.AddRange(CategoryHelpers.Flatten(all, x => !excluded.Contains(x.Id), alphabetical: true).Select(o => new ParentOption(o.Id, o.DisplayName)));
         ParentChoices = options;
         EditParentKey = c.ParentId ?? Guid.Empty;
     }
@@ -122,6 +127,8 @@ public sealed partial class CategoriesViewModel : ObservableObject
             foreach (var n in Flatten(Roots)) if (!n.IsExpanded) _collapsed.Add(n.Model.Id); else _collapsed.Remove(n.Model.Id);
 
             var all = _core.Reader.GetCategories();
+            var used = all.Select(c => c.Color).Where(c => c.Length > 0).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            Palette = PaletteHexes.Select(h => new PaletteColor(h, used.Contains(h))).ToList();
             var ids = all.Select(c => c.Id).ToHashSet();
             var byParent = all.ToLookup(c => c.ParentId is { } p && ids.Contains(p) ? p : Guid.Empty);
 

@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Windows;
 using System.Windows.Markup;
 using BudzetDomowy.App.Infrastructure;
+using BudzetDomowy.App.Infrastructure.Updates;
 using BudzetDomowy.App.ViewModels;
 using BudzetDomowy.App.Views;
 using BudzetDomowy.Core;
@@ -26,6 +27,7 @@ public partial class App : Application
         AppPaths.Initialize(e.Args);
         SetTaskbarIdentity();
         SetPolishCulture();
+        AmountBoxes.Register();
         AppLog.Info($"Starting (profile: {AppPaths.Profile ?? "default"}).");
         InstallErrorHandlers();
 
@@ -86,6 +88,7 @@ public partial class App : Application
 
         var store = new SettingsStore(settings);
         UiPreferences.Instance.Initialize(store);
+        ShortcutMap.Instance.Initialize(store);
 
         var services = new ServiceCollection()
             .AddSingleton(_core)
@@ -104,6 +107,11 @@ public partial class App : Application
             .AddSingleton<IBackgroundHost, TrayHotkeyHost>()
             .AddSingleton<IAppRestarter, AppRestarter>()
             .AddSingleton<IFileDialogs, WpfFileDialogs>()
+            .AddSingleton<IRecurringPrompt, WpfRecurringPrompt>()
+            .AddSingleton<IUpdatePrompt, WpfUpdatePrompt>()
+            .AddSingleton(sp => new GitHubReleases(GitHubReleases.CreateClient(), () => TokenProtector.Unprotect(sp.GetRequiredService<SettingsStore>().Current.UpdateToken)))
+            .AddSingleton<UpdateService>()
+            .AddSingleton<RecurringRunner>()
             .AddSingleton<ImportMappingStore>()
             .AddSingleton<ExportActions>()
             .AddTransient<ImportViewModel>()
@@ -119,6 +127,22 @@ public partial class App : Application
         ShutdownMode = ShutdownMode.OnMainWindowClose;
         StartBackgroundMode(settings, services);
         main.Show();
+        StartUpdateCheck(services);
+    }
+
+    /// <summary>A few seconds after the start (when switched on in Settings) the program looks for a newer version on GitHub.</summary>
+    private static async void StartUpdateCheck(ServiceProvider services)
+    {
+        try
+        {
+            if (Environment.ProcessPath is { } exe) UpdateInstaller.CleanUp(exe);
+            await Task.Delay(TimeSpan.FromSeconds(8));
+            await services.GetRequiredService<UpdateService>().RunAutomaticAsync();
+        }
+        catch (Exception e)
+        {
+            AppLog.Warn("Update check failed: " + e.Message);   // never a reason to disturb the user
+        }
     }
 
     private static void UseConfiguredLocalFolder(AppSettings settings)

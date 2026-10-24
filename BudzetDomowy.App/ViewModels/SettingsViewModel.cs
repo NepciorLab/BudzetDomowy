@@ -1,6 +1,7 @@
 using BudzetDomowy.App.Infrastructure;
 using BudzetDomowy.Core;
 using System.Collections.ObjectModel;
+using BudzetDomowy.App.Infrastructure.Updates;
 using BudzetDomowy.Core.Excel;
 using BudzetDomowy.Core.Journal;
 using BudzetDomowy.Core.Sync;
@@ -14,11 +15,50 @@ public sealed record ThemeOption(ThemeChoice Choice, string Label)
     public override string ToString() => Label;
 }
 
-public sealed record ShortcutItem(string Keys, string Description);
+public sealed record ScaleOption(UiScaleChoice Choice, string Label)
+{
+    public override string ToString() => Label;
+}
+
+public sealed record MarkerOption(MarkerShape Choice, string Label)
+{
+    public override string ToString() => Label;
+}
+
+/// <summary>One line of the shortcuts list; those with an <see cref="Id"/> can be given other keys.</summary>
+public sealed partial class ShortcutRow : ObservableObject
+{
+    public string? Id { get; }
+    public string Description { get; }
+    public bool IsFixed => Id is null;
+
+    [ObservableProperty] private string _keys;
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(CanReset))] private bool _isCustom;
+    [ObservableProperty] private bool _isEditing;
+    [ObservableProperty] private string _message = "";
+
+    public bool CanReset => IsCustom;
+
+    public ShortcutRow(string? id, string keys, string description)
+    {
+        Id = id;
+        _keys = keys;
+        Description = description;
+        if (id is not null) _isCustom = ShortcutMap.Instance.IsCustom(id);
+    }
+
+    public void Reload()
+    {
+        if (Id is null) return;
+        Keys = ShortcutMap.Instance.DisplayOf(Id);
+        IsCustom = ShortcutMap.Instance.IsCustom(Id);
+    }
+}
 
 public sealed partial class SettingsViewModel : ObservableObject
 {
-    public const int ShortcutsTab = 4;
+    public const int AppearanceTab = 1;
+    public const int ShortcutsTab = 5;
 
     private readonly BudgetCore _core;
     private readonly SettingsStore _store;
@@ -27,6 +67,8 @@ public sealed partial class SettingsViewModel : ObservableObject
     private readonly IBackgroundHost _background;
     private readonly IFileDialogs _dialogs;
     private readonly IAppRestarter _restarter;
+    private readonly UpdateService _updates;
+    private ReleaseInfo? _foundRelease;
     private FolderCheck? _pendingCheck;
     private bool _restoringBackground;
 
@@ -48,28 +90,129 @@ public sealed partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private bool _restartNeeded;
 
     public bool HasPendingDataFolder => PendingDataFolder.Length > 0;
+    // ----- updates from GitHub -----
+    [ObservableProperty] private bool _autoUpdate;
+    [ObservableProperty] private string _updateMessage = "";
+    [ObservableProperty] private bool _updateAvailable;
+    [ObservableProperty] private bool _updateBusy;
+    [ObservableProperty] private bool _updateTokenSet;
+
+    public string CurrentVersionText => _updates.Current.ToString(3);
+    public string UpdateRepository => _store.Current.UpdateRepository;
+
+    partial void OnAutoUpdateChanged(bool value) => _store.Update(s => s with { AutoUpdate = value });
+
+    /// <summary>The access token typed in Settings (empty removes it); kept protected for this Windows user.</summary>
+    public void SetUpdateToken(string token)
+    {
+        _store.Update(s => s with { UpdateToken = TokenProtector.Protect(token) });
+        UpdateTokenSet = !string.IsNullOrEmpty(_store.Current.UpdateToken);
+        UpdateMessage = Res.Get(UpdateTokenSet ? "UpdateTokenSaved" : "UpdateTokenRemoved");
+    }
+
+    [RelayCommand]
+    private async Task CheckUpdateAsync()
+    {
+        UpdateBusy = true;
+        UpdateAvailable = false;
+        UpdateMessage = Res.Get("UpdateChecking");
+        try
+        {
+            var check = await _updates.CheckAsync();
+            _foundRelease = check.Release;
+            UpdateAvailable = check.State == UpdateState.Available;
+            UpdateMessage = check.Message;
+        }
+        finally
+        {
+            UpdateBusy = false;
+        }
+    }
+
+    [RelayCommand]
+    private async Task InstallUpdateAsync()
+    {
+        if (_foundRelease is not { } release) return;
+        UpdateBusy = true;
+        UpdateMessage = Res.Get("UpdateDownloading");
+        try
+        {
+            var error = await _updates.InstallAsync(release);
+            if (error is not null)
+            {
+                UpdateMessage = error;
+                return;
+            }
+            UpdateMessage = Res.Get("UpdateInstalled");
+            _updates.Restart();
+        }
+        finally
+        {
+            UpdateBusy = false;
+        }
+    }
+
     [ObservableProperty] private bool _backgroundMode;
     [ObservableProperty] private string _backgroundMessage = "";
 
-    public IReadOnlyList<ShortcutItem> Shortcuts { get; } =
+    /// <summary>The program's keys: first the fixed ones, then those that can be changed.</summary>
+    public IReadOnlyList<ShortcutRow> Shortcuts { get; } =
     [
-        new("Enter", Res.Get("KeyEnter")),
-        new("Ctrl + Enter", Res.Get("KeyCtrlEnter")),
-        new("Tab / Shift + Tab", Res.Get("KeyTab")),
-        new("Esc", Res.Get("KeyEsc")),
-        new("Esc (w tabeli)", Res.Get("KeyEscTable")),
-        new("F2", Res.Get("KeyF2")),
-        new("F3", Res.Get("KeyF3")),
-        new("F4", Res.Get("KeyF4")),
-        new("Ctrl + L", Res.Get("KeyCtrlL")),
-        new("Ctrl + Z", Res.Get("KeyCtrlZ")),
-        new("Ctrl + 1 … Ctrl + 7", Res.Get("KeyCtrlDigits")),
-        new("Alt + ← / →", Res.Get("KeyAltArrows")),
-        new("Ctrl + K", Res.Get("KeyCtrlK")),
-        new("Del", Res.Get("KeyDel")),
-        new("F1", Res.Get("KeyF1")),
-        new("Ctrl + Alt + B", Res.Get("KeyGlobal")),
+        new(null, "Enter", Res.Get("KeyEnter")),
+        new(null, "Ctrl + Enter", Res.Get("KeyCtrlEnter")),
+        new(null, "Tab / Shift + Tab", Res.Get("KeyTab")),
+        new(null, "Esc", Res.Get("KeyEsc")),
+        new(null, "Esc (" + Res.Get("KeyInTable") + ")", Res.Get("KeyEscTable")),
+        .. ShortcutMap.Definitions.Select(d => new ShortcutRow(d.Id, ShortcutMap.Instance.DisplayOf(d.Id), ShortcutMap.Describe(d))),
     ];
+
+    [RelayCommand]
+    private void EditShortcut(ShortcutRow? row)
+    {
+        if (row is null || row.IsFixed) return;
+        foreach (var other in Shortcuts) other.IsEditing = false;
+        row.Message = "";
+        row.IsEditing = true;
+    }
+
+    [RelayCommand]
+    private void CancelShortcutEdit(ShortcutRow? row)
+    {
+        if (row is not null) row.IsEditing = false;
+    }
+
+    /// <summary>The view passes the key that was pressed while a row waits for its new shortcut.</summary>
+    public void ApplyShortcut(ShortcutRow row, System.Windows.Input.Key key, System.Windows.Input.ModifierKeys modifiers)
+    {
+        if (row.Id is not { } id || ShortcutMap.IsModifier(key)) return;
+        var error = ShortcutMap.Instance.Set(id, key, modifiers);
+        row.Message = error ?? "";
+        if (error is not null) return;
+
+        row.IsEditing = false;
+        row.Reload();
+        if (id == ShortcutMap.GlobalQuickAdd && _background.IsActive)
+        {
+            // the global key is registered with Windows: register it again under the new keys
+            _background.Stop();
+            if (!_background.Start(out var problem)) BackgroundMessage = problem ?? "";
+        }
+    }
+
+    [RelayCommand]
+    private void ResetShortcut(ShortcutRow? row)
+    {
+        if (row?.Id is not { } id) return;
+        ShortcutMap.Instance.Reset(id);
+        row.Message = "";
+        row.IsEditing = false;
+        row.Reload();
+        if (id == ShortcutMap.GlobalQuickAdd && _background.IsActive)
+        {
+            _background.Stop();
+            _background.Start(out _);
+        }
+    }
 
     public IReadOnlyList<ThemeOption> Themes { get; } =
     [
@@ -80,13 +223,37 @@ public sealed partial class SettingsViewModel : ObservableObject
 
     [ObservableProperty] private ThemeOption _selectedTheme;
 
+    public IReadOnlyList<ScaleOption> Scales { get; } =
+    [
+        new(UiScaleChoice.Small, Res.Get("ScaleSmall")),
+        new(UiScaleChoice.Medium, Res.Get("ScaleMedium")),
+        new(UiScaleChoice.Large, Res.Get("ScaleLarge")),
+    ];
+
+    public IReadOnlyList<MarkerOption> Markers { get; } =
+    [
+        new(MarkerShape.Circle, Res.Get("MarkerCircle")),
+        new(MarkerShape.Square, Res.Get("MarkerSquare")),
+        new(MarkerShape.Bar, Res.Get("MarkerBar")),
+    ];
+
+    [ObservableProperty] private ScaleOption _selectedScale;
+    [ObservableProperty] private MarkerOption _selectedMarker;
+
+    partial void OnSelectedScaleChanged(ScaleOption value) => UiPreferences.Instance.Scale = value.Choice;
+    partial void OnSelectedMarkerChanged(MarkerOption value) => UiPreferences.Instance.Marker = value.Choice;
+
+    /// <summary>The amounts as they will look, for the preview in the appearance tab.</summary>
+    public string SampleExpense => UiPreferences.Instance.SignOf(false) + (1234.5m).ToString("C2", System.Globalization.CultureInfo.CurrentCulture);
+    public string SampleIncome => UiPreferences.Instance.SignOf(true) + (6500m).ToString("C2", System.Globalization.CultureInfo.CurrentCulture);
+
     public string DataFolder => _core.DataFolder;
     public string LocalFolder => AppPaths.LocalDir;
     public string DeviceName => _core.Device.DeviceName;
     public string DeviceId => _core.Device.DeviceId;
 
     public SettingsViewModel(BudgetCore core, SettingsStore store, CategoriesViewModel categories,
-        Func<ImportViewModel> createImport, ExportActions exports, DiagnosticsViewModel diagnostics, IBackgroundHost background, IFileDialogs dialogs, IAppRestarter restarter)
+        Func<ImportViewModel> createImport, ExportActions exports, DiagnosticsViewModel diagnostics, IBackgroundHost background, IFileDialogs dialogs, IAppRestarter restarter, UpdateService updates)
     {
         _core = core;
         _store = store;
@@ -96,9 +263,19 @@ public sealed partial class SettingsViewModel : ObservableObject
         _background = background;
         _dialogs = dialogs;
         _restarter = restarter;
+        _updates = updates;
+        _autoUpdate = store.Current.AutoUpdate;
+        UpdateTokenSet = !string.IsNullOrEmpty(store.Current.UpdateToken);
         Diagnostics = diagnostics;
         _backgroundMode = store.Current.BackgroundMode && background.IsActive;
         _selectedTheme = Themes.First(t => t.Choice == store.Current.Theme);
+        _selectedScale = Scales.First(s => s.Choice == store.Current.UiScale);
+        _selectedMarker = Markers.First(m => m.Choice == store.Current.CategoryMarker);
+        UiPreferences.Instance.OnAppearanceChanged(this, self =>
+        {
+            self.OnPropertyChanged(nameof(SampleExpense));
+            self.OnPropertyChanged(nameof(SampleIncome));
+        });
     }
 
     partial void OnBackgroundModeChanged(bool value)

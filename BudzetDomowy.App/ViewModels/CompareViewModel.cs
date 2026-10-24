@@ -22,7 +22,7 @@ public sealed record CategoryPick(Guid? Id, string Name)
     {
         var parents = categories.Where(c => c.ParentId is not null).Select(c => c.ParentId!.Value).ToHashSet();
         var list = new List<CategoryPick> { new(null, allLabel) };
-        list.AddRange(CategoryHelpers.Flatten(categories, c => CategoryHelpers.Matches(c.Type, type) && (!onlyParents || parents.Contains(c.Id)))
+        list.AddRange(CategoryHelpers.Flatten(categories, c => CategoryHelpers.Matches(c.Type, type) && (!onlyParents || parents.Contains(c.Id)), alphabetical: true)
             .Select(o => new CategoryPick(o.Id, o.DisplayName)));
         return list;
     }
@@ -51,6 +51,8 @@ public sealed partial class PickItem : ObservableObject
 
 public enum CompareKind { Years, Months }
 
+public enum CompareStyle { Columns, Lines, Averages }
+
 public sealed record CompareTotal(string Name, string Color, string Total, string Average);
 
 /// <summary>Years side by side (month by month) or months side by side (category by category), for expenses or income.</summary>
@@ -66,9 +68,12 @@ public sealed partial class CompareViewModel : ObservableObject
     private CompareKind _kind = CompareKind.Years;
 
     [ObservableProperty, NotifyPropertyChangedFor(nameof(IsIncome))] private bool _isExpense = true;
-    [ObservableProperty, NotifyPropertyChangedFor(nameof(IsColumns))] private bool _isLines;
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(IsColumns)), NotifyPropertyChangedFor(nameof(IsLines)), NotifyPropertyChangedFor(nameof(IsAverages))]
+    private CompareStyle _style = CompareStyle.Columns;
 
-    public bool IsColumns => !IsLines;
+    public bool IsColumns => Style == CompareStyle.Columns;
+    public bool IsLines => Style == CompareStyle.Lines;
+    public bool IsAverages => Style == CompareStyle.Averages;
 
     [ObservableProperty] private IReadOnlyList<CategoryPick> _choices = [];
     [ObservableProperty] private CategoryPick? _category;
@@ -97,12 +102,28 @@ public sealed partial class CompareViewModel : ObservableObject
 
     private TransactionType Type => IsExpense ? TransactionType.Expense : TransactionType.Income;
 
-    partial void OnKindChanged(CompareKind value) => RebuildAll();
+    partial void OnKindChanged(CompareKind value)
+    {
+        if (value == CompareKind.Months && Style == CompareStyle.Averages)
+        {
+            // running averages are per year; the redraw happens once the lists are rebuilt
+            _building = true;
+            Style = CompareStyle.Columns;
+            _building = false;
+        }
+        RebuildAll();
+    }
     partial void OnIsExpenseChanged(bool value) => RebuildAll();
-    partial void OnIsLinesChanged(bool value) => Reload();
+    partial void OnStyleChanged(CompareStyle value)
+    {
+        if (!_building) Reload();
+    }
 
     [RelayCommand]
-    private void SetChartStyle(string? key) => IsLines = key == "Lines";
+    private void SetChartStyle(string? key)
+    {
+        if (Enum.TryParse<CompareStyle>(key, out var style) && (style != CompareStyle.Averages || IsYears)) Style = style;
+    }
 
     partial void OnCategoryChanged(CategoryPick? value)
     {
@@ -189,7 +210,7 @@ public sealed partial class CompareViewModel : ObservableObject
         {
             var years = Picks.Where(p => p.IsSelected).Select(p => (int)p.Key).ToList();
             var data = ComparisonReports.YearsByMonth(all, cats, years, Type, Category?.Id);
-            Series = ChartFactory.YearColumns(data, IsLines);
+            Series = IsAverages ? ChartFactory.YearAverages(data, today) : ChartFactory.YearColumns(data, IsLines);
             XAxes = ChartFactory.LabelAxes(CultureInfo.CurrentCulture.DateTimeFormat.AbbreviatedMonthNames.Take(12));
             Totals = data.Select((y, i) =>
             {
@@ -199,7 +220,7 @@ public sealed partial class CompareViewModel : ObservableObject
                     Money(y.Total), Res.Format("CompareAverage", Money(y.Total / months)));
             }).ToList();
             HasData = data.Any(y => y.Total != 0);
-            Title = Res.Format("CompareTitleYears", typeName, Category?.Name ?? "");
+            Title = Res.Format(IsAverages ? "CompareTitleAverages" : "CompareTitleYears", typeName, Category?.Name ?? "");
         }
         else
         {

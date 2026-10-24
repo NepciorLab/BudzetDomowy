@@ -72,6 +72,24 @@ public static class ChartFactory
         years.Select((y, i) => Series(lines, y.Year.ToString(System.Globalization.CultureInfo.CurrentCulture), y.Months,
             ParseColor(Palette[i % Palette.Length]))).ToList();
 
+    /// <summary>One line per year: the average of the months so far (see ComparisonReports.CumulativeAverages); future months stay empty.</summary>
+    public static IReadOnlyList<ISeries> YearAverages(IReadOnlyList<YearSeries> years, DateOnly today) =>
+        years.Select((y, i) =>
+        {
+            var color = ParseColor(Palette[i % Palette.Length]);
+            return (ISeries)new LineSeries<double?>
+            {
+                Name = y.Year.ToString(System.Globalization.CultureInfo.CurrentCulture),
+                Values = ComparisonReports.CumulativeAverages(y, today).Select(v => (double?)v).ToArray(),
+                Fill = null,
+                LineSmoothness = 0,
+                Stroke = new SolidColorPaint(color) { StrokeThickness = 3 },
+                GeometrySize = 9,
+                GeometryFill = new SolidColorPaint(color),
+                GeometryStroke = new SolidColorPaint(color) { StrokeThickness = 3 },
+            };
+        }).ToList();
+
     /// <summary>One series per month, one point or column per category.</summary>
     public static IReadOnlyList<ISeries> MonthColumns(IReadOnlyList<MonthSeries> months, Func<DateOnly, string> name, bool lines = false) =>
         months.Select((m, i) => Series(lines, name(m.Month), m.Values, ParseColor(Palette[i % Palette.Length]), 26)).ToList();

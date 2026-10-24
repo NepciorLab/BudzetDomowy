@@ -369,6 +369,55 @@ public class BudgetAndRecurringServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task Generate_WithConfirmation_BooksNothingUntilTheUserAnswers()
+    {
+        var core = NewCore();
+        var t = core.Recurring.Add(Rent(new DateOnly(2026, 8, 5)) with { ConfirmEach = true });
+
+        var run = await core.Recurring.GenerateDueAsync(Today);
+        Assert.Equal(0, run.Created);
+        Assert.Equal([new DateOnly(2026, 8, 5), new DateOnly(2026, 9, 5), new DateOnly(2026, 10, 5)], run.Pending.Select(p => p.Date));
+        Assert.Empty(core.Reader.GetTransactions());
+        Assert.Null(core.Reader.GetRecurringTransactions().Single().LastGeneratedDate);   // nothing was handled yet
+
+        // yes: the same deterministic transaction an automatic run would have made
+        Assert.True(await core.Recurring.ConfirmAsync(t.Id, new DateOnly(2026, 8, 5)));
+        var booked = core.Reader.GetTransactions().Single();
+        Assert.Equal(DeterministicId.ForRecurrence(t.Id, new DateOnly(2026, 8, 5)), booked.Id);
+        Assert.Equal(1200m, booked.AmountPln);
+
+        // no: never booked, never asked again
+        core.Recurring.Decline(t.Id, new DateOnly(2026, 9, 5));
+        var after = await core.Recurring.GenerateDueAsync(Today);
+        Assert.Equal([new DateOnly(2026, 10, 5)], after.Pending.Select(p => p.Date));
+        Assert.Single(core.Reader.GetTransactions());
+
+        Assert.True(await core.Recurring.ConfirmAsync(t.Id, new DateOnly(2026, 10, 5)));
+        var done = await core.Recurring.GenerateDueAsync(Today);
+        Assert.Empty(done.Pending);
+        Assert.Equal(2, core.Reader.GetTransactions().Count);
+        Assert.Equal(new DateOnly(2026, 10, 5), core.Reader.GetRecurringTransactions().Single().LastGeneratedDate);   // all answered: the watermark moved on
+        Assert.Equal([new DateOnly(2026, 9, 5)], core.Reader.GetRecurringTransactions().Single().SkippedDates);
+    }
+
+    [Fact]
+    public async Task Generate_WithConfirmation_TheFlagAndDeclinedDatesSurviveARebuildFromTheJournal()
+    {
+        var core = NewCore();
+        var t = core.Recurring.Add(Rent(new DateOnly(2026, 9, 5)) with { ConfirmEach = true });
+        core.Recurring.Decline(t.Id, new DateOnly(2026, 9, 5));
+
+        var stored = core.Reader.GetRecurringTransactions().Single();
+        Assert.True(stored.ConfirmEach);
+        Assert.Equal([new DateOnly(2026, 9, 5)], stored.SkippedDates);
+
+        core.Sync.Rebuild();
+        var rebuilt = core.Reader.GetRecurringTransactions().Single();
+        Assert.True(rebuilt.ConfirmEach);
+        Assert.Equal([new DateOnly(2026, 9, 5)], rebuilt.SkippedDates);
+    }
+
+    [Fact]
     public async Task TwoComputersGeneratingTheSameTemplate_EndWithOneTransactionPerDate()
     {
         var a = NewCore();

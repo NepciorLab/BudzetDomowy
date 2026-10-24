@@ -12,10 +12,10 @@ public static class CategoryHelpers
     public const string PathSeparator = " › ";
 
     /// <summary>
-    /// Flattens categories depth-first (parents before their children, siblings by SortOrder then name).
+    /// Flattens categories depth-first (parents before their children, siblings by SortOrder then name, or alphabetically for pick lists).
     /// Orphans (parent missing) are listed as roots.
     /// </summary>
-    public static IReadOnlyList<CategoryOption> Flatten(IEnumerable<Category> categories, Func<Category, bool>? include = null)
+    public static IReadOnlyList<CategoryOption> Flatten(IEnumerable<Category> categories, Func<Category, bool>? include = null, bool alphabetical = false)
     {
         var all = categories.ToList();
         var ids = all.Select(c => c.Id).ToHashSet();
@@ -24,7 +24,10 @@ public static class CategoryHelpers
 
         void Walk(Guid parent, string prefix, int depth)
         {
-            foreach (var c in byParent[parent].OrderBy(c => c.SortOrder).ThenBy(c => c.Name, StringComparer.CurrentCultureIgnoreCase))
+            var siblings = alphabetical
+                ? byParent[parent].OrderBy(c => c.Name, StringComparer.CurrentCultureIgnoreCase)
+                : byParent[parent].OrderBy(c => c.SortOrder).ThenBy(c => c.Name, StringComparer.CurrentCultureIgnoreCase);
+            foreach (var c in siblings)
             {
                 var name = prefix.Length == 0 ? c.Name : prefix + PathSeparator + c.Name;
                 if (include is null || include(c)) result.Add(new CategoryOption(c, name, depth));
@@ -38,7 +41,7 @@ public static class CategoryHelpers
 
     /// <summary>Categories usable for new entries of the given transaction type (not archived, matching type).</summary>
     public static IReadOnlyList<CategoryOption> ForEntry(IEnumerable<Category> categories, TransactionType type) =>
-        Flatten(categories, c => !c.IsArchived && Matches(c.Type, type));
+        Flatten(categories, c => !c.IsArchived && Matches(c.Type, type), alphabetical: true);
 
     public static bool Matches(CategoryType categoryType, TransactionType type) =>
         categoryType == CategoryType.Both

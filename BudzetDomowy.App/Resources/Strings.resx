@@ -409,15 +409,15 @@ Del – usuń zaznaczone transakcje</value></data>
   <data name="DiagRebuildDone" xml:space="preserve"><value>Baza odbudowana z dzienników. Wczytano zdarzeń: {0}.</value></data>
   <data name="DiagRebuildFailed" xml:space="preserve"><value>Nie udało się odbudować bazy. Szczegóły zapisano w dzienniku.</value></data>
   <data name="SettingsBackgroundHeading" xml:space="preserve"><value>Szybkie dodawanie spoza programu</value></data>
-  <data name="SettingsBackgroundOption" xml:space="preserve"><value>Włącz skrót Ctrl+Alt+B i ikonę w zasobniku systemowym</value></data>
+  <data name="SettingsBackgroundOption" xml:space="preserve"><value>Włącz globalny skrót szybkiego dodawania i ikonę w zasobniku systemowym</value></data>
   <data name="SettingsBackgroundHint" xml:space="preserve"><value>Skrót lub kliknięcie ikony otwiera małe okno szybkiego dodania. Domyślnie wyłączone.</value></data>
-  <data name="BackgroundHotkeyTaken" xml:space="preserve"><value>Nie udało się zarejestrować skrótu Ctrl+Alt+B – prawdopodobnie używa go inny program ({0}).</value></data>
-  <data name="TrayQuickAdd" xml:space="preserve"><value>Szybkie dodanie (Ctrl+Alt+B)</value></data>
+  <data name="BackgroundHotkeyTaken" xml:space="preserve"><value>Nie udało się zarejestrować skrótu {0} – prawdopodobnie używa go inny program ({1}).</value></data>
+  <data name="TrayQuickAdd" xml:space="preserve"><value>Szybkie dodanie</value></data>
   <data name="TrayOpen" xml:space="preserve"><value>Otwórz program</value></data>
   <data name="TrayExit" xml:space="preserve"><value>Zakończ</value></data>
   <data name="QuickWindowTitle" xml:space="preserve"><value>Szybkie dodanie</value></data>
   <data name="FooterVersionTip" xml:space="preserve"><value>Wersja programu</value></data>
-  <data name="ShortcutsIntro" xml:space="preserve"><value>Cały program da się obsłużyć z klawiatury. Skróty działają w całym oknie, o ile nie zaznaczono inaczej.</value></data>
+  <data name="ShortcutsIntro" xml:space="preserve"><value>Cały program da się obsłużyć z klawiatury. Skróty działają w całym oknie, o ile nie zaznaczono inaczej. Klawisze oznaczone przyciskiem „Zmień…” możesz ustawić po swojemu.</value></data>
   <data name="KeyEnter" xml:space="preserve"><value>Przejdź do następnego pola paska dodawania; na przycisku „Dodaj” zapisuje wpis</value></data>
   <data name="KeyCtrlEnter" xml:space="preserve"><value>Zapisz wpis z dowolnego pola paska dodawania</value></data>
   <data name="KeyTab" xml:space="preserve"><value>Następne / poprzednie pole</value></data>
@@ -427,7 +427,7 @@ Del – usuń zaznaczone transakcje</value></data>
   <data name="KeyF4" xml:space="preserve"><value>Przejdź do pola kursu (gdy wybrana jest waluta obca)</value></data>
   <data name="KeyCtrlL" xml:space="preserve"><value>Przejdź do pola Kwota</value></data>
   <data name="KeyCtrlZ" xml:space="preserve"><value>Cofnij ostatnią operację, gdy widać komunikat z przyciskiem „Cofnij”</value></data>
-  <data name="KeyCtrlDigits" xml:space="preserve"><value>Przełącz ekrany: Pulpit, Transakcje, Budżety, Wydarzenia, Wpisy cykliczne, Raporty, Ustawienia</value></data>
+  <data name="KeyCtrlDigitsOld" xml:space="preserve"><value>Przełącz ekrany: Pulpit, Transakcje, Budżety, Wydarzenia, Wpisy cykliczne, Raporty, Ustawienia</value></data>
   <data name="KeyDel" xml:space="preserve"><value>Usuń zaznaczone transakcje (na ekranie Transakcje)</value></data>
   <data name="KeyF1" xml:space="preserve"><value>Pokaż tę listę skrótów</value></data>
   <data name="KeyGlobal" xml:space="preserve"><value>Szybkie dodanie z dowolnego programu (po włączeniu w Ustawieniach → Ogólne)</value></data>
@@ -463,9 +463,8 @@ Del – usuń zaznaczone transakcje</value></data>
   <data name="PeriodNext" xml:space="preserve"><value>Następny okres (Alt + →)</value></data>
   <data name="PeriodWeekTitle" xml:space="preserve"><value>Tydzień {0} · {1} – {2}</value></data>
   <data name="PeriodRangeTitle" xml:space="preserve"><value>{0} – {1}</value></data>
-  <data name="KeyAltArrows" xml:space="preserve"><value>Poprzedni / następny tydzień, miesiąc lub rok na ekranie, który to pokazuje</value></data>
   <data name="KeyCtrlK" xml:space="preserve"><value>Zmień kategorię zaznaczonych transakcji</value></data>
-  <data name="KeyEscTable" xml:space="preserve"><value>Odznacz zaznaczone pozycje w tabeli transakcji</value></data>
+  <data name="KeyEscTable" xml:space="preserve"><value>Ekran Transakcje: odznacz zaznaczone wpisy, a potem wyczyść filtry</value></data>
   <data name="ReportTabOverview" xml:space="preserve"><value>Przegląd</value></data>
   <data name="ReportTabCompare" xml:space="preserve"><value>Porównania</value></data>
   <data name="ReportTabPlaces" xml:space="preserve"><value>Miejsca</value></data>
@@ -496,4 +495,71 @@ Del – usuń zaznaczone transakcje</value></data>
   <data name="AvgTotal" xml:space="preserve"><value>Suma w okresie</value></data>
   <data name="ChartColumns" xml:space="preserve"><value>Słupkowy</value></data>
   <data name="ChartLines" xml:space="preserve"><value>Liniowy</value></data>
+  <data name="SettingsAppearance" xml:space="preserve"><value>Wygląd</value></data>
+  <data name="SettingsScale" xml:space="preserve"><value>Skala interfejsu</value></data>
+  <data name="SettingsScaleHint" xml:space="preserve"><value>Powiększa lub zmniejsza cały program; działa od razu.</value></data>
+  <data name="ScaleSmall" xml:space="preserve"><value>Mały</value></data>
+  <data name="ScaleMedium" xml:space="preserve"><value>Średni</value></data>
+  <data name="ScaleLarge" xml:space="preserve"><value>Duży</value></data>
+  <data name="SettingsGraphics" xml:space="preserve"><value>Grafika</value></data>
+  <data name="SettingsMarker" xml:space="preserve"><value>Symbol koloru kategorii</value></data>
+  <data name="MarkerCircle" xml:space="preserve"><value>Kółko</value></data>
+  <data name="MarkerSquare" xml:space="preserve"><value>Kwadrat</value></data>
+  <data name="MarkerBar" xml:space="preserve"><value>Pionowa kreska</value></data>
+  <data name="SettingsAmounts" xml:space="preserve"><value>Kwoty</value></data>
+  <data name="SettingsShowMinus" xml:space="preserve"><value>Pokazuj znak „−” przy wydatkach</value></data>
+  <data name="SettingsColorAmounts" xml:space="preserve"><value>Koloruj kwoty (wydatki na czerwono, przychody na zielono)</value></data>
+  <data name="KeyGoTo" xml:space="preserve"><value>Przejdź do ekranu: {0}</value></data>
+  <data name="KeyPrevPeriod" xml:space="preserve"><value>Poprzedni tydzień, miesiąc lub rok na ekranie, który to pokazuje</value></data>
+  <data name="KeyNextPeriod" xml:space="preserve"><value>Następny tydzień, miesiąc lub rok na ekranie, który to pokazuje</value></data>
+  <data name="KeyInTable" xml:space="preserve"><value>w tabeli</value></data>
+  <data name="ShortcutChange" xml:space="preserve"><value>Zmień…</value></data>
+  <data name="ShortcutReset" xml:space="preserve"><value>Domyślny</value></data>
+  <data name="ShortcutPress" xml:space="preserve"><value>Naciśnij nowy skrót (Esc anuluje)…</value></data>
+  <data name="ShortcutUsedBy" xml:space="preserve"><value>Ten skrót ma już: {0}. Najpierw zmień tamten.</value></data>
+  <data name="ShortcutReserved" xml:space="preserve"><value>Ten skrót jest zarezerwowany przez program lub system.</value></data>
+  <data name="ShortcutNeedsModifier" xml:space="preserve"><value>Skrót musi zawierać Ctrl lub Alt (albo być klawiszem funkcyjnym, Del lub Ins).</value></data>
+  <data name="RecurConfirmEach" xml:space="preserve"><value>Potwierdzaj wykonanie</value></data>
+  <data name="RecurConfirmEachTip" xml:space="preserve"><value>Przy każdym terminie program zapyta, czy to zdarzenie miało miejsce, i doda wpis dopiero po potwierdzeniu.</value></data>
+  <data name="RecurPromptTitle" xml:space="preserve"><value>Wpis cykliczny</value></data>
+  <data name="RecurPromptQuestion" xml:space="preserve"><value>Czy to zdarzenie miało miejsce?</value></data>
+  <data name="RecurPromptHint" xml:space="preserve"><value>Tak – wpis zostanie dodany. Nie – ten termin zostanie pominięty i program nie zapyta o niego ponownie. Później – zapyta przy następnym uruchomieniu.</value></data>
+  <data name="RecurPromptYes" xml:space="preserve"><value>Tak</value></data>
+  <data name="RecurPromptNo" xml:space="preserve"><value>Nie</value></data>
+  <data name="RecurPromptLater" xml:space="preserve"><value>Później</value></data>
+  <data name="RecurPromptNoName" xml:space="preserve"><value>(bez nazwy)</value></data>
+  <data name="RecurPostponed" xml:space="preserve"><value>Pytania odłożone na później: {0}.</value></data>
+  <data name="ChartAverages" xml:space="preserve"><value>Średnie</value></data>
+  <data name="ChartAveragesTip" xml:space="preserve"><value>Dla każdego roku średnia miesięczna narastająco: styczeń to styczeń, luty to średnia stycznia i lutego, marzec – trzech pierwszych miesięcy itd.</value></data>
+  <data name="CompareTitleAverages" xml:space="preserve"><value>{0} – {1} – średnia miesięczna narastająco</value></data>
+  <data name="SettingsUpdatesHeading" xml:space="preserve"><value>Aktualizacje</value></data>
+  <data name="SettingsAutoUpdate" xml:space="preserve"><value>Automatycznie sprawdzaj aktualizacje (GitHub) przy uruchomieniu</value></data>
+  <data name="SettingsVersionIs" xml:space="preserve"><value>Wersja programu:</value></data>
+  <data name="UpdateCheckNow" xml:space="preserve"><value>Sprawdź teraz</value></data>
+  <data name="UpdateInstallNow" xml:space="preserve"><value>Pobierz i zainstaluj</value></data>
+  <data name="UpdateChecking" xml:space="preserve"><value>Sprawdzam…</value></data>
+  <data name="UpdateDownloading" xml:space="preserve"><value>Pobieram i instaluję…</value></data>
+  <data name="UpdateUpToDate" xml:space="preserve"><value>Masz najnowszą wersję.</value></data>
+  <data name="UpdateAvailable" xml:space="preserve"><value>Dostępna jest nowa wersja: {0}.</value></data>
+  <data name="UpdateNotFound" xml:space="preserve"><value>Nie znaleziono wydania w repozytorium. Jeśli repozytorium jest prywatne, wpisz poniżej token dostępu GitHub (tylko do odczytu).</value></data>
+  <data name="UpdateFailed" xml:space="preserve"><value>Nie udało się sprawdzić aktualizacji: {0}</value></data>
+  <data name="UpdateIncomplete" xml:space="preserve"><value>Pobrany plik jest niekompletny.</value></data>
+  <data name="UpdateNoExeInArchive" xml:space="preserve"><value>W pobranym archiwum nie ma pliku BudzetDomowy.exe.</value></data>
+  <data name="UpdateNotAProgram" xml:space="preserve"><value>Pobrany plik nie jest programem.</value></data>
+  <data name="UpdateNotNewer" xml:space="preserve"><value>Pobrany program nie jest nowszy od uruchomionego.</value></data>
+  <data name="UpdateNoAsset" xml:space="preserve"><value>Wydanie nie zawiera pliku programu (BudzetDomowy.exe lub archiwum .zip).</value></data>
+  <data name="UpdateCannotInstall" xml:space="preserve"><value>Ten program nie może sam siebie zastąpić (uruchomiono go inaczej niż z pliku .exe).</value></data>
+  <data name="UpdateInstallFailed" xml:space="preserve"><value>Instalacja aktualizacji nie powiodła się: {0}</value></data>
+  <data name="UpdateInstalled" xml:space="preserve"><value>Zainstalowano. Program uruchomi się ponownie.</value></data>
+  <data name="UpdatePromptTitle" xml:space="preserve"><value>Aktualizacja programu</value></data>
+  <data name="UpdatePromptText" xml:space="preserve"><value>Dostępna jest nowa wersja programu: {0} (masz {1}).
+
+Pobrać i zainstalować ją teraz? Program uruchomi się ponownie.</value></data>
+  <data name="UpdateTokenHint" xml:space="preserve"><value>Repozytorium prywatne: token dostępu GitHub (Fine-grained, tylko odczyt zawartości). Jest zapisywany w ustawieniach w postaci chronionej dla Twojego konta Windows.</value></data>
+  <data name="UpdateTokenPlaceholder" xml:space="preserve"><value>token GitHub (opcjonalnie)</value></data>
+  <data name="UpdateTokenSave" xml:space="preserve"><value>Zapisz token</value></data>
+  <data name="UpdateTokenSaved" xml:space="preserve"><value>Token zapisany.</value></data>
+  <data name="UpdateTokenRemoved" xml:space="preserve"><value>Token usunięty.</value></data>
+  <data name="PeriodAll" xml:space="preserve"><value>Wszystko</value></data>
+  <data name="PeriodAllTitle" xml:space="preserve"><value>Wszystkie wpisy</value></data>
 </root>

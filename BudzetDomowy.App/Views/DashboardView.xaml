@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:ui="http://schemas.modernwpf.com/2019"
              xmlns:infra="clr-namespace:BudzetDomowy.App.Infrastructure"
+             xmlns:controls="clr-namespace:BudzetDomowy.App.Controls"
              xmlns:lvc="clr-namespace:LiveChartsCore.SkiaSharpView.WPF;assembly=LiveChartsCore.SkiaSharpView.WPF">
     <UserControl.Resources>
         <infra:BoolToVisibilityConverter x:Key="BoolToVis" />
@@ -120,7 +121,7 @@
                                                     <ColumnDefinition Width="54" />
                                                     <ColumnDefinition Width="14" />
                                                 </Grid.ColumnDefinitions>
-                                                <Ellipse Width="12" Height="12" Fill="{Binding Color, Converter={StaticResource HexToBrush}}" HorizontalAlignment="Left" />
+                                                <controls:CategoryMarker Size="12" Color="{Binding Color}" HorizontalAlignment="Left" />
                                                 <TextBlock Grid.Column="1" Text="{Binding Name}" TextTrimming="CharacterEllipsis" />
                                                 <TextBlock Grid.Column="2" Text="{Binding AmountText}" FontWeight="SemiBold" Margin="8,0" />
                                                 <TextBlock Grid.Column="3" Text="{Binding ShareText}" TextAlignment="Right" Opacity="0.7" />
@@ -214,20 +215,16 @@
                                     <TextBlock Text="{Binding Date, StringFormat='dd.MM.yyyy'}" Opacity="0.7" />
                                     <TextBlock Grid.Column="1" Text="{Binding Place}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
                                     <StackPanel Grid.Column="2" Orientation="Horizontal">
-                                        <Ellipse Width="10" Height="10" Margin="0,0,8,0" Fill="{Binding CategoryColor, Converter={StaticResource HexToBrush}}" />
+                                        <controls:CategoryMarker Size="10" Color="{Binding CategoryColor}" Margin="0,0,8,0" />
                                         <TextBlock Text="{Binding Category}" TextTrimming="CharacterEllipsis" />
                                     </StackPanel>
                                     <TextBlock Grid.Column="3" Text="{Binding AmountText}" TextAlignment="Right" FontWeight="SemiBold">
-                                        <TextBlock.Style>
-                                            <Style TargetType="TextBlock">
-                                                <Setter Property="Foreground" Value="{StaticResource ExpenseBrush}" />
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding IsIncome}" Value="True">
-                                                        <Setter Property="Foreground" Value="{StaticResource IncomeBrush}" />
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </TextBlock.Style>
+                                        <TextBlock.Foreground>
+                                            <MultiBinding Converter="{x:Static infra:AmountBrushConverter.Instance}">
+                                                <Binding Path="IsIncome" />
+                                                <Binding Path="ColorAmounts" Source="{x:Static infra:UiPreferences.Instance}" />
+                                            </MultiBinding>
+                                        </TextBlock.Foreground>
                                     </TextBlock>
                                 </Grid>
                             </DataTemplate>

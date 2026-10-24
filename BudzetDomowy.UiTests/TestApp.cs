@@ -1,3 +1,4 @@
+using BudzetDomowy.App.Infrastructure.Updates;
 using BudzetDomowy.App;
 using BudzetDomowy.App.Infrastructure;
 using BudzetDomowy.App.ViewModels;
@@ -50,6 +51,46 @@ public sealed class FakeDialogs : IFileDialogs
     public string? PickFolder(string title, string? initialFolder) => NextFolder;
 }
 
+/// <summary>Answers the "did this happen?" questions from a queue instead of opening a window.</summary>
+public sealed class FakeRecurringPrompt : IRecurringPrompt
+{
+    public bool CanAsk { get; set; } = true;
+    public Queue<RecurringAnswer> Answers { get; } = new();
+    public List<RecurringQuestion> Asked { get; } = [];
+
+    public RecurringAnswer Ask(RecurringQuestion question)
+    {
+        Asked.Add(question);
+        return Answers.Count > 0 ? Answers.Dequeue() : RecurringAnswer.Later;
+    }
+}
+
+/// <summary>Answers GitHub requests from a table of canned responses; nothing goes to the network.</summary>
+public sealed class FakeGitHub : System.Net.Http.HttpMessageHandler
+{
+    public Dictionary<string, (System.Net.HttpStatusCode Status, byte[] Body)> Responses { get; } = [];
+    public List<System.Net.Http.HttpRequestMessage> Requests { get; } = [];
+
+    protected override Task<System.Net.Http.HttpResponseMessage> SendAsync(System.Net.Http.HttpRequestMessage request, CancellationToken cancellationToken)
+    {
+        Requests.Add(request);
+        var (status, body) = Responses.GetValueOrDefault(request.RequestUri!.ToString(), (System.Net.HttpStatusCode.NotFound, []));
+        return Task.FromResult(new System.Net.Http.HttpResponseMessage(status) { Content = new System.Net.Http.ByteArrayContent(body) });
+    }
+}
+
+public sealed class FakeUpdatePrompt : IUpdatePrompt
+{
+    public bool Answer { get; set; }
+    public int Asked { get; private set; }
+
+    public bool Confirm(ReleaseInfo release, Version current)
+    {
+        Asked++;
+        return Answer;
+    }
+}
+
 /// <summary>Counts restarts instead of starting a new process.</summary>
 public sealed class FakeRestarter : IAppRestarter
 {
@@ -90,6 +131,16 @@ public sealed class TestApp : IDisposable
             .AddSingleton<IBackgroundHost, FakeHost>()
             .AddSingleton<IFileDialogs, FakeDialogs>()
             .AddSingleton<IAppRestarter, FakeRestarter>()
+            .AddSingleton<FakeGitHub>()
+            .AddSingleton<FakeUpdatePrompt>()
+            .AddSingleton<IUpdatePrompt>(sp => sp.GetRequiredService<FakeUpdatePrompt>())
+            .AddSingleton(sp => new GitHubReleases(new System.Net.Http.HttpClient(sp.GetRequiredService<FakeGitHub>()),
+                () => TokenProtector.Unprotect(sp.GetRequiredService<SettingsStore>().Current.UpdateToken)))
+            .AddSingleton(sp => new UpdateService(sp.GetRequiredService<SettingsStore>(), sp.GetRequiredService<GitHubReleases>(),
+                sp.GetRequiredService<IUpdatePrompt>(), sp.GetRequiredService<IAppRestarter>(), Path.Combine(_root, "BudzetDomowy.exe"), new Version(0, 1, 0)))
+            .AddSingleton<FakeRecurringPrompt>()
+            .AddSingleton<IRecurringPrompt>(sp => sp.GetRequiredService<FakeRecurringPrompt>())
+            .AddSingleton<RecurringRunner>()
             .AddSingleton(new ImportMappingStore(Path.Combine(_root, "import-mapping.json")))
             .AddSingleton<ExportActions>()
             .AddTransient<ImportViewModel>()

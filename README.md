@@ -2,7 +2,7 @@
 
 Program dla Windows 11 do wpisywania przychodów i wydatków oraz pilnowania budżetu domowego. Pracują w nim dwie osoby na dwóch komputerach na wspólnych danych. Interfejs jest po polsku, walutą bazową jest złoty.
 
-Wersja **0.2.0**.
+Wersja **0.3.0**.
 
 ## Uruchomienie
 
@@ -40,12 +40,24 @@ Pasek **szybkiego dodawania** u góry jest widoczny na każdym ekranie: Data, Kw
 * Kwotę w obcej walucie wpisz z kodem, np. `12,50 EUR`. Kurs średni NBP (tabela A) z ostatniego dnia roboczego przed datą wpisu pobierze się sam; możesz go zmienić ręcznie (F4). Bez internetu program użyje ostatniego znanego kursu albo poprosi o kurs.
 * Po zapisie pojawia się komunikat z przyciskiem **Cofnij** (też Ctrl+Z).
 * **Alt+←** i **Alt+→** przesuwają ekran Transakcje, Pulpit, Budżety i Raporty do poprzedniego i następnego tygodnia, miesiąca lub roku.
-* W tabeli Transakcje: **Esc** odznacza zaznaczone wpisy, **Del** je usuwa, **Ctrl+K** zmienia kategorię zaznaczonych (to samo jest pod prawym przyciskiem myszy).
+* W tabeli Transakcje: **Esc** odznacza zaznaczone wpisy (a gdy nic nie jest zaznaczone – czyści filtry), **Del** usuwa zaznaczone, **Ctrl+K** zmienia ich kategorię (to samo jest pod prawym przyciskiem myszy).
+* Podwójne kliknięcie w polu z kwotą zaznacza całą kwotę, razem z groszami.
+* Klawisze skrótów można zmienić: Ustawienia → Skróty klawiszowe → *Zmień…* (program nie pozwoli przypisać klawisza, który ma już inne polecenie albo który jest zarezerwowany, np. Ctrl+C).
 * Pełna lista skrótów: **F1** albo Ustawienia → Skróty klawiszowe.
 
-Ekrany: **Pulpit** (miesiąc, kafelki, wykres kategorii z podkategoriami, paski budżetów, ostatnie wpisy, trwające wydarzenie), **Transakcje** (edycja w miejscu, filtry, przeglądanie tygodniowe, miesięczne, roczne albo w dowolnym zakresie, domyślnie bieżący miesiąc; na dole sumy wszystkich pasujących wpisów i osobno zaznaczonych; ikona Excela w prawym górnym rogu eksportuje to, co widać), **Budżety** (limity miesięczne z historią zmian), **Wydarzenia** (np. wakacje: koszty osobno, koszt na dzień, porównanie z planem), **Wpisy cykliczne** (osobny ekran: dodawanie i edycja), **Raporty** (zakładki: *Przegląd* – miesiąc lub rok, porównanie z poprzednim okresem, trend, średnie na dzień, tydzień i miesiąc dla wybranej kategorii; *Porównania* – lata obok siebie miesiąc po miesiącu albo wybrane miesiące obok siebie kategoria po kategorii, osobno dla wydatków i przychodów; *Miejsca* – sumy według miejsc w wybranym okresie), **Ustawienia** (kategorie z wyborem ikony z listy, import i eksport, diagnostyka).
+Ekrany: **Pulpit** (miesiąc, kafelki, wykres kategorii z podkategoriami, paski budżetów, ostatnie wpisy, trwające wydarzenie), **Transakcje** (edycja w miejscu, filtry, przeglądanie tygodniowe, miesięczne, roczne, całe (*Wszystko*) albo w dowolnym zakresie, domyślnie bieżący miesiąc; na dole sumy wszystkich pasujących wpisów, a obok po prawej zaznaczonych; ikona Excela w prawym górnym rogu eksportuje to, co widać), **Budżety** (limity miesięczne z historią zmian), **Wydarzenia** (np. wakacje: koszty osobno, koszt na dzień, porównanie z planem), **Wpisy cykliczne** (osobny ekran: dodawanie i edycja; pole *Potwierdzaj wykonanie* sprawia, że przy każdym terminie program pyta „czy to miało miejsce?”: Tak dodaje wpis, Nie pomija ten termin na zawsze, Później pyta przy następnym uruchomieniu; pytania pokazują się tylko, gdy okno programu jest widoczne), **Raporty** (zakładki: *Przegląd* – miesiąc lub rok, porównanie z poprzednim okresem, trend, średnie na dzień, tydzień i miesiąc dla wybranej kategorii; *Porównania* – lata obok siebie miesiąc po miesiącu albo wybrane miesiące obok siebie kategoria po kategorii, osobno dla wydatków i przychodów, wykres słupkowy, liniowy albo *Średnie* (dla każdego roku średnia miesięczna narastająco: styczeń, średnia stycznia i lutego, średnia trzech pierwszych miesięcy…); *Miejsca* – sumy według miejsc w wybranym okresie), **Ustawienia** (wygląd, kategorie z wyborem ikony z listy i koloru, import i eksport, diagnostyka, skróty klawiszowe).
 
 Skróty ekranów: Ctrl+1 … Ctrl+7 (Pulpit, Transakcje, Budżety, Wydarzenia, Wpisy cykliczne, Raporty, Ustawienia).
+
+### Wygląd
+
+Ustawienia → **Wygląd**: motyw, skala interfejsu (mały / średni / duży, działa od razu), symbol koloru kategorii (kółko, kwadrat albo pionowa kreska), pokazywanie znaku „−” przy wydatkach i kolorowanie kwot (czerwone wydatki, zielone przychody). W palecie kolorów kategorii ptaszkiem są oznaczone kolory, które już ma jakaś kategoria.
+
+### Aktualizacje
+
+Ustawienia → Ogólne → *Automatycznie sprawdzaj aktualizacje*: kilka sekund po starcie program sprawdza najnowsze wydanie (Release) w repozytorium GitHub `NepciorLab/BudzetDomowy`. Gdy jest nowsze, pyta, czy je pobrać; po zgodzie pobiera `BudzetDomowy.exe` (albo archiwum `.zip` z tym plikiem), podmienia uruchomiony plik (stary zostaje chwilowo jako `BudzetDomowy.exe.old`) i uruchamia się ponownie. Przycisk *Sprawdź teraz* robi to samo na żądanie. Wydanie musi mieć załącznik `BudzetDomowy.exe` lub `BudzetDomowy-<wersja>.zip` i znacznik wersji w rodzaju `v0.3.0`.
+
+Repozytorium prywatne nie jest widoczne bez uwierzytelnienia: wpisz w tym samym miejscu token dostępu GitHub (Fine-grained, tylko odczyt zawartości); jest zapisywany w postaci chronionej dla Twojego konta Windows.
 
 ### Tabele i okno
 
@@ -69,7 +81,7 @@ Transakcje do **Excela** (ikona w prawym górnym rogu ekranu Transakcje: wpisy p
 
 ### Szybkie dodawanie spoza programu (opcjonalne)
 
-Ustawienia → Ogólne → *Włącz skrót Ctrl+Alt+B i ikonę w zasobniku*. Skrót i kliknięcie ikony otwierają małe okno szybkiego dodania. Domyślnie wyłączone.
+Ustawienia → Ogólne → *Włącz globalny skrót szybkiego dodawania i ikonę w zasobniku* (domyślnie Ctrl+Alt+B, można zmienić w Ustawieniach → Skróty klawiszowe). Skrót i kliknięcie ikony otwierają małe okno szybkiego dodania. Domyślnie wyłączone.
 
 ## Kopia zapasowa
 
@@ -95,6 +107,7 @@ Ustawienia → **Diagnostyka** pokazuje urządzenia, liczbę zdarzeń i rozmiary
 
 * Plik `.exe` nie jest podpisany cyfrowo (ostrzeżenie SmartScreen), nie ma instalatora ani automatycznych aktualizacji.
 * Synchronizacja była sprawdzana testami na dwóch folderach i na dwóch kopiach programu na jednym komputerze, nie na prawdziwych dwóch maszynach z OneDrive.
+* Aktualizacja z GitHuba nie była sprawdzona na prawdziwym wydaniu (repozytorium nie ma jeszcze wydań); logika jest sprawdzona testami na sztucznych odpowiedziach serwera.
 * Konflikty rozstrzyga reguła „ostatnia zmiana wygrywa” na poziomie całego wpisu: jednoczesna edycja różnych pól tej samej transakcji na dwóch komputerach zachowa tylko późniejszą wersję. Usunięcie i edycja: wygrywa późniejsze z nich.
 * Kursy walut pochodzą z tabeli A NBP (tylko waluty z tej tabeli). Zmiana daty już zapisanej transakcji w obcej walucie nie zmienia jej kursu; walutę wpisu zmienia się przez usunięcie i dodanie.
 * Dzielenie paragonu na kilka kategorii i odczyt paragonów przez AI nie są zaimplementowane (model danych jest na to przygotowany).

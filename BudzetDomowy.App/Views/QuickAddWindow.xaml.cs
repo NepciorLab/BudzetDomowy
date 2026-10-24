@@ -1,3 +1,4 @@
+using BudzetDomowy.App.Infrastructure;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -14,6 +15,7 @@ public partial class QuickAddWindow : Window
     {
         _vm = vm;
         InitializeComponent();
+        UiScaling.Attach(this);
         Bar.DataContext = vm;
         vm.Saved += OnSaved;
         Closed += (_, _) => vm.Saved -= OnSaved;

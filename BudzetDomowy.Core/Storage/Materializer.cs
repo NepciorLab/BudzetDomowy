@@ -227,12 +227,13 @@ public sealed class Materializer
             case RecurringTransaction r:
                 Exec(conn, tx, """
                     INSERT OR REPLACE INTO recurring_transactions
-                        (id, type, amount, currency_code, category_id, place, note, event_id, frequency, day, start_date, end_date, last_generated_date)
-                    VALUES ($id, $type, $amt, $cur, $cat, $place, $note, $ev, $freq, $day, $start, $end, $last)
+                        (id, type, amount, currency_code, category_id, place, note, event_id, frequency, day, start_date, end_date, last_generated_date, confirm_each, skipped_dates)
+                    VALUES ($id, $type, $amt, $cur, $cat, $place, $note, $ev, $freq, $day, $start, $end, $last, $confirm, $skipped)
                     """,
                     ("$id", Id(r.Id)), ("$type", r.Type.ToString()), ("$amt", Dec(r.Amount)), ("$cur", r.CurrencyCode),
                     ("$cat", Id(r.CategoryId)), ("$place", r.Place), ("$note", r.Note), ("$ev", Id(r.EventId)), ("$freq", r.Frequency.ToString()),
-                    ("$day", r.Day), ("$start", Day(r.StartDate)), ("$end", Day(r.EndDate)), ("$last", Day(r.LastGeneratedDate)));
+                    ("$day", r.Day), ("$start", Day(r.StartDate)), ("$end", Day(r.EndDate)), ("$last", Day(r.LastGeneratedDate)),
+                    ("$confirm", r.ConfirmEach ? 1 : 0), ("$skipped", string.Join(",", r.SkippedDates.OrderBy(d => d).Select(d => Day(d)))));
                 break;
             case CategoryRule k:
                 Exec(conn, tx, """

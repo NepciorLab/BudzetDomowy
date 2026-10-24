@@ -32,15 +32,17 @@
                              Command="{Binding SetModeCommand}" CommandParameter="Month" MinWidth="0" Margin="6,0,0,0" />
                 <RadioButton Content="{infra:Str PeriodYear}" GroupName="mode" IsChecked="{Binding IsYearMode, Mode=OneWay}"
                              Command="{Binding SetModeCommand}" CommandParameter="Year" MinWidth="0" Margin="6,0,0,0" />
+                <RadioButton Content="{infra:Str PeriodAll}" GroupName="mode" IsChecked="{Binding IsAllMode, Mode=OneWay}"
+                             Command="{Binding SetModeCommand}" CommandParameter="All" MinWidth="0" Margin="6,0,0,0" />
                 <RadioButton Content="{infra:Str PeriodRange}" GroupName="mode" IsChecked="{Binding IsRangeMode, Mode=OneWay}"
                              Command="{Binding SetModeCommand}" CommandParameter="Range" MinWidth="0" Margin="6,0,20,0" />
                 <Button Content="◀" Command="{Binding PreviousCommand}" Width="40" ToolTip="{infra:Str PeriodPrevious}"
-                        Visibility="{Binding IsRangeMode, Converter={StaticResource NotVis}}" />
+                        Visibility="{Binding HasArrows, Converter={StaticResource BoolToVis}}" />
                 <TextBlock Text="{Binding PeriodTitle}" FontSize="20" FontWeight="SemiBold" MinWidth="230" TextAlignment="Center" VerticalAlignment="Center" />
                 <Button Content="▶" Command="{Binding NextCommand}" Width="40" ToolTip="{infra:Str PeriodNext}"
-                        Visibility="{Binding IsRangeMode, Converter={StaticResource NotVis}}" />
+                        Visibility="{Binding HasArrows, Converter={StaticResource BoolToVis}}" />
                 <Button Content="{infra:Str DashToday}" Command="{Binding TodayCommand}" Margin="12,0,0,0"
-                        Visibility="{Binding IsRangeMode, Converter={StaticResource NotVis}}" />
+                        Visibility="{Binding HasArrows, Converter={StaticResource BoolToVis}}" />
                 <DatePicker SelectedDate="{Binding From, Mode=TwoWay}" Width="140" Margin="8,0,0,0" ui:ControlHelper.PlaceholderText="{infra:Str FilterFrom}"
                             Visibility="{Binding IsRangeMode, Converter={StaticResource BoolToVis}}" />
                 <DatePicker SelectedDate="{Binding To, Mode=TwoWay}" Width="140" Margin="8,0,0,0" ui:ControlHelper.PlaceholderText="{infra:Str FilterTo}"
@@ -141,13 +143,15 @@
                 <DataGridTemplateColumn Header="{infra:Str ColAmount}" Width="130" SortMemberPath="Model.AmountPln">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
-                            <TextBlock x:Name="Amount" Text="{Binding AmountDisplay}" TextAlignment="Right" VerticalAlignment="Center"
-                                       Margin="8,0" FontWeight="SemiBold" Foreground="{StaticResource ExpenseBrush}" />
-                            <DataTemplate.Triggers>
-                                <DataTrigger Binding="{Binding IsIncome}" Value="True">
-                                    <Setter TargetName="Amount" Property="Foreground" Value="{StaticResource IncomeBrush}" />
-                                </DataTrigger>
-                            </DataTemplate.Triggers>
+                            <TextBlock Text="{Binding AmountDisplay}" TextAlignment="Right" VerticalAlignment="Center"
+                                       Margin="8,0" FontWeight="SemiBold">
+                                <TextBlock.Foreground>
+                                    <MultiBinding Converter="{x:Static infra:AmountBrushConverter.Instance}">
+                                        <Binding Path="IsIncome" />
+                                        <Binding Path="ColorAmounts" Source="{x:Static infra:UiPreferences.Instance}" />
+                                    </MultiBinding>
+                                </TextBlock.Foreground>
+                            </TextBlock>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                     <DataGridTemplateColumn.CellEditingTemplate>
@@ -170,8 +174,7 @@
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="8,0">
-                                <Ellipse Width="10" Height="10" Margin="0,0,8,0"
-                                         Fill="{Binding CategoryColor, Converter={StaticResource HexToBrush}}" />
+                                <controls:CategoryMarker Size="10" Color="{Binding CategoryColor}" Margin="0,0,8,0" />
                                 <TextBlock Text="{Binding CategoryIcon}" Margin="0,0,6,0" />
                                 <TextBlock Text="{Binding CategoryPath}" TextTrimming="CharacterEllipsis" />
                             </StackPanel>
@@ -227,7 +230,21 @@
                    Opacity="0.6" IsHitTestVisible="False"
                    Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVis}}" />
 
-        <StackPanel Grid.Row="3" Margin="0,10,0,0">
+        <DockPanel Grid.Row="3" Margin="0,10,0,0" LastChildFill="True">
+            <WrapPanel DockPanel.Dock="Right" Margin="16,0,0,0" VerticalAlignment="Top" Visibility="{Binding HasSelection, Converter={StaticResource BoolToVis}}">
+                <Border CornerRadius="14" Padding="14,5" Margin="0,0,8,0" Background="{DynamicResource SystemControlBackgroundAccentBrush}">
+                    <TextBlock Text="{Binding SelectionLabel}" FontWeight="SemiBold" Foreground="White" />
+                </Border>
+                <Border CornerRadius="14" Padding="14,5" Margin="0,0,8,0" Background="#33E53935">
+                    <TextBlock Text="{Binding SelectionExpenseText}" FontWeight="SemiBold" Foreground="{StaticResource ExpenseBrush}" />
+                </Border>
+                <Border CornerRadius="14" Padding="14,5" Margin="0,0,8,0" Background="#3343A047">
+                    <TextBlock Text="{Binding SelectionIncomeText}" FontWeight="SemiBold" Foreground="{StaticResource IncomeBrush}" />
+                </Border>
+                <Border CornerRadius="14" Padding="14,5" Background="#33F9A825">
+                    <TextBlock Text="{Binding SelectionBalanceText}" FontWeight="Bold" />
+                </Border>
+            </WrapPanel>
             <WrapPanel>
                 <Border CornerRadius="14" Padding="14,5" Margin="0,0,8,6" Background="{DynamicResource SystemControlBackgroundListLowBrush}">
                     <TextBlock Text="{Binding AllLabel}" FontWeight="SemiBold" />
@@ -242,20 +259,6 @@
                     <TextBlock Text="{Binding AllBalanceText}" FontWeight="Bold" />
                 </Border>
             </WrapPanel>
-            <WrapPanel Visibility="{Binding HasSelection, Converter={StaticResource BoolToVis}}">
-                <Border CornerRadius="14" Padding="14,5" Margin="0,0,8,0" Background="{DynamicResource SystemControlBackgroundAccentBrush}">
-                    <TextBlock Text="{Binding SelectionLabel}" FontWeight="SemiBold" Foreground="White" />
-                </Border>
-                <Border CornerRadius="14" Padding="14,5" Margin="0,0,8,0" Background="#33E53935">
-                    <TextBlock Text="{Binding SelectionExpenseText}" FontWeight="SemiBold" Foreground="{StaticResource ExpenseBrush}" />
-                </Border>
-                <Border CornerRadius="14" Padding="14,5" Margin="0,0,8,0" Background="#3343A047">
-                    <TextBlock Text="{Binding SelectionIncomeText}" FontWeight="SemiBold" Foreground="{StaticResource IncomeBrush}" />
-                </Border>
-                <Border CornerRadius="14" Padding="14,5" Background="#33F9A825">
-                    <TextBlock Text="{Binding SelectionBalanceText}" FontWeight="Bold" />
-                </Border>
-            </WrapPanel>
-        </StackPanel>
+        </DockPanel>
     </Grid>
 </UserControl>

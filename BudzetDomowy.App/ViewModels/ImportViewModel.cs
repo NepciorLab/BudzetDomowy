@@ -305,7 +305,7 @@ public sealed partial class ImportViewModel : ObservableObject
     {
         var suggested = _core.Import.SuggestMapping(plan, _store.Load());
         var categories = _core.Reader.GetCategories();
-        var all = CategoryHelpers.Flatten(categories, c => !c.IsArchived);
+        var all = CategoryHelpers.Flatten(categories, c => !c.IsArchived, alphabetical: true);
 
         CategoryRows.Clear();
         foreach (var (name, count) in plan.SourceCategories)

@@ -9,7 +9,14 @@ using CommunityToolkit.Mvvm.Input;
 
 namespace BudzetDomowy.App.ViewModels;
 
-public sealed record NavItem(string Key, string Title, string Glyph, string Shortcut);
+public sealed partial class NavItem(string key, string title, string glyph, string shortcut) : ObservableObject
+{
+    public string Key { get; } = key;
+    public string Title { get; } = title;
+    public string Glyph { get; } = glyph;
+
+    [ObservableProperty] private string _shortcut = shortcut;
+}
 
 public sealed class PlaceholderViewModel
 {
@@ -45,9 +52,10 @@ public sealed partial class MainViewModel : ObservableObject
 
     public MainViewModel(BudgetCore core, QuickAddViewModel quickAdd, TransactionsViewModel transactions,
         SettingsViewModel settings, EventsViewModel events, DashboardViewModel dashboard, BudgetsViewModel budgets,
-        ReportsViewModel reports, RecurringViewModel recurring, ToastService toast)
+        ReportsViewModel reports, RecurringViewModel recurring, ToastService toast, RecurringRunner runner)
     {
         Core = core;
+        _runner = runner;
         QuickAdd = quickAdd;
         Settings = settings;
         VersionLabel = "v" + (typeof(MainViewModel).Assembly.GetCustomAttributes(typeof(System.Reflection.AssemblyInformationalVersionAttribute), false)
@@ -56,13 +64,13 @@ public sealed partial class MainViewModel : ObservableObject
 
         NavItems =
         [
-            new("dashboard", Res.Get("NavDashboard"), "", "Ctrl+1"),
-            new("transactions", Res.Get("NavTransactions"), "", "Ctrl+2"),
-            new("budgets", Res.Get("NavBudgets"), "", "Ctrl+3"),
-            new("events", Res.Get("NavEvents"), "", "Ctrl+4"),
-            new("recurring", Res.Get("NavRecurring"), "", "Ctrl+5"),
-            new("reports", Res.Get("NavReports"), "", "Ctrl+6"),
-            new("settings", Res.Get("NavSettings"), "", "Ctrl+7"),
+            new("dashboard", Res.Get("NavDashboard"), "", ShortcutMap.Instance.DisplayOf("Go.dashboard")),
+            new("transactions", Res.Get("NavTransactions"), "", ShortcutMap.Instance.DisplayOf("Go.transactions")),
+            new("budgets", Res.Get("NavBudgets"), "", ShortcutMap.Instance.DisplayOf("Go.budgets")),
+            new("events", Res.Get("NavEvents"), "", ShortcutMap.Instance.DisplayOf("Go.events")),
+            new("recurring", Res.Get("NavRecurring"), "", ShortcutMap.Instance.DisplayOf("Go.recurring")),
+            new("reports", Res.Get("NavReports"), "", ShortcutMap.Instance.DisplayOf("Go.reports")),
+            new("settings", Res.Get("NavSettings"), "", ShortcutMap.Instance.DisplayOf("Go.settings")),
         ];
 
         _pages = new Dictionary<string, object>
@@ -84,6 +92,10 @@ public sealed partial class MainViewModel : ObservableObject
         _clock.Tick += (_, _) => UpdateToday();
         _clock.Start();
 
+        ShortcutMap.Instance.Changed += _ =>
+        {
+            foreach (var item in NavItems) item.Shortcut = ShortcutMap.Instance.DisplayOf(ShortcutMap.GoPrefix + item.Key);
+        };
         SelectedNav = NavItems[1];
         core.Sync.StatusChanged += (_, s) => Application.Current.Dispatcher.BeginInvoke(() => ShowStatus(s));
         ShowStatus(core.Sync.Status);
@@ -97,12 +109,13 @@ public sealed partial class MainViewModel : ObservableObject
     }
 
     private readonly System.Windows.Threading.DispatcherTimer _recurringTimer;
+    private readonly RecurringRunner _runner;
 
     private async Task GenerateRecurringAsync()
     {
         try
         {
-            var run = await Core.Recurring.GenerateDueAsync(DateOnly.FromDateTime(DateTime.Today));
+            var run = await _runner.RunAsync(DateOnly.FromDateTime(DateTime.Today));
             if (run.Created > 0) Toast.Show(Res.Format("RecurGeneratedToast", run.Created));
         }
         catch (UpdateRequiredException) { /* shown by the sync indicator */ }

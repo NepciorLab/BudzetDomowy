@@ -53,6 +53,7 @@ public sealed partial class DashboardViewModel : ObservableObject, IPeriodNaviga
     public DashboardViewModel(BudgetCore core, DataHub hub)
     {
         _core = core;
+        UiPreferences.Instance.OnAppearanceChanged(this, self => self.Reload());
         hub.Changed += (_, _) => Reload();
         Reload();
     }
@@ -111,7 +112,7 @@ public sealed partial class DashboardViewModel : ObservableObject, IPeriodNaviga
             var cat = t.CategoryId is { } id ? cats.FirstOrDefault(c => c.Id == id) : null;
             return new RecentRow(t.Date.ToDateTime(TimeOnly.MinValue), t.Place.Length > 0 ? t.Place : t.Note,
                 cat?.Name ?? "", cat?.Color ?? "",
-                (t.Type == TransactionType.Income ? "+" : "−") + Money(t.AmountPln), t.Type == TransactionType.Income);
+                UiPreferences.Instance.SignOf(t.Type == TransactionType.Income) + Money(t.AmountPln), t.Type == TransactionType.Income);
         }).ToList();
 
         BuildEvent(all, cats, today);

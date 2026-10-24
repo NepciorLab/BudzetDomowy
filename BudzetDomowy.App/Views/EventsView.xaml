@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:ui="http://schemas.modernwpf.com/2019"
              xmlns:infra="clr-namespace:BudzetDomowy.App.Infrastructure"
+             xmlns:controls="clr-namespace:BudzetDomowy.App.Controls"
              xmlns:lvc="clr-namespace:LiveChartsCore.SkiaSharpView.WPF;assembly=LiveChartsCore.SkiaSharpView.WPF">
     <UserControl.Resources>
         <infra:BoolToVisibilityConverter x:Key="BoolToVis" />
@@ -182,7 +183,7 @@
                                             <ColumnDefinition Width="Auto" />
                                             <ColumnDefinition Width="60" />
                                         </Grid.ColumnDefinitions>
-                                        <Ellipse Width="12" Height="12" Fill="{Binding Color, Converter={StaticResource HexToBrush}}" HorizontalAlignment="Left" />
+                                        <controls:CategoryMarker Size="12" Color="{Binding Color}" HorizontalAlignment="Left" />
                                         <TextBlock Grid.Column="1" Text="{Binding Name}" TextTrimming="CharacterEllipsis" />
                                         <TextBlock Grid.Column="2" Text="{Binding AmountText}" FontWeight="SemiBold" Margin="8,0" />
                                         <TextBlock Grid.Column="3" Text="{Binding ShareText}" TextAlignment="Right" Opacity="0.7" />

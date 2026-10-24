@@ -1,3 +1,4 @@
+using BudzetDomowy.App.Infrastructure;
 using System.ComponentModel;
 using System.Windows;
 using BudzetDomowy.App.ViewModels;
@@ -13,6 +14,7 @@ public partial class ImportWindow : Window
         _vm = vm;
         DataContext = vm;
         InitializeComponent();
+        UiScaling.Attach(this);
         vm.CloseRequested += Close;
         vm.PropertyChanged += OnVmChanged;
         UpdateButtons();

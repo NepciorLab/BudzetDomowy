@@ -32,6 +32,8 @@ public class MigrationTests : IDisposable
         Exec(db, "ALTER TABLE transactions DROP COLUMN rate_date");
         Exec(db, "ALTER TABLE transactions DROP COLUMN rate_manual");
         Exec(db, "ALTER TABLE recurring_transactions DROP COLUMN place");
+        Exec(db, "ALTER TABLE recurring_transactions DROP COLUMN confirm_each");
+        Exec(db, "ALTER TABLE recurring_transactions DROP COLUMN skipped_dates");
         Exec(db, "DROP TABLE exchange_rate_coverage");
         Exec(db, "PRAGMA user_version = 1");
         SqliteConnection.ClearAllPools();

@@ -84,7 +84,7 @@ public class ViewSmokeTests
         var view = new SettingsView { DataContext = vm };
         UiHost.Layout(view, 1080, 640);
         UiHost.Render(view, 1080, 640, "settings");
-        Assert.Contains("Motyw", UiHost.Texts(view));
+        Assert.Contains("Dane", UiHost.Texts(view));
         Assert.NotEmpty(vm.Categories.Roots);
     });
 

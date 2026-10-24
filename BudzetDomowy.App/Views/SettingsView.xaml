@@ -15,10 +15,7 @@
         <TabItem Header="{infra:Str SettingsGeneral}">
             <ScrollViewer VerticalScrollBarVisibility="Auto">
                 <StackPanel Margin="0,16,0,0" MaxWidth="720" HorizontalAlignment="Left">
-                    <ComboBox ItemsSource="{Binding Themes}" SelectedItem="{Binding SelectedTheme, Mode=TwoWay}" Width="260"
-                              ui:ControlHelper.Header="{infra:Str SettingsTheme}" />
-
-                    <TextBlock Text="{infra:Str SettingsDataSection}" FontSize="18" FontWeight="SemiBold" Margin="0,28,0,8" />
+                    <TextBlock Text="{infra:Str SettingsDataSection}" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,8" />
                     <TextBlock Text="{infra:Str SyncDetailsFolder}" Opacity="0.7" />
                     <TextBlock Text="{Binding DataFolder}" TextWrapping="Wrap" />
                     <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
@@ -75,10 +72,74 @@
                     <CheckBox IsChecked="{Binding Preferences.AutoFitColumns, Mode=TwoWay}" Content="{infra:Str SettingsAutoFit}" />
                     <TextBlock Text="{infra:Str SettingsTablesHint}" TextWrapping="Wrap" Opacity="0.7" Margin="0,4,0,0" />
 
+                    <TextBlock Text="{infra:Str SettingsUpdatesHeading}" FontSize="18" FontWeight="SemiBold" Margin="0,28,0,8" />
+                    <CheckBox IsChecked="{Binding AutoUpdate, Mode=TwoWay}" Content="{infra:Str SettingsAutoUpdate}" />
+                    <TextBlock Margin="0,4,0,0" Opacity="0.7" TextWrapping="Wrap">
+                        <Run Text="{infra:Str SettingsVersionIs}" /> <Run Text="{Binding CurrentVersionText, Mode=OneWay}" /> · <Run Text="{Binding UpdateRepository, Mode=OneWay}" />
+                    </TextBlock>
+                    <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                        <Button Content="{infra:Str UpdateCheckNow}" Command="{Binding CheckUpdateCommand}" IsEnabled="{Binding UpdateBusy, Converter={x:Static infra:BoolToVisibilityConverter.Not}}" Margin="0,0,8,0" />
+                        <Button Content="{infra:Str UpdateInstallNow}" Command="{Binding InstallUpdateCommand}" Style="{StaticResource AccentButtonStyle}"
+                                Visibility="{Binding UpdateAvailable, Converter={x:Static infra:BoolToVisibilityConverter.Visible}}" />
+                    </StackPanel>
+                    <TextBlock Text="{Binding UpdateMessage}" TextWrapping="Wrap" Margin="0,8,0,0" />
+                    <TextBlock Text="{infra:Str UpdateTokenHint}" TextWrapping="Wrap" Opacity="0.7" Margin="0,12,0,4" />
+                    <StackPanel Orientation="Horizontal">
+                        <PasswordBox x:Name="TokenBox" Width="320" ui:ControlHelper.PlaceholderText="{infra:Str UpdateTokenPlaceholder}" />
+                        <Button Content="{infra:Str UpdateTokenSave}" Click="SaveToken_Click" Margin="8,0,0,0" />
+                    </StackPanel>
+
                     <TextBlock Text="{infra:Str SettingsBackgroundHeading}" FontSize="18" FontWeight="SemiBold" Margin="0,28,0,8" />
                     <CheckBox IsChecked="{Binding BackgroundMode, Mode=TwoWay}" Content="{infra:Str SettingsBackgroundOption}" />
                     <TextBlock Text="{infra:Str SettingsBackgroundHint}" TextWrapping="Wrap" Opacity="0.7" Margin="0,4,0,0" />
                     <TextBlock Text="{Binding BackgroundMessage}" TextWrapping="Wrap" Foreground="{StaticResource ExpenseBrush}" Margin="0,6,0,0" />
+                </StackPanel>
+            </ScrollViewer>
+        </TabItem>
+
+        <!-- Appearance -->
+        <TabItem Header="{infra:Str SettingsAppearance}">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <StackPanel Margin="0,16,0,0" MaxWidth="720" HorizontalAlignment="Left">
+                    <ComboBox ItemsSource="{Binding Themes}" SelectedItem="{Binding SelectedTheme, Mode=TwoWay}" Width="260"
+                              ui:ControlHelper.Header="{infra:Str SettingsTheme}" />
+
+                    <ComboBox ItemsSource="{Binding Scales}" SelectedItem="{Binding SelectedScale, Mode=TwoWay}" Width="260" Margin="0,16,0,0"
+                              ui:ControlHelper.Header="{infra:Str SettingsScale}" />
+                    <TextBlock Text="{infra:Str SettingsScaleHint}" TextWrapping="Wrap" Opacity="0.7" Margin="0,4,0,0" />
+
+                    <TextBlock Text="{infra:Str SettingsGraphics}" FontSize="18" FontWeight="SemiBold" Margin="0,28,0,8" />
+                    <ComboBox ItemsSource="{Binding Markers}" SelectedItem="{Binding SelectedMarker, Mode=TwoWay}" Width="260"
+                              ui:ControlHelper.Header="{infra:Str SettingsMarker}" />
+                    <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                        <controls:CategoryMarker Color="#1E88E5" Size="14" Margin="0,0,6,0" />
+                        <controls:CategoryMarker Color="#43A047" Size="14" Margin="0,0,6,0" />
+                        <controls:CategoryMarker Color="#FB8C00" Size="14" Margin="0,0,6,0" />
+                        <controls:CategoryMarker Color="#8E24AA" Size="14" Margin="0,0,6,0" />
+                        <controls:CategoryMarker Color="#E53935" Size="14" />
+                    </StackPanel>
+
+                    <TextBlock Text="{infra:Str SettingsAmounts}" FontSize="18" FontWeight="SemiBold" Margin="0,28,0,8" />
+                    <CheckBox IsChecked="{Binding Preferences.ShowMinus, Mode=TwoWay}" Content="{infra:Str SettingsShowMinus}" />
+                    <CheckBox IsChecked="{Binding Preferences.ColorAmounts, Mode=TwoWay}" Content="{infra:Str SettingsColorAmounts}" Margin="0,4,0,0" />
+                    <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                        <TextBlock Text="{Binding SampleExpense}" FontWeight="SemiBold" Margin="0,0,24,0">
+                            <TextBlock.Foreground>
+                                <MultiBinding Converter="{x:Static infra:AmountBrushConverter.Instance}">
+                                    <Binding Source="False" Converter="{x:Static infra:StringToBoolConverter.Instance}" />
+                                    <Binding Path="ColorAmounts" Source="{x:Static infra:UiPreferences.Instance}" />
+                                </MultiBinding>
+                            </TextBlock.Foreground>
+                        </TextBlock>
+                        <TextBlock Text="{Binding SampleIncome}" FontWeight="SemiBold">
+                            <TextBlock.Foreground>
+                                <MultiBinding Converter="{x:Static infra:AmountBrushConverter.Instance}">
+                                    <Binding Source="True" Converter="{x:Static infra:StringToBoolConverter.Instance}" />
+                                    <Binding Path="ColorAmounts" Source="{x:Static infra:UiPreferences.Instance}" />
+                                </MultiBinding>
+                            </TextBlock.Foreground>
+                        </TextBlock>
+                    </StackPanel>
                 </StackPanel>
             </ScrollViewer>
         </TabItem>
@@ -117,7 +178,7 @@
                         <TreeView.ItemTemplate>
                             <HierarchicalDataTemplate DataType="{x:Type vm:CategoryNode}" ItemsSource="{Binding Children}">
                                 <StackPanel Orientation="Horizontal" Margin="0,3" Opacity="{Binding TitleOpacity}">
-                                    <Ellipse Width="12" Height="12" Margin="0,0,8,0" Fill="{Binding Color, Converter={StaticResource HexToBrush}}" />
+                                    <controls:CategoryMarker Size="12" Color="{Binding Color}" Margin="0,0,8,0" />
                                     <TextBlock Text="{Binding Icon}" Width="22" />
                                     <TextBlock Text="{Binding Title}" />
                                 </StackPanel>
@@ -181,10 +242,17 @@
                             </ItemsControl.ItemsPanel>
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <Button Width="26" Height="26" Margin="0,0,6,6" Padding="0" MinWidth="0" MinHeight="0"
-                                            Background="{Binding Converter={StaticResource HexToBrush}}"
+                                    <Button Width="28" Height="28" Margin="0,0,6,6" Padding="0" MinWidth="0" MinHeight="0"
+                                            Background="{Binding Hex, Converter={StaticResource HexToBrush}}"
                                             Command="{Binding DataContext.PickColorCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                                            CommandParameter="{Binding}" ToolTip="{Binding}" />
+                                            CommandParameter="{Binding Hex}" ToolTip="{Binding Hex}">
+                                        <TextBlock Text="✔" Foreground="White" FontWeight="Bold" FontSize="15" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                   Visibility="{Binding IsUsed, Converter={StaticResource BoolToVis}}">
+                                            <TextBlock.Effect>
+                                                <DropShadowEffect ShadowDepth="0" BlurRadius="3" Opacity="0.9" />
+                                            </TextBlock.Effect>
+                                        </TextBlock>
+                                    </Button>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
@@ -235,12 +303,42 @@
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="210" />
                                         <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
                                     <Border CornerRadius="5" Padding="10,3" HorizontalAlignment="Left"
-                                            Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}">
+                                            Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}"
+                                            Visibility="{Binding IsEditing, Converter={x:Static infra:BoolToVisibilityConverter.Hidden}}">
                                         <TextBlock Text="{Binding Keys}" FontFamily="Consolas" FontWeight="SemiBold" />
                                     </Border>
-                                    <TextBlock Grid.Column="1" Text="{Binding Description}" TextWrapping="Wrap" VerticalAlignment="Center" />
+                                    <!-- waits for the next key press and takes it as the new shortcut (Esc cancels) -->
+                                    <TextBox Grid.Column="0" IsReadOnly="True" Text="{infra:Str ShortcutPress}" BorderBrush="{DynamicResource SystemControlForegroundAccentBrush}"
+                                             PreviewKeyDown="ShortcutBox_PreviewKeyDown" LostKeyboardFocus="ShortcutBox_LostFocus"
+                                             IsVisibleChanged="ShortcutBox_VisibleChanged"
+                                             Visibility="{Binding IsEditing, Converter={x:Static infra:BoolToVisibilityConverter.Visible}}" />
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding Description}" TextWrapping="Wrap" />
+                                        <TextBlock Text="{Binding Message}" TextWrapping="Wrap" Foreground="{StaticResource ExpenseBrush}" FontSize="12">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Style.Triggers>
+                                                        <Trigger Property="Text" Value="">
+                                                            <Setter Property="Visibility" Value="Collapsed" />
+                                                        </Trigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="2" Orientation="Horizontal" Margin="12,0,0,0"
+                                                Visibility="{Binding IsFixed, Converter={x:Static infra:BoolToVisibilityConverter.Hidden}}">
+                                        <Button Content="{infra:Str ShortcutChange}" MinWidth="0" Padding="12,3"
+                                                Command="{Binding DataContext.EditShortcutCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                CommandParameter="{Binding}" />
+                                        <Button Content="{infra:Str ShortcutReset}" MinWidth="0" Padding="12,3" Margin="6,0,0,0"
+                                                Visibility="{Binding CanReset, Converter={x:Static infra:BoolToVisibilityConverter.Visible}}"
+                                                Command="{Binding DataContext.ResetShortcutCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                CommandParameter="{Binding}" />
+                                    </StackPanel>
                                 </Grid>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>

@@ -70,7 +70,7 @@ public sealed class TransactionRowViewModel : ObservableObject
         : "";
 
     public string AmountDisplay =>
-        (IsIncome ? "+" : "−") + Model.AmountPln.ToString("C2", CultureInfo.CurrentCulture);
+        UiPreferences.Instance.SignOf(IsIncome) + Model.AmountPln.ToString("C2", CultureInfo.CurrentCulture);
 
     public string Place
     {

@@ -69,6 +69,7 @@ public sealed partial class EventsViewModel : ObservableObject
     {
         _core = core;
         _toast = toast;
+        UiPreferences.Instance.OnAppearanceChanged(this, self => self.Reload());
         hub.Changed += (_, _) => Reload();
         Reload();
     }
@@ -184,7 +185,7 @@ public sealed partial class EventsViewModel : ObservableObject
 
         Transactions = r.Transactions.OrderByDescending(t => t.Date).ThenByDescending(t => t.CreatedAt).Select(t => new EventTxRow(
             t.Date.ToDateTime(TimeOnly.MinValue),
-            (t.Type == TransactionType.Income ? "+" : "−") + Money(t.AmountPln) + (CurrencyIsForeign(t) ? $"  ({t.Amount.ToString("N2", CultureInfo.CurrentCulture)} {t.CurrencyCode})" : ""),
+            UiPreferences.Instance.SignOf(t.Type == TransactionType.Income) + Money(t.AmountPln) + (CurrencyIsForeign(t) ? $"  ({t.Amount.ToString("N2", CultureInfo.CurrentCulture)} {t.CurrencyCode})" : ""),
             t.Type == TransactionType.Income,
             CategoryHelpers.PathOf(t.CategoryId, byId), t.Place, t.Note)).ToList();
     }

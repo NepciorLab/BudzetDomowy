@@ -1,3 +1,4 @@
+using BudzetDomowy.App.Infrastructure;
 using System.Windows;
 using BudzetDomowy.App.ViewModels;
 using Microsoft.Win32;
@@ -13,6 +14,7 @@ public partial class FirstRunWindow : Window
         _vm = vm;
         DataContext = vm;
         InitializeComponent();
+        UiScaling.Attach(this);
         vm.CloseRequested += ok =>
         {
             DialogResult = ok;

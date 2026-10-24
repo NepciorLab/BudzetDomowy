@@ -151,5 +151,22 @@ public static class ComparisonReports
         return new AverageOf(type, a.Days, a.Months, total, perDay, perWeek, perMonth, mode);
     }
 
+    /// <summary>
+    /// Running average of a year's monthly sums: January is January's value, February is the average of January and February,
+    /// March of the first three months, and so on. Months that have not started yet (in the current year) are null.
+    /// </summary>
+    public static decimal?[] CumulativeAverages(YearSeries year, DateOnly today)
+    {
+        var elapsed = year.Year < today.Year ? 12 : year.Year == today.Year ? today.Month : 0;
+        var result = new decimal?[12];
+        decimal sum = 0;
+        for (var m = 0; m < elapsed; m++)
+        {
+            sum += year.Months[m];
+            result[m] = R(sum / (m + 1));
+        }
+        return result;
+    }
+
     private static decimal R(decimal v) => Math.Round(v, 2, MidpointRounding.AwayFromZero);
 }

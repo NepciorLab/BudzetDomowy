@@ -139,6 +139,11 @@ public sealed class LocalDatabase
             PRIMARY KEY (currency_code, from_date, to_date)
         );
         """,
+        // v4: recurring entries that ask for confirmation, and the occurrences answered "no"
+        """
+        ALTER TABLE recurring_transactions ADD COLUMN confirm_each INTEGER NOT NULL DEFAULT 0;
+        ALTER TABLE recurring_transactions ADD COLUMN skipped_dates TEXT NOT NULL DEFAULT '';
+        """,
     ];
 
     public static int CurrentVersion => Migrations.Length;

@@ -30,6 +30,7 @@ public sealed partial class RecurringViewModel : ObservableObject
 {
     private readonly BudgetCore _core;
     private readonly ToastService _toast;
+    private readonly RecurringRunner _runner;
 
     public ObservableCollection<RecurringItem> Items { get; } = [];
 
@@ -60,6 +61,7 @@ public sealed partial class RecurringViewModel : ObservableObject
     [ObservableProperty] private int _editMonthDay = 1;
     [ObservableProperty] private DateTime? _editStart = DateTime.Today;
     [ObservableProperty] private DateTime? _editEnd;
+    [ObservableProperty] private bool _editConfirm;
     [ObservableProperty] private string _message = "";
 
     private bool _loading;
@@ -68,10 +70,11 @@ public sealed partial class RecurringViewModel : ObservableObject
     public bool IsExpense => !EditIsIncome;
     public bool IsWeekly => EditFrequency?.Frequency == RecurrenceFrequency.Weekly;
 
-    public RecurringViewModel(BudgetCore core, DataHub hub, ToastService toast)
+    public RecurringViewModel(BudgetCore core, DataHub hub, ToastService toast, RecurringRunner runner)
     {
         _core = core;
         _toast = toast;
+        _runner = runner;
         _editFrequency = Frequencies[1];
         hub.Changed += (_, _) => Reload();
         Reload();
@@ -142,6 +145,7 @@ public sealed partial class RecurringViewModel : ObservableObject
         if (t.Frequency == RecurrenceFrequency.Weekly) EditWeekday = Math.Clamp(t.Day, 1, 7); else EditMonthDay = Math.Clamp(t.Day, 1, 31);
         EditStart = t.StartDate.ToDateTime(TimeOnly.MinValue);
         EditEnd = t.EndDate?.ToDateTime(TimeOnly.MinValue);
+        EditConfirm = t.ConfirmEach;
     }
 
     [RelayCommand]
@@ -160,6 +164,7 @@ public sealed partial class RecurringViewModel : ObservableObject
         EditMonthDay = DateTime.Today.Day;
         EditStart = DateTime.Today;
         EditEnd = null;
+        EditConfirm = false;
         Message = Res.Get("RecurFillIn");
     }
 
@@ -195,6 +200,7 @@ public sealed partial class RecurringViewModel : ObservableObject
             Day = frequency == RecurrenceFrequency.Weekly ? EditWeekday : EditMonthDay,
             StartDate = DateOnly.FromDateTime(start),
             EndDate = EditEnd is { } e ? DateOnly.FromDateTime(e) : null,
+            ConfirmEach = EditConfirm,
         };
 
         try
@@ -240,9 +246,10 @@ public sealed partial class RecurringViewModel : ObservableObject
     {
         try
         {
-            var run = await _core.Recurring.GenerateDueAsync(DateOnly.FromDateTime(DateTime.Today));
-            Message = run.Created > 0 ? Res.Format("RecurGenerated", run.Created) : Res.Get("RecurNothingDue");
-            if (run.TemplatesWaitingForRate.Count > 0) Message += " " + Res.Get("RecurWaitingForRate");
+            var run = await _runner.RunAsync(DateOnly.FromDateTime(DateTime.Today), askAgain: true);
+            Message = run.Created > 0 ? Res.Format("RecurGenerated", run.Created) : run.Postponed > 0 ? "" : Res.Get("RecurNothingDue");
+            if (run.Postponed > 0) Message = (Message + " " + Res.Format("RecurPostponed", run.Postponed)).Trim();
+            if (run.WaitingForRate > 0) Message += " " + Res.Get("RecurWaitingForRate");
         }
         catch (UpdateRequiredException)
         {

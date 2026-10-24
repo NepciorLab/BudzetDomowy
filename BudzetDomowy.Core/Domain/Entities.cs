@@ -108,6 +108,12 @@ public sealed record RecurringTransaction
     public DateOnly StartDate { get; init; }
     public DateOnly? EndDate { get; init; }
     public DateOnly? LastGeneratedDate { get; init; }
+
+    /// <summary>Ask before each occurrence is booked ("did this happen?") instead of booking it automatically.</summary>
+    public bool ConfirmEach { get; init; }
+
+    /// <summary>Occurrences the user answered "no" to: they are never booked and never asked about again.</summary>
+    public IReadOnlyList<DateOnly> SkippedDates { get; init; } = [];
 }
 
 /// <summary>Learned mapping from a note pattern to a category (and optionally an event).</summary>

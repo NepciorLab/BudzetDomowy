@@ -1,3 +1,4 @@
+using BudzetDomowy.App.Infrastructure;
 using System.Windows;
 using BudzetDomowy.App.ViewModels;
 
@@ -9,6 +10,7 @@ public partial class SyncDetailsWindow : Window
     {
         DataContext = vm;
         InitializeComponent();
+        UiScaling.Attach(this);
         Closed += (_, _) => vm.Detach();
     }
 }

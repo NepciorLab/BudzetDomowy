@@ -58,7 +58,14 @@ public static class RecurrenceEngine
         new(year, month, Math.Clamp(day, 1, DateTime.DaysInMonth(year, month)));
 }
 
-public sealed record RecurringRun(int Created, int Skipped, IReadOnlyList<Guid> TemplatesWaitingForRate);
+/// <summary>An occurrence of a template that asks for confirmation and has not been answered yet.</summary>
+public sealed record PendingOccurrence(RecurringTransaction Template, DateOnly Date);
+
+public sealed record RecurringRun(int Created, int Skipped, IReadOnlyList<Guid> TemplatesWaitingForRate)
+{
+    /// <summary>Occurrences waiting for the user's "yes" or "no" (templates with confirmation switched on), oldest first.</summary>
+    public IReadOnlyList<PendingOccurrence> Pending { get; init; } = [];
+}
 
 public sealed class RecurringService
 {
@@ -91,48 +98,47 @@ public sealed class RecurringService
     /// Creates every transaction that is due up to <paramref name="today"/> and not created yet. The id of a generated
     /// transaction is derived from the template id and the date, so two computers produce the very same transaction
     /// instead of two copies, and running this again changes nothing. A generated transaction the user deleted is not recreated.
+    /// Templates with <see cref="RecurringTransaction.ConfirmEach"/> create nothing here: their due occurrences come back in
+    /// <see cref="RecurringRun.Pending"/> until <see cref="ConfirmAsync"/> or <see cref="Decline"/> answers them.
     /// </summary>
     public async Task<RecurringRun> GenerateDueAsync(DateOnly today, CancellationToken ct = default)
     {
         var created = 0;
         var skipped = 0;
         var waiting = new List<Guid>();
+        var pending = new List<PendingOccurrence>();
 
         foreach (var template in _reader.GetRecurringTransactions())
         {
             var from = template.LastGeneratedDate?.AddDays(1) ?? template.StartDate;
             DateOnly? lastHandled = null;
             var blocked = false;
+            var unanswered = false;   // the watermark must not pass an occurrence that still waits for an answer
 
             foreach (var date in RecurrenceEngine.Occurrences(template, from, today).Take(RecurrenceEngine.MaxOccurrencesPerRun))
             {
                 ct.ThrowIfCancellationRequested();
                 var id = DeterministicId.ForRecurrence(template.Id, date);
-                if (_reader.GetTransaction(id) is not null || _reader.IsTombstone(EntityTypes.Transaction, id))
+                if (_reader.GetTransaction(id) is not null || _reader.IsTombstone(EntityTypes.Transaction, id) || template.SkippedDates.Contains(date))
                 {
                     skipped++;
-                    lastHandled = date;
+                    if (!unanswered) lastHandled = date;
                     continue;
                 }
 
-                var rate = 1m;
-                DateOnly? rateDate = null;
-                if (CurrencyCatalog.IsForeign(template.CurrencyCode))
+                if (template.ConfirmEach)
                 {
-                    var lookup = await _rates.GetRateAsync(template.CurrencyCode, date, ct).ConfigureAwait(false);
-                    if (lookup.Rate is not { } r || lookup.Origin == RateOrigin.LastKnown)
-                    {
-                        // no trustworthy rate for that day: try again next time instead of booking a wrong amount
-                        blocked = true;
-                        break;
-                    }
-                    rate = r;
-                    rateDate = lookup.EffectiveDate;
+                    pending.Add(new PendingOccurrence(template, date));
+                    unanswered = true;
+                    continue;
                 }
 
-                _transactions.Add(date, template.Type, template.Amount, template.CategoryId, template.Note, template.EventId,
-                    place: template.Place, currency: template.CurrencyCode, rateToPln: rate, rateDate: rateDate,
-                    id: id, createdAt: new DateTimeOffset(date.ToDateTime(TimeOnly.MinValue), TimeSpan.Zero));
+                if (!await CreateAsync(template, date, id, ct).ConfigureAwait(false))
+                {
+                    // no trustworthy rate for that day: try again next time instead of booking a wrong amount
+                    blocked = true;
+                    break;
+                }
                 created++;
                 lastHandled = date;
             }
@@ -142,6 +148,42 @@ public sealed class RecurringService
                 _recorder.Save(template with { LastGeneratedDate = last });
         }
 
-        return new RecurringRun(created, skipped, waiting);
+        return new RecurringRun(created, skipped, waiting) { Pending = pending.OrderBy(p => p.Date).ToList() };
+    }
+
+    /// <summary>The user said "yes, it happened": books the occurrence. False when no trustworthy exchange rate was available yet.</summary>
+    public async Task<bool> ConfirmAsync(Guid templateId, DateOnly date, CancellationToken ct = default)
+    {
+        var template = _reader.GetRecurringTransactions().FirstOrDefault(t => t.Id == templateId);
+        if (template is null) return false;
+        var id = DeterministicId.ForRecurrence(template.Id, date);
+        if (_reader.GetTransaction(id) is not null) return true;
+        return await CreateAsync(template, date, id, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>The user said "no, it did not happen": the occurrence is never booked and never asked about again.</summary>
+    public void Decline(Guid templateId, DateOnly date)
+    {
+        var template = _reader.GetRecurringTransactions().FirstOrDefault(t => t.Id == templateId);
+        if (template is null || template.SkippedDates.Contains(date)) return;
+        _recorder.Save(template with { SkippedDates = [.. template.SkippedDates, date] });
+    }
+
+    private async Task<bool> CreateAsync(RecurringTransaction template, DateOnly date, Guid id, CancellationToken ct)
+    {
+        var rate = 1m;
+        DateOnly? rateDate = null;
+        if (CurrencyCatalog.IsForeign(template.CurrencyCode))
+        {
+            var lookup = await _rates.GetRateAsync(template.CurrencyCode, date, ct).ConfigureAwait(false);
+            if (lookup.Rate is not { } r || lookup.Origin == RateOrigin.LastKnown) return false;
+            rate = r;
+            rateDate = lookup.EffectiveDate;
+        }
+
+        _transactions.Add(date, template.Type, template.Amount, template.CategoryId, template.Note, template.EventId,
+            place: template.Place, currency: template.CurrencyCode, rateToPln: rate, rateDate: rateDate,
+            id: id, createdAt: new DateTimeOffset(date.ToDateTime(TimeOnly.MinValue), TimeSpan.Zero));
+        return true;
     }
 }

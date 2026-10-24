@@ -15,7 +15,7 @@ public sealed record TypeFilterOption(TransactionType? Type, string Label)
     public override string ToString() => Label;
 }
 
-public enum ViewMode { Week, Month, Year, Range }
+public enum ViewMode { Week, Month, Year, All, Range }
 
 public sealed partial class TransactionsViewModel : ObservableObject, IPeriodNavigable
 {
@@ -49,7 +49,8 @@ public sealed partial class TransactionsViewModel : ObservableObject, IPeriodNav
 
     // what period the table shows: a week, month or year around the anchor date, or a free range
     [ObservableProperty, NotifyPropertyChangedFor(nameof(IsWeekMode)), NotifyPropertyChangedFor(nameof(IsMonthMode)),
-        NotifyPropertyChangedFor(nameof(IsYearMode)), NotifyPropertyChangedFor(nameof(IsRangeMode))] private ViewMode _mode = ViewMode.Month;
+        NotifyPropertyChangedFor(nameof(IsYearMode)), NotifyPropertyChangedFor(nameof(IsRangeMode)), NotifyPropertyChangedFor(nameof(IsAllMode)),
+        NotifyPropertyChangedFor(nameof(HasArrows))] private ViewMode _mode = ViewMode.Month;
     [ObservableProperty] private DateOnly _anchor = DateOnly.FromDateTime(DateTime.Today);
     [ObservableProperty] private string _periodTitle = "";
     [ObservableProperty] private DateTime? _from;
@@ -76,6 +77,10 @@ public sealed partial class TransactionsViewModel : ObservableObject, IPeriodNav
     public bool IsMonthMode => Mode == ViewMode.Month;
     public bool IsYearMode => Mode == ViewMode.Year;
     public bool IsRangeMode => Mode == ViewMode.Range;
+    public bool IsAllMode => Mode == ViewMode.All;
+
+    /// <summary>Week, month and year have a previous and a next period; "all" and a free range do not.</summary>
+    public bool HasArrows => Mode is ViewMode.Week or ViewMode.Month or ViewMode.Year;
 
     public TransactionsViewModel(BudgetCore core, DataHub hub, ToastService toast, ExportActions exports)
     {
@@ -83,6 +88,11 @@ public sealed partial class TransactionsViewModel : ObservableObject, IPeriodNav
         _toast = toast;
         _exports = exports;
         _typeFilter = TypeFilters[0];
+        UiPreferences.Instance.OnAppearanceChanged(this, self =>
+        {
+            foreach (var row in self.Rows) row.Refresh(row.Model, force: true);
+            self.UpdateSummary();
+        });
         hub.Changed += (_, _) => Reload();
         Reload();
     }
@@ -132,7 +142,7 @@ public sealed partial class TransactionsViewModel : ObservableObject, IPeriodNav
         var eventOptions = specials.OrderByDescending(e => e.DateFrom).Select(e => new EventOption(e.Id, e.Name)).ToList();
         FilterEvents = [allOption, .. eventOptions];
         EventChoices = [noneOption, .. eventOptions];
-        FilterCategories = CategoryHelpers.Flatten(categories)
+        FilterCategories = CategoryHelpers.Flatten(categories, alphabetical: true)
             .Select(o => o.Category.IsArchived ? o with { DisplayName = o.DisplayName + " " + Res.Get("ArchivedSuffix") } : o)
             .ToList();
 
@@ -193,6 +203,7 @@ public sealed partial class TransactionsViewModel : ObservableObject, IPeriodNav
     /// <summary>The dates the table covers (either end may be open in the free-range mode).</summary>
     private (DateOnly? From, DateOnly? To) CurrentRange()
     {
+        if (Mode == ViewMode.All) return (null, null);
         if (Mode == ViewMode.Range)
             return (From is { } f ? DateOnly.FromDateTime(f) : null, To is { } t ? DateOnly.FromDateTime(t) : null);
         var kind = Mode switch { ViewMode.Week => PeriodKind.Week, ViewMode.Year => PeriodKind.Year, _ => PeriodKind.Month };
@@ -209,6 +220,8 @@ public sealed partial class TransactionsViewModel : ObservableObject, IPeriodNav
                 return Res.Format("PeriodWeekTitle", a.ToString("d.MM", CultureInfo.CurrentCulture), b.ToString("d.MM.yyyy", CultureInfo.CurrentCulture), PeriodRanges.IsoWeek(Anchor));
             case ViewMode.Year:
                 return Anchor.Year.ToString(CultureInfo.CurrentCulture);
+            case ViewMode.All:
+                return Res.Get("PeriodAllTitle");
             case ViewMode.Range:
                 return Res.Format("PeriodRangeTitle",
                     From is { } f ? f.ToString("d", CultureInfo.CurrentCulture) : "…",
@@ -224,7 +237,7 @@ public sealed partial class TransactionsViewModel : ObservableObject, IPeriodNav
 
     private void Step(int direction)
     {
-        if (Mode == ViewMode.Range) return;
+        if (!HasArrows) return;
         var kind = Mode switch { ViewMode.Week => PeriodKind.Week, ViewMode.Year => PeriodKind.Year, _ => PeriodKind.Month };
         Anchor = PeriodRanges.Shift(kind, Anchor, direction);
     }
@@ -352,6 +365,16 @@ public sealed partial class TransactionsViewModel : ObservableObject, IPeriodNav
         EventFilter = Guid.Empty;
         TypeFilter = TypeFilters[0];
         Search = "";
+    }
+
+    /// <summary>Whether any of the filters under the period is set (Esc then clears them).</summary>
+    public bool HasActiveFilters => CategoryFilter is not null || EventFilter != Guid.Empty || TypeFilter?.Type is not null || Search.Length > 0;
+
+    public bool ClearFiltersIfAny()
+    {
+        if (!HasActiveFilters) return false;
+        ClearFilters();
+        return true;
     }
 
 

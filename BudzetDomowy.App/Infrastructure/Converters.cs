@@ -10,12 +10,25 @@ public sealed class BoolToVisibilityConverter : IValueConverter
     /// <summary>Shared instance for use with {x:Static} where no resource is declared.</summary>
     public static readonly BoolToVisibilityConverter Visible = new();
 
+    /// <summary>Not a visibility: the negated bool, for IsEnabled bindings.</summary>
+    public static readonly NotConverter Not = new();
+
+    /// <summary>The opposite: visible when the value is false.</summary>
+    public static readonly BoolToVisibilityConverter Hidden = new() { Invert = true };
+
     public bool Invert { get; set; }
 
     public object Convert(object value, Type targetType, object parameter, CultureInfo culture) =>
         (value is true) ^ Invert ? Visibility.Visible : Visibility.Collapsed;
 
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => throw new NotSupportedException();
+}
+
+public sealed class NotConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture) => value is not true;
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => value is not true;
 }
 
 public sealed class NullToVisibilityConverter : IValueConverter
@@ -42,6 +55,30 @@ public sealed class HexToBrushConverter : IValueConverter
     }
 
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => throw new NotSupportedException();
+}
+
+/// <summary>"True"/"False" text to bool (lets XAML pass a constant to a multi-binding).</summary>
+public sealed class StringToBoolConverter : IValueConverter
+{
+    public static readonly StringToBoolConverter Instance = new();
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture) => string.Equals(value as string, "True", StringComparison.OrdinalIgnoreCase);
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => throw new NotSupportedException();
+}
+
+/// <summary>(isIncome, colourAmounts) to the income or expense brush; plain text colour when colouring is off.</summary>
+public sealed class AmountBrushConverter : IMultiValueConverter
+{
+    public static readonly AmountBrushConverter Instance = new();
+
+    public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
+    {
+        var income = values.Length > 0 && values[0] is true;
+        var colour = values.Length < 2 || values[1] is not false;
+        if (!colour) return DependencyProperty.UnsetValue;
+        return Application.Current?.TryFindResource(income ? "IncomeBrush" : "ExpenseBrush") ?? DependencyProperty.UnsetValue;
+    }
+
+    public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture) => throw new NotSupportedException();
 }
 
 /// <summary>true = fully visible, false = dimmed.</summary>

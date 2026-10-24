@@ -53,6 +53,39 @@ public class ComparisonTests
     }
 
     [Fact]
+    public void PickLists_SortSiblingsAlphabetically_KeepingChildrenUnderTheirParent()
+    {
+        Category Cat(string name, int order, Guid? parent = null) => new() { Id = Guid.NewGuid(), Name = name, SortOrder = order, ParentId = parent, Type = CategoryType.Expense };
+        var zeta = Cat("Zeta", 0);
+        var alfa = Cat("Alfa", 1);
+        var kids = new[] { Cat("Żółw", 0, zeta.Id), Cat("Bar", 1, zeta.Id) };
+        var all = new List<Category> { zeta, alfa }.Concat(kids).ToList();
+
+        var manual = CategoryHelpers.Flatten(all).Select(o => o.Category.Name);
+        Assert.Equal(["Zeta", "Żółw", "Bar", "Alfa"], manual);                       // the tree keeps the user's own order
+
+        var pick = CategoryHelpers.ForEntry(all, TransactionType.Expense).Select(o => o.Category.Name);
+        Assert.Equal(["Alfa", "Zeta", "Bar", "Żółw"], pick);                         // pick lists: A to Z at every level, Polish letters in place
+    }
+
+    [Fact]
+    public void CumulativeAverages_AverageTheMonthsSoFar_AndLeaveFutureMonthsEmpty()
+    {
+        var months = new decimal[12];
+        months[0] = 100; months[1] = 300; months[2] = 200; months[3] = 600;
+        var year = new YearSeries(2026, months);
+
+        var running = ComparisonReports.CumulativeAverages(year, new DateOnly(2026, 3, 20));
+        Assert.Equal([100m, 200m, 200m], running.Take(3));                 // 100 / 100+300 / 100+300+200
+        Assert.All(running.Skip(3), v => Assert.Null(v));                  // April and later have not happened
+
+        var full = ComparisonReports.CumulativeAverages(year, new DateOnly(2027, 1, 5));
+        Assert.Equal(300m, full[3]);                                       // (100+300+200+600) / 4
+        Assert.Equal(100m, full[11]);                                      // 1200 / 12
+        Assert.All(ComparisonReports.CumulativeAverages(new YearSeries(2028, new decimal[12]), new DateOnly(2027, 1, 5)), v => Assert.Null(v));
+    }
+
+    [Fact]
     public void MonthsByCategory_CountsEntriesWithoutACategory()
     {
         var tx = new[]
