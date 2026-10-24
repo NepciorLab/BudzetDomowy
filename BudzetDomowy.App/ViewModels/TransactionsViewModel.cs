@@ -21,6 +21,7 @@ public sealed partial class TransactionsViewModel : ObservableObject
 
     private readonly BudgetCore _core;
     private readonly ToastService _toast;
+    private readonly ExportActions _exports;
     private IReadOnlyDictionary<Guid, Category> _categoriesById = new Dictionary<Guid, Category>();
     private IReadOnlyDictionary<Guid, SpecialEvent> _eventsById = new Dictionary<Guid, SpecialEvent>();
     private IReadOnlyList<CategoryOption> _expenseChoices = [];
@@ -57,10 +58,11 @@ public sealed partial class TransactionsViewModel : ObservableObject
 
     public int ChoicesVersion { get; private set; }
 
-    public TransactionsViewModel(BudgetCore core, DataHub hub, ToastService toast)
+    public TransactionsViewModel(BudgetCore core, DataHub hub, ToastService toast, ExportActions exports)
     {
         _core = core;
         _toast = toast;
+        _exports = exports;
         _typeFilter = TypeFilters[0];
         hub.Changed += (_, _) => Reload();
         Reload();
@@ -252,6 +254,13 @@ public sealed partial class TransactionsViewModel : ObservableObject
         }
         _toast.Show(Res.Format("CategoryChangedCount", ids.Count), () => _core.Transactions.Restore(before));
     }
+
+    /// <summary>Exports what the table shows right now (the current filters apply).</summary>
+    [RelayCommand]
+    private void ExportXlsx() => _exports.Transactions(Rows.Select(r => r.Model).ToList(), csv: false);
+
+    [RelayCommand]
+    private void ExportCsv() => _exports.Transactions(Rows.Select(r => r.Model).ToList(), csv: true);
 
     [RelayCommand]
     private void ClearFilters()

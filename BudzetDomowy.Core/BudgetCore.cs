@@ -1,4 +1,5 @@
 using BudzetDomowy.Core.Currency;
+using BudzetDomowy.Core.Excel;
 using BudzetDomowy.Core.Journal;
 using BudzetDomowy.Core.Services;
 using BudzetDomowy.Core.Storage;
@@ -27,6 +28,7 @@ public sealed class BudgetCore : IDisposable
     public ExchangeRateService Rates { get; }
     public BudgetService Budgets { get; }
     public RecurringService Recurring { get; }
+    public ImportService Import { get; }
 
     private BudgetCore(DeviceIdentity device, string dataFolder, LocalDatabase db, SyncOptions? syncOptions, IExchangeRateSource? rateSource)
     {
@@ -47,6 +49,7 @@ public sealed class BudgetCore : IDisposable
         Rates = new ExchangeRateService(Reader, rateSource ?? new NbpClient());
         Budgets = new BudgetService(Recorder, Reader);
         Recurring = new RecurringService(Recorder, Reader, Transactions, Rates);
+        Import = new ImportService(Reader, Transactions, Categories);
     }
 
     /// <param name="localDataDir">Per-installation folder (outside OneDrive): device.json and the SQLite database.</param>

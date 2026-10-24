@@ -2,6 +2,7 @@ using System.Globalization;
 using BudzetDomowy.App.Infrastructure;
 using BudzetDomowy.Core;
 using BudzetDomowy.Core.Domain;
+using BudzetDomowy.Core.Excel;
 using BudzetDomowy.Core.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -21,7 +22,7 @@ public sealed record EventRow(string Name, string Dates, string Spent, string Pe
 public sealed partial class ReportsViewModel : ObservableObject
 {
     private readonly BudgetCore _core;
-    private bool _suspend;
+    private readonly ExportActions _exports;
 
     [ObservableProperty, NotifyPropertyChangedFor(nameof(IsMonth))] private bool _isYear;
     [ObservableProperty] private DateOnly _anchor = BudgetMath.MonthStart(DateOnly.FromDateTime(DateTime.Today));
@@ -61,9 +62,10 @@ public sealed partial class ReportsViewModel : ObservableObject
 
     public LiveChartsCore.SkiaSharpView.Painting.SolidColorPaint LegendTextPaint => ChartFactory.TextPaint();
 
-    public ReportsViewModel(BudgetCore core, DataHub hub)
+    public ReportsViewModel(BudgetCore core, DataHub hub, ExportActions exports)
     {
         _core = core;
+        _exports = exports;
         var today = DateTime.Today;
         _avgFrom = new DateTime(today.Year, 1, 1);
         _avgTo = today;
@@ -82,6 +84,9 @@ public sealed partial class ReportsViewModel : ObservableObject
 
     [RelayCommand]
     private void Next() => Anchor = IsYear ? Anchor.AddYears(1) : Anchor.AddMonths(1);
+
+    [RelayCommand]
+    private void Export() => _exports.Report(IsYear ? ReportScope.Year : ReportScope.Month, Anchor);
 
     [RelayCommand]
     private void Current() => Anchor = BudgetMath.MonthStart(DateOnly.FromDateTime(DateTime.Today));

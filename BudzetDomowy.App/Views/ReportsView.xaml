@@ -31,6 +31,7 @@
                 <TextBlock Text="{Binding Title}" FontSize="24" FontWeight="SemiBold" Width="240" TextAlignment="Center" VerticalAlignment="Center" />
                 <Button Content="▶" Command="{Binding NextCommand}" Width="40" />
                 <Button Content="{infra:Str DashToday}" Command="{Binding CurrentCommand}" Margin="12,0,0,0" />
+                <Button Content="{infra:Str ExportReportButton}" Command="{Binding ExportCommand}" Margin="24,0,0,0" ToolTip="{infra:Str ExportReportTip}" />
             </StackPanel>
 
             <!-- Summary and comparison -->

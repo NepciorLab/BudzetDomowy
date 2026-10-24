@@ -60,7 +60,9 @@
                     </ui:Flyout>
                 </ui:FlyoutService.Flyout>
             </Button>
-            <Button Content="{infra:Str BulkDelete}" Command="{Binding DeleteSelectedCommand}" ToolTip="Del" />
+            <Button Content="{infra:Str BulkDelete}" Command="{Binding DeleteSelectedCommand}" ToolTip="Del" Margin="0,0,24,0" />
+            <Button Content="{infra:Str ExportXlsxShort}" Command="{Binding ExportXlsxCommand}" ToolTip="{infra:Str ExportVisibleTip}" Margin="0,0,8,0" />
+            <Button Content="{infra:Str ExportCsvShort}" Command="{Binding ExportCsvCommand}" ToolTip="{infra:Str ExportVisibleTip}" />
         </StackPanel>
 
         <!-- Table -->

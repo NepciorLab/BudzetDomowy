@@ -16,6 +16,15 @@ public sealed class NoRates : IExchangeRateSource
             [new ExchangeRate { CurrencyCode = currencyCode, Date = to, Rate = 4.25m, Source = ExchangeRateSource.Nbp, FetchedAt = DateTimeOffset.UtcNow }]);
 }
 
+/// <summary>File pickers that never open a window: they return the paths a test sets.</summary>
+public sealed class FakeDialogs : IFileDialogs
+{
+    public string? NextOpen { get; set; }
+    public string? NextSave { get; set; }
+    public string? OpenFile(string title, string filter) => NextOpen;
+    public string? SaveFile(string title, string filter, string defaultFileName) => NextSave;
+}
+
 /// <summary>A complete application object graph on temporary folders, with some sample data.</summary>
 public sealed class TestApp : IDisposable
 {
@@ -45,6 +54,11 @@ public sealed class TestApp : IDisposable
             .AddSingleton<BudgetsViewModel>()
             .AddSingleton<ReportsViewModel>()
             .AddSingleton<RecurringViewModel>()
+            .AddSingleton<IFileDialogs, FakeDialogs>()
+            .AddSingleton(new ImportMappingStore(Path.Combine(_root, "import-mapping.json")))
+            .AddSingleton<ExportActions>()
+            .AddTransient<ImportViewModel>()
+            .AddSingleton<Func<ImportViewModel>>(sp => () => sp.GetRequiredService<ImportViewModel>())
             .AddSingleton<SettingsViewModel>()
             .AddSingleton<MainViewModel>()
             .BuildServiceProvider();

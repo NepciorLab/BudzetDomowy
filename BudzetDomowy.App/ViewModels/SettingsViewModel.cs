@@ -1,5 +1,6 @@
 using BudzetDomowy.App.Infrastructure;
 using BudzetDomowy.Core;
+using BudzetDomowy.Core.Excel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
@@ -14,6 +15,8 @@ public sealed partial class SettingsViewModel : ObservableObject
 {
     private readonly BudgetCore _core;
     private readonly SettingsStore _store;
+    private readonly Func<ImportViewModel> _createImport;
+    private readonly ExportActions _exports;
 
     public CategoriesViewModel Categories { get; }
     public RecurringViewModel Recurring { get; }
@@ -32,12 +35,15 @@ public sealed partial class SettingsViewModel : ObservableObject
     public string DeviceName => _core.Device.DeviceName;
     public string DeviceId => _core.Device.DeviceId;
 
-    public SettingsViewModel(BudgetCore core, SettingsStore store, CategoriesViewModel categories, RecurringViewModel recurring)
+    public SettingsViewModel(BudgetCore core, SettingsStore store, CategoriesViewModel categories, RecurringViewModel recurring,
+        Func<ImportViewModel> createImport, ExportActions exports)
     {
         _core = core;
         _store = store;
         Categories = categories;
         Recurring = recurring;
+        _createImport = createImport;
+        _exports = exports;
         _selectedTheme = Themes.First(t => t.Choice == store.Current.Theme);
     }
 
@@ -46,6 +52,21 @@ public sealed partial class SettingsViewModel : ObservableObject
         ThemeService.Apply(value.Choice);
         _store.Update(s => s with { Theme = value.Choice });
     }
+
+    /// <summary>The view opens the import wizard window for the view model it is given.</summary>
+    public event Action<ImportViewModel>? ImportRequested;
+
+    [RelayCommand]
+    private void OpenImport() => ImportRequested?.Invoke(_createImport());
+
+    [RelayCommand]
+    private void ExportAllXlsx() => _exports.Transactions(_core.Reader.GetTransactions(), csv: false);
+
+    [RelayCommand]
+    private void ExportAllCsv() => _exports.Transactions(_core.Reader.GetTransactions(), csv: true);
+
+    [RelayCommand]
+    private void ExportThisYear() => _exports.Report(ReportScope.Year, DateOnly.FromDateTime(DateTime.Today));
 
     [RelayCommand]
     private void OpenDataFolder() => Open(DataFolder);

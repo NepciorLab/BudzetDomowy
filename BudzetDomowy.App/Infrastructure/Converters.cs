@@ -44,6 +44,16 @@ public sealed class HexToBrushConverter : IValueConverter
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => throw new NotSupportedException();
 }
 
+/// <summary>true = fully visible, false = dimmed.</summary>
+public sealed class DimConverter : IValueConverter
+{
+    public static readonly DimConverter Instance = new();
+
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture) => value is true ? 1.0 : 0.45;
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => throw new NotSupportedException();
+}
+
 /// <summary>A width in pixels to a left margin (indentation of tree-like lists).</summary>
 public sealed class IndentConverter : IValueConverter
 {

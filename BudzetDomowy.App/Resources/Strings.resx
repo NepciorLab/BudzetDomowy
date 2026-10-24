@@ -314,6 +314,87 @@ Del – usuń zaznaczone transakcje</value></data>
   <data name="RecurNothingDue" xml:space="preserve"><value>Nic nie czeka na utworzenie.</value></data>
   <data name="RecurWaitingForRate" xml:space="preserve"><value>Wpis w obcej walucie czeka na kurs NBP (brak połączenia).</value></data>
   <data name="RecurGeneratedToast" xml:space="preserve"><value>Utworzono wpisy cykliczne: {0}.</value></data>
+  <data name="SettingsImportExport" xml:space="preserve"><value>Import i eksport</value></data>
+  <data name="SettingsImportText" xml:space="preserve"><value>Wczytaj historię wydatków z pliku Excela (.xlsx lub .xlsm). Kreator rozpoznaje arkusze i kolumny, pozwala dopasować kategorie i pokazuje podgląd przed zapisem. Powtórny import tego samego pliku niczego nie podwoi.</value></data>
+  <data name="SettingsImportButton" xml:space="preserve"><value>Importuj z Excela…</value></data>
+  <data name="SettingsExportHeading" xml:space="preserve"><value>Eksport</value></data>
+  <data name="SettingsExportText" xml:space="preserve"><value>Zapisz wszystkie transakcje albo raport roczny do pliku. Transakcje widoczne na ekranie Transakcje (z filtrami) wyeksportujesz przyciskami pod tabelą.</value></data>
+  <data name="ExportAllXlsx" xml:space="preserve"><value>Wszystkie transakcje do Excela</value></data>
+  <data name="ExportAllCsv" xml:space="preserve"><value>Wszystkie transakcje do CSV</value></data>
+  <data name="ExportYearReport" xml:space="preserve"><value>Raport bieżącego roku do Excela</value></data>
+  <data name="ExportXlsxShort" xml:space="preserve"><value>Eksport do Excela</value></data>
+  <data name="ExportCsvShort" xml:space="preserve"><value>Eksport do CSV</value></data>
+  <data name="ExportVisibleTip" xml:space="preserve"><value>Eksportuje wpisy widoczne w tabeli, z uwzględnieniem filtrów.</value></data>
+  <data name="ExportReportButton" xml:space="preserve"><value>Eksport raportu do Excela</value></data>
+  <data name="ExportReportTip" xml:space="preserve"><value>Zapisuje podsumowanie, kategorie i trend dla wybranego okresu.</value></data>
+  <data name="ExportXlsxTitle" xml:space="preserve"><value>Zapisz jako plik Excela</value></data>
+  <data name="ExportXlsxFilter" xml:space="preserve"><value>Skoroszyt Excela (*.xlsx)|*.xlsx</value></data>
+  <data name="ExportCsvTitle" xml:space="preserve"><value>Zapisz jako plik CSV</value></data>
+  <data name="ExportCsvFilter" xml:space="preserve"><value>Plik CSV (*.csv)|*.csv</value></data>
+  <data name="ExportDone" xml:space="preserve"><value>Zapisano plik: {0}</value></data>
+  <data name="ExportDoneCount" xml:space="preserve"><value>Zapisano {0} wpisów do pliku: {1}</value></data>
+  <data name="ExportFailed" xml:space="preserve"><value>Nie udało się zapisać pliku (czy jest otwarty w Excelu?): {0}</value></data>
+  <data name="ImportTitle" xml:space="preserve"><value>Import z Excela</value></data>
+  <data name="ImportHeading" xml:space="preserve"><value>Import danych historycznych z Excela</value></data>
+  <data name="ImportStep1" xml:space="preserve"><value>Krok 1 z 4: wybierz plik i arkusze z wpisami.</value></data>
+  <data name="ImportStep2" xml:space="preserve"><value>Krok 2 z 4: sprawdź, która kolumna co zawiera.</value></data>
+  <data name="ImportStep3" xml:space="preserve"><value>Krok 3 z 4: dopasuj kategorie z pliku do kategorii programu.</value></data>
+  <data name="ImportStep4" xml:space="preserve"><value>Krok 4 z 4: sprawdź podgląd i zaimportuj.</value></data>
+  <data name="ImportStepDone" xml:space="preserve"><value>Gotowe.</value></data>
+  <data name="ImportFile" xml:space="preserve"><value>Plik Excela</value></data>
+  <data name="ImportOpenTitle" xml:space="preserve"><value>Wybierz plik Excela</value></data>
+  <data name="ImportOpenFilter" xml:space="preserve"><value>Pliki Excela (*.xlsx;*.xlsm)|*.xlsx;*.xlsm</value></data>
+  <data name="ImportSheetRows" xml:space="preserve"><value>wpisów: {0}</value></data>
+  <data name="ImportSheetNo_no-header" xml:space="preserve"><value>brak nagłówków Kwota/Kategoria</value></data>
+  <data name="ImportSheetNo_no-date" xml:space="preserve"><value>brak kolumny z datami</value></data>
+  <data name="ImportSheetNo_no-rows" xml:space="preserve"><value>brak wpisów</value></data>
+  <data name="ImportSheetNo_empty" xml:space="preserve"><value>pusty arkusz</value></data>
+  <data name="ImportSignOption" xml:space="preserve"><value>Znak kwoty ma znaczenie: minus to wydatek, plus to przychód (wyciąg z banku)</value></data>
+  <data name="ImportSignTip" xml:space="preserve"><value>Domyślnie każdy wiersz jest wydatkiem, jak w arkuszach miesięcznych.</value></data>
+  <data name="ImportIncomeLabelOption" xml:space="preserve"><value>Dodaj przychód z komórki obok napisu:</value></data>
+  <data name="ImportNothingFound" xml:space="preserve"><value>W tym pliku nie znaleziono arkuszy z wpisami (potrzebne są nagłówki z kwotą oraz kolumna z datami).</value></data>
+  <data name="ImportOpenFailed" xml:space="preserve"><value>Nie udało się otworzyć pliku: {0}</value></data>
+  <data name="ImportNoRows" xml:space="preserve"><value>W wybranych arkuszach nie znaleziono żadnych wierszy do zaimportowania.</value></data>
+  <data name="ImportColumnsOf" xml:space="preserve"><value>Rozpoznane kolumny w arkuszu:</value></data>
+  <data name="ImportColDate" xml:space="preserve"><value>Data</value></data>
+  <data name="ImportColAmount" xml:space="preserve"><value>Kwota</value></data>
+  <data name="ImportColCategory" xml:space="preserve"><value>Kategoria</value></data>
+  <data name="ImportColPlace" xml:space="preserve"><value>Miejsce (gdzie)</value></data>
+  <data name="ImportColNote" xml:space="preserve"><value>Notatka (opis)</value></data>
+  <data name="ImportColType" xml:space="preserve"><value>Rodzaj (wydatek/przychód) – opcjonalnie</value></data>
+  <data name="ImportNoColumn" xml:space="preserve"><value>(brak)</value></data>
+  <data name="ImportHeaderRow" xml:space="preserve"><value>Numer wiersza z nagłówkami</value></data>
+  <data name="ImportColumnsHint" xml:space="preserve"><value>Jeżeli w kolumnie z datą data jest tylko w pierwszym wierszu dnia, pozostałe wiersze tego dnia dostają tę samą datę. Zmiana ustawień dotyczy wszystkich wybranych arkuszy.</value></data>
+  <data name="ImportNeedAmountAndDate" xml:space="preserve"><value>Wskaż kolumnę z kwotą i kolumnę z datą.</value></data>
+  <data name="ImportCategoriesHint" xml:space="preserve"><value>Dla każdej kategorii z pliku wybierz kategorię programu, utwórz nową albo zostaw wpisy bez kategorii. Wybór zostanie zapamiętany przy kolejnym imporcie.</value></data>
+  <data name="ImportRowsCount" xml:space="preserve"><value>wpisów: {0}</value></data>
+  <data name="ImportUncategorized" xml:space="preserve"><value>(bez kategorii)</value></data>
+  <data name="ImportCreateNew" xml:space="preserve"><value>Nowa kategoria: {0}</value></data>
+  <data name="ImportSheetIncome" xml:space="preserve"><value>(przychód z arkusza)</value></data>
+  <data name="ImportShow" xml:space="preserve"><value>Pokaż</value></data>
+  <data name="ImportFilterAll" xml:space="preserve"><value>Wszystkie wiersze</value></data>
+  <data name="ImportFilterImport" xml:space="preserve"><value>Do zaimportowania</value></data>
+  <data name="ImportFilterDuplicates" xml:space="preserve"><value>Duplikaty (już są w programie)</value></data>
+  <data name="ImportFilterProblems" xml:space="preserve"><value>Problemy i ostrzeżenia</value></data>
+  <data name="ImportFilterSkipped" xml:space="preserve"><value>Pominięte</value></data>
+  <data name="ImportSummary" xml:space="preserve"><value>Do zaimportowania: {0} · duplikaty: {1} · ostrzeżenia: {2} · błędy: {3} · pominięte: {4}</value></data>
+  <data name="ImportColSheet" xml:space="preserve"><value>Arkusz</value></data>
+  <data name="ImportColRow" xml:space="preserve"><value>Wiersz</value></data>
+  <data name="ImportColStatus" xml:space="preserve"><value>Status</value></data>
+  <data name="ImportStatusNew" xml:space="preserve"><value>do zaimportowania</value></data>
+  <data name="ImportMsg_duplicate" xml:space="preserve"><value>duplikat – już jest w programie</value></data>
+  <data name="ImportMsg_no-category" xml:space="preserve"><value>brak kategorii (zostanie bez kategorii)</value></data>
+  <data name="ImportMsg_bad-amount" xml:space="preserve"><value>błąd: nie można odczytać kwoty</value></data>
+  <data name="ImportMsg_negative" xml:space="preserve"><value>błąd: ujemna kwota (zmień znaczenie znaku w kroku 1)</value></data>
+  <data name="ImportMsg_foreign-currency" xml:space="preserve"><value>błąd: waluta obca nie jest obsługiwana w imporcie</value></data>
+  <data name="ImportMsg_date-far-future" xml:space="preserve"><value>błąd: data zbyt odległa w przyszłości</value></data>
+  <data name="ImportMsg_no-date" xml:space="preserve"><value>błąd: brak daty</value></data>
+  <data name="ImportMsg_subtotal" xml:space="preserve"><value>pominięto: wiersz sumy</value></data>
+  <data name="ImportMsg_zero" xml:space="preserve"><value>pominięto: kwota zero</value></data>
+  <data name="ImportMsg_no-amount" xml:space="preserve"><value>pominięto: brak kwoty</value></data>
+  <data name="ImportDoImport" xml:space="preserve"><value>Importuj</value></data>
+  <data name="ImportResult" xml:space="preserve"><value>Dodano wpisów: {0}. Pominięto duplikatów: {1}. Wierszy z błędami: {2}. Nowych kategorii: {3}.</value></data>
+  <data name="ImportFailed" xml:space="preserve"><value>Import przerwany: {0}</value></data>
   <data name="EventPlannedField" xml:space="preserve"><value>Plan (zł)</value></data>
   <data name="EventPlannedHint" xml:space="preserve"><value>np. 5000 (opcjonalnie)</value></data>
 </root>

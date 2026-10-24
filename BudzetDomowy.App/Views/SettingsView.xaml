@@ -136,6 +136,25 @@
                 </ScrollViewer>
             </Grid>
         </TabItem>
+        <!-- Import and export -->
+        <TabItem Header="{infra:Str SettingsImportExport}">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <StackPanel Margin="0,16,0,0" MaxWidth="720" HorizontalAlignment="Left">
+                    <TextBlock Text="{infra:Str ImportHeading}" FontSize="18" FontWeight="SemiBold" />
+                    <TextBlock Text="{infra:Str SettingsImportText}" TextWrapping="Wrap" Margin="0,6,0,10" Opacity="0.85" />
+                    <Button Content="{infra:Str SettingsImportButton}" Command="{Binding OpenImportCommand}" Style="{StaticResource AccentButtonStyle}" />
+
+                    <TextBlock Text="{infra:Str SettingsExportHeading}" FontSize="18" FontWeight="SemiBold" Margin="0,30,0,0" />
+                    <TextBlock Text="{infra:Str SettingsExportText}" TextWrapping="Wrap" Margin="0,6,0,10" Opacity="0.85" />
+                    <WrapPanel>
+                        <Button Content="{infra:Str ExportAllXlsx}" Command="{Binding ExportAllXlsxCommand}" Margin="0,0,8,8" />
+                        <Button Content="{infra:Str ExportAllCsv}" Command="{Binding ExportAllCsvCommand}" Margin="0,0,8,8" />
+                        <Button Content="{infra:Str ExportYearReport}" Command="{Binding ExportThisYearCommand}" Margin="0,0,8,8" />
+                    </WrapPanel>
+                </StackPanel>
+            </ScrollViewer>
+        </TabItem>
+
         <!-- Recurring entries -->
         <TabItem Header="{infra:Str SettingsRecurring}">
             <local:RecurringView DataContext="{Binding Recurring}" />

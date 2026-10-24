@@ -52,6 +52,9 @@ public static class UiHost
 
     public static T Run<T>(Func<T> func) => UiDispatcher.Invoke(func);
 
+    /// <summary>Runs async code on the UI thread and waits for it from the calling (test) thread, which leaves the UI thread free to continue the awaits.</summary>
+    public static void RunAsync(Func<Task> work) => UiDispatcher.InvokeAsync(work).Task.Unwrap().GetAwaiter().GetResult();
+
     public static string OutputDir
     {
         get
