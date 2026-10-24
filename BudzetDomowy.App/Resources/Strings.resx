@@ -184,4 +184,50 @@ Del – usuń zaznaczone transakcje</value></data>
   <data name="CategorySaved" xml:space="preserve"><value>Zapisano.</value></data>
   <data name="CategoryDeleted" xml:space="preserve"><value>Usunięto kategorię „{0}”.</value></data>
   <data name="CategoryArchivedToast" xml:space="preserve"><value>Kategoria „{0}” ma wpisy lub podkategorie, więc została zarchiwizowana.</value></data>
+  <data name="NoCategory" xml:space="preserve"><value>Bez kategorii</value></data>
+  <data name="QuickCurrency" xml:space="preserve"><value>Waluta</value></data>
+  <data name="QuickCurrencyTip" xml:space="preserve"><value>Waluta wpisu (F3). Można też dopisać ją do kwoty, np. 12,50 EUR.</value></data>
+  <data name="QuickAmountTip" xml:space="preserve"><value>Kwota, np. 12,50 albo 12,50 EUR</value></data>
+  <data name="RateLabel" xml:space="preserve"><value>Kurs na PLN:</value></data>
+  <data name="RateTip" xml:space="preserve"><value>Kurs NBP z ostatniego dnia roboczego przed datą wpisu (F4 – zmień ręcznie)</value></data>
+  <data name="RateReset" xml:space="preserve"><value>Pobierz kurs NBP ponownie</value></data>
+  <data name="RateShort" xml:space="preserve"><value>kurs</value></data>
+  <data name="RateLoading" xml:space="preserve"><value>Pobieranie kursu NBP…</value></data>
+  <data name="RateNbp" xml:space="preserve"><value>Kurs średni NBP (tabela A) z dnia {0}</value></data>
+  <data name="RateCached" xml:space="preserve"><value>Kurs średni NBP (tabela A) z dnia {0} – z pamięci podręcznej</value></data>
+  <data name="RateLastKnown" xml:space="preserve"><value>Brak połączenia z NBP. Podstawiono ostatni znany kurs z dnia {0} – sprawdź go albo wpisz własny.</value></data>
+  <data name="RateNone" xml:space="preserve"><value>Nie udało się pobrać kursu. Wpisz kurs ręcznie.</value></data>
+  <data name="RateManual" xml:space="preserve"><value>Kurs wpisany ręcznie</value></data>
+  <data name="RateWait" xml:space="preserve"><value>Poczekaj chwilę, kurs jest jeszcze pobierany.</value></data>
+  <data name="RateMissing" xml:space="preserve"><value>Podaj kurs waluty (np. 4,2512).</value></data>
+  <data name="ColOriginal" xml:space="preserve"><value>W walucie</value></data>
+  <data name="NavEventsTitle" xml:space="preserve"><value>Wydarzenia</value></data>
+  <data name="EventAdd" xml:space="preserve"><value>Nowe wydarzenie</value></data>
+  <data name="EventsEmpty" xml:space="preserve"><value>Nie ma jeszcze wydarzeń. Dodaj np. wakacje, żeby zobaczyć ich koszty osobno.</value></data>
+  <data name="EventPickOne" xml:space="preserve"><value>Wybierz wydarzenie z listy albo dodaj nowe.</value></data>
+  <data name="EventPlanned" xml:space="preserve"><value>planowane</value></data>
+  <data name="EventOngoing" xml:space="preserve"><value>trwa</value></data>
+  <data name="EventFinished" xml:space="preserve"><value>zakończone</value></data>
+  <data name="EventName" xml:space="preserve"><value>Nazwa</value></data>
+  <data name="EventFrom" xml:space="preserve"><value>Od</value></data>
+  <data name="EventTo" xml:space="preserve"><value>Do</value></data>
+  <data name="EventNote" xml:space="preserve"><value>Notatka</value></data>
+  <data name="EventSpent" xml:space="preserve"><value>Wydano</value></data>
+  <data name="EventPerDay" xml:space="preserve"><value>Koszt na dzień</value></data>
+  <data name="EventDays" xml:space="preserve"><value>Dni:</value></data>
+  <data name="EventIncomeRefunds" xml:space="preserve"><value>Przychody i zwroty</value></data>
+  <data name="EventPlanTitle" xml:space="preserve"><value>Porównanie z planem</value></data>
+  <data name="EventPlanText" xml:space="preserve"><value>Wydano {0} z planowanych {1} ({2}%)</value></data>
+  <data name="EventNoPlan" xml:space="preserve"><value>Brak planowanego budżetu. Wpisz kwotę w polu „Plan (zł)”, aby porównać.</value></data>
+  <data name="EventRemaining" xml:space="preserve"><value>Zostało {0}</value></data>
+  <data name="EventOver" xml:space="preserve"><value>Przekroczono plan o {0}</value></data>
+  <data name="EventTransactions" xml:space="preserve"><value>Wpisy przypisane do wydarzenia</value></data>
+  <data name="EventNameRequired" xml:space="preserve"><value>Podaj nazwę wydarzenia.</value></data>
+  <data name="EventDatesRequired" xml:space="preserve"><value>Podaj daty początku i końca.</value></data>
+  <data name="EventPlanInvalid" xml:space="preserve"><value>Plan wpisz jako kwotę, np. 5000.</value></data>
+  <data name="EventSaved" xml:space="preserve"><value>Zapisano.</value></data>
+  <data name="EventDeleted" xml:space="preserve"><value>Usunięto wydarzenie „{0}”. Wpisy zostały zachowane.</value></data>
+  <data name="NewEventName" xml:space="preserve"><value>Nowe wydarzenie</value></data>
+  <data name="EventPlannedField" xml:space="preserve"><value>Plan (zł)</value></data>
+  <data name="EventPlannedHint" xml:space="preserve"><value>np. 5000 (opcjonalnie)</value></data>
 </root>

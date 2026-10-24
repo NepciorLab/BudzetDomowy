@@ -20,10 +20,14 @@ public sealed class TransactionService
         _now = now ?? (() => DateTimeOffset.UtcNow);
     }
 
-    /// <summary>Adds a PLN transaction with a single position (foreign currencies arrive in a later phase).</summary>
-    public Transaction Add(DateOnly date, TransactionType type, decimal amount, Guid? categoryId, string? note, Guid? eventId, string? place = null)
+    /// <summary>Adds a transaction with a single position. The PLN amount is computed and stored with the rate used.</summary>
+    public Transaction Add(DateOnly date, TransactionType type, decimal amount, Guid? categoryId, string? note, Guid? eventId, string? place = null,
+        string currency = "PLN", decimal rateToPln = 1m, DateOnly? rateDate = null, bool rateManual = false)
     {
         if (amount <= 0) throw new ArgumentOutOfRangeException(nameof(amount), "Amount must be positive.");
+        if (rateToPln <= 0) throw new ArgumentOutOfRangeException(nameof(rateToPln), "Exchange rate must be positive.");
+        currency = string.IsNullOrWhiteSpace(currency) ? "PLN" : currency.Trim().ToUpperInvariant();
+        if (currency == "PLN") (rateToPln, rateDate, rateManual) = (1m, null, false);
 
         var id = Guid.NewGuid();
         var t = new Transaction
@@ -32,9 +36,11 @@ public sealed class TransactionService
             Date = date,
             Type = type,
             Amount = amount,
-            CurrencyCode = "PLN",
-            ExchangeRateToPln = 1m,
-            AmountPln = Money.ToPln(amount, 1m),
+            CurrencyCode = currency,
+            ExchangeRateToPln = rateToPln,
+            ExchangeRateDate = rateDate,
+            ExchangeRateManual = rateManual,
+            AmountPln = Money.ToPln(amount, rateToPln),
             CategoryId = categoryId,
             Place = (place ?? "").Trim(),
             Note = (note ?? "").Trim(),

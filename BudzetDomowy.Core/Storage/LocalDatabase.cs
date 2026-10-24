@@ -128,6 +128,17 @@ public sealed class LocalDatabase
         ALTER TABLE transactions ADD COLUMN place TEXT NOT NULL DEFAULT '';
         ALTER TABLE recurring_transactions ADD COLUMN place TEXT NOT NULL DEFAULT '';
         """,
+        // v3: which NBP day a rate came from, manual rates, and which date ranges of the rate cache are complete
+        """
+        ALTER TABLE transactions ADD COLUMN rate_date TEXT;
+        ALTER TABLE transactions ADD COLUMN rate_manual INTEGER NOT NULL DEFAULT 0;
+        CREATE TABLE exchange_rate_coverage (
+            currency_code TEXT NOT NULL,
+            from_date     TEXT NOT NULL,
+            to_date       TEXT NOT NULL,
+            PRIMARY KEY (currency_code, from_date, to_date)
+        );
+        """,
     ];
 
     public static int CurrentVersion => Migrations.Length;

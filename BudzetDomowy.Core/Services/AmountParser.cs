@@ -40,6 +40,55 @@ public static partial class AmountParser
         return true;
     }
 
+    /// <summary>Parses an exchange rate (more decimals than an amount): "4,2512" or "4.2512".</summary>
+    public static bool TryParseRate(string? text, out decimal rate)
+    {
+        rate = 0;
+        if (string.IsNullOrWhiteSpace(text)) return false;
+        var s = text.Trim().Replace(" ", "").Replace(',', '.');
+        return decimal.TryParse(s, NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out rate) && rate > 0 && rate < 1_000_000m;
+    }
+
+    private static readonly Dictionary<char, string> Symbols = new() { ['€'] = "EUR", ['$'] = "USD", ['£'] = "GBP" };
+
+    /// <summary>
+    /// Like <see cref="TryParse"/> but also recognises a trailing currency: "12,50 EUR", "12.5eur", "9 €".
+    /// <paramref name="currency"/> is null when none was typed (the caller keeps its selected currency).
+    /// </summary>
+    public static bool TryParseWithCurrency(string? text, IReadOnlySet<string> knownCodes, out decimal amount, out string? currency)
+    {
+        amount = 0;
+        currency = null;
+        if (string.IsNullOrWhiteSpace(text)) return false;
+
+        var s = text.Trim();
+        if (Symbols.TryGetValue(s[^1], out var symbolCode))
+        {
+            currency = symbolCode;
+            s = s[..^1];
+        }
+        else
+        {
+            var m = TrailingCode().Match(s);
+            if (m.Success && knownCodes.Contains(m.Groups["code"].Value.ToUpperInvariant()))
+            {
+                var code = m.Groups["code"].Value.ToUpperInvariant();
+                currency = code;
+                s = s[..m.Index];
+            }
+        }
+
+        if (!TryParse(s, out amount))
+        {
+            currency = null;
+            return false;
+        }
+        return true;
+    }
+
+    [GeneratedRegex(@"\s*(?<code>[A-Za-z]{3})\.?$", RegexOptions.CultureInvariant)]
+    private static partial Regex TrailingCode();
+
     [GeneratedRegex(@"\s*(zł|zl|pln)\.?$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
     private static partial Regex CurrencySuffix();
 }

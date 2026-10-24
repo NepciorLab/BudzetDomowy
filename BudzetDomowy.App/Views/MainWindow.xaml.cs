@@ -11,11 +11,15 @@ public partial class MainWindow : Window
 
     public ICommand FocusAmountCommand { get; }
     public ICommand GoCommand { get; }
+    public ICommand FocusCurrencyCommand { get; }
+    public ICommand FocusRateCommand { get; }
 
     public MainWindow(MainViewModel vm)
     {
         _vm = vm;
         FocusAmountCommand = new RelayCommand(() => QuickBar.FocusAmount());
+        FocusCurrencyCommand = new RelayCommand(() => QuickBar.FocusCurrency());
+        FocusRateCommand = new RelayCommand(() => QuickBar.FocusRate());
         GoCommand = new RelayCommand<string>(key => { if (key is not null) vm.Navigate(key); });
         DataContext = vm;
         InitializeComponent();

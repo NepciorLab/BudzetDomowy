@@ -58,6 +58,7 @@ public partial class App : Application
             .AddSingleton<QuickAddViewModel>()
             .AddSingleton<TransactionsViewModel>()
             .AddSingleton<CategoriesViewModel>()
+            .AddSingleton<EventsViewModel>()
             .AddSingleton<SettingsViewModel>()
             .AddSingleton<MainViewModel>()
             .AddSingleton<MainWindow>()

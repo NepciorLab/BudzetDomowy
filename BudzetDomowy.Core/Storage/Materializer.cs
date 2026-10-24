@@ -251,13 +251,14 @@ public sealed class Materializer
     {
         Exec(conn, tx, """
             INSERT OR REPLACE INTO transactions
-                (id, date, type, amount_cents, currency_code, exchange_rate, amount_pln_cents, category_id, place, note, event_id, created_at, created_by_device)
-            VALUES ($id, $date, $type, $amt, $cur, $rate, $pln, $cat, $place, $note, $ev, $created, $dev)
+                (id, date, type, amount_cents, currency_code, exchange_rate, amount_pln_cents, category_id, place, note, event_id, created_at, created_by_device, rate_date, rate_manual)
+            VALUES ($id, $date, $type, $amt, $cur, $rate, $pln, $cat, $place, $note, $ev, $created, $dev, $rdate, $rman)
             """,
             ("$id", Id(t.Id)), ("$date", Day(t.Date)), ("$type", t.Type.ToString()), ("$amt", Money.ToCents(t.Amount)),
             ("$cur", t.CurrencyCode), ("$rate", Dec(t.ExchangeRateToPln)), ("$pln", Money.ToCents(t.AmountPln)),
             ("$cat", Id(t.CategoryId)), ("$place", t.Place), ("$note", t.Note), ("$ev", Id(t.EventId)),
-            ("$created", t.CreatedAt.ToString("o", CultureInfo.InvariantCulture)), ("$dev", t.CreatedByDeviceId));
+            ("$created", t.CreatedAt.ToString("o", CultureInfo.InvariantCulture)), ("$dev", t.CreatedByDeviceId),
+            ("$rdate", Day(t.ExchangeRateDate)), ("$rman", t.ExchangeRateManual ? 1 : 0));
 
         Exec(conn, tx, "DELETE FROM transaction_lines WHERE transaction_id = $id", ("$id", Id(t.Id)));
         var order = 0;

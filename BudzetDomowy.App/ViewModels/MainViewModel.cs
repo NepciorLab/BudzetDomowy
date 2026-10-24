@@ -42,7 +42,7 @@ public sealed partial class MainViewModel : ObservableObject
     public event Action? SyncDetailsRequested;
 
     public MainViewModel(BudgetCore core, QuickAddViewModel quickAdd, TransactionsViewModel transactions,
-        SettingsViewModel settings, ToastService toast)
+        SettingsViewModel settings, EventsViewModel events, ToastService toast)
     {
         Core = core;
         QuickAdd = quickAdd;
@@ -63,7 +63,7 @@ public sealed partial class MainViewModel : ObservableObject
             ["dashboard"] = new PlaceholderViewModel(Res.Get("NavDashboard")),
             ["transactions"] = transactions,
             ["budgets"] = new PlaceholderViewModel(Res.Get("NavBudgets")),
-            ["events"] = new PlaceholderViewModel(Res.Get("NavEvents")),
+            ["events"] = events,
             ["reports"] = new PlaceholderViewModel(Res.Get("NavReports")),
             ["settings"] = settings,
         };

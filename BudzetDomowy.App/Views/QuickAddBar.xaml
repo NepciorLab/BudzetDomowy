@@ -5,6 +5,9 @@
              xmlns:infra="clr-namespace:BudzetDomowy.App.Infrastructure"
              xmlns:controls="clr-namespace:BudzetDomowy.App.Controls"
              PreviewKeyDown="OnPreviewKeyDown">
+    <UserControl.Resources>
+        <infra:BoolToVisibilityConverter x:Key="BoolToVis" />
+    </UserControl.Resources>
     <Border Padding="16,10,16,10" BorderThickness="0,0,0,1"
             Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}"
             BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
@@ -12,14 +15,16 @@
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="116" />
+                <ColumnDefinition Width="84" />
                 <ColumnDefinition Width="2*" MinWidth="170" />
-                <ColumnDefinition Width="1.4*" MinWidth="120" />
-                <ColumnDefinition Width="1.6*" MinWidth="120" />
-                <ColumnDefinition Width="*" MinWidth="130" />
+                <ColumnDefinition Width="1.4*" MinWidth="110" />
+                <ColumnDefinition Width="1.6*" MinWidth="110" />
+                <ColumnDefinition Width="*" MinWidth="120" />
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
@@ -31,30 +36,42 @@
             <TextBox x:Name="AmountBox" Grid.Column="1" Margin="0,0,8,0"
                      Text="{Binding AmountText, UpdateSourceTrigger=PropertyChanged}"
                      ui:ControlHelper.Header="{infra:Str QuickAmount}"
-                     ui:ControlHelper.PlaceholderText="0,00" />
+                     ui:ControlHelper.PlaceholderText="0,00"
+                     ToolTip="{infra:Str QuickAmountTip}" />
 
-            <controls:FilterComboBox x:Name="CategoryBox" Grid.Column="2" Margin="0,0,8,0" HorizontalAlignment="Stretch"
+            <ComboBox x:Name="CurrencyBox" Grid.Column="2" Margin="0,0,8,0" HorizontalAlignment="Stretch" IsTabStop="False"
+                      ItemsSource="{Binding Currencies}" DisplayMemberPath="Code"
+                      SelectedValuePath="Code" SelectedValue="{Binding CurrencyCode, Mode=TwoWay}"
+                      ui:ControlHelper.Header="{infra:Str QuickCurrency}" ToolTip="{infra:Str QuickCurrencyTip}">
+                <ComboBox.ItemContainerStyle>
+                    <Style TargetType="ComboBoxItem" BasedOn="{StaticResource DefaultComboBoxItemStyle}">
+                        <Setter Property="ToolTip" Value="{Binding Display}" />
+                    </Style>
+                </ComboBox.ItemContainerStyle>
+            </ComboBox>
+
+            <controls:FilterComboBox x:Name="CategoryBox" Grid.Column="3" Margin="0,0,8,0" HorizontalAlignment="Stretch"
                                      Choices="{Binding Categories}" DisplayMemberPath="DisplayName"
                                      SelectedValuePath="Id" SelectedValue="{Binding CategoryId, Mode=TwoWay}"
                                      ui:ControlHelper.Header="{infra:Str QuickCategory}"
                                      ui:ControlHelper.PlaceholderText="{infra:Str QuickCategoryHint}" />
 
-            <TextBox x:Name="PlaceBox" Grid.Column="3" Margin="0,0,8,0"
+            <TextBox x:Name="PlaceBox" Grid.Column="4" Margin="0,0,8,0"
                      Text="{Binding Place, UpdateSourceTrigger=PropertyChanged}"
                      ui:ControlHelper.Header="{infra:Str QuickPlace}"
                      ui:ControlHelper.PlaceholderText="{infra:Str QuickPlaceHint}" />
 
-            <TextBox x:Name="NoteBox" Grid.Column="4" Margin="0,0,8,0"
+            <TextBox x:Name="NoteBox" Grid.Column="5" Margin="0,0,8,0"
                      Text="{Binding Note, UpdateSourceTrigger=PropertyChanged}"
                      ui:ControlHelper.Header="{infra:Str QuickNote}"
                      ui:ControlHelper.PlaceholderText="{infra:Str QuickNoteHint}" />
 
-            <ComboBox x:Name="EventBox" Grid.Column="5" Margin="0,0,8,0" HorizontalAlignment="Stretch"
+            <ComboBox x:Name="EventBox" Grid.Column="6" Margin="0,0,8,0" HorizontalAlignment="Stretch"
                       ItemsSource="{Binding Events}" DisplayMemberPath="Name"
                       SelectedValuePath="Key" SelectedValue="{Binding EventKey, Mode=TwoWay}"
                       ui:ControlHelper.Header="{infra:Str QuickEvent}" />
 
-            <StackPanel Grid.Column="6" Margin="0,0,8,0">
+            <StackPanel Grid.Column="7" Margin="0,0,8,0">
                 <TextBlock Text="{infra:Str QuickType}" Margin="0,0,0,4" Opacity="0.85" />
                 <Button x:Name="TypeButton" Content="{Binding TypeLabel}" Command="{Binding ToggleTypeCommand}"
                         MinWidth="100" IsTabStop="False" ToolTip="{infra:Str QuickTypeTip}">
@@ -71,11 +88,23 @@
                 </Button>
             </StackPanel>
 
-            <Button x:Name="AddButton" Grid.Column="7" Content="{infra:Str QuickAdd}" Command="{Binding AddCommand}"
+            <Button x:Name="AddButton" Grid.Column="8" Content="{infra:Str QuickAdd}" Command="{Binding AddCommand}"
                     Style="{StaticResource AccentButtonStyle}" VerticalAlignment="Bottom" MinWidth="90"
                     ToolTip="{infra:Str QuickAddTip}" />
 
-            <TextBlock Grid.Row="1" Grid.ColumnSpan="8" Text="{Binding ErrorMessage}" Margin="0,6,0,0"
+            <!-- Exchange rate: only for a foreign currency -->
+            <StackPanel Grid.Row="1" Grid.ColumnSpan="9" Orientation="Horizontal" Margin="0,8,0,0"
+                        Visibility="{Binding IsForeign, Converter={StaticResource BoolToVis}}">
+                <TextBlock Text="{infra:Str RateLabel}" VerticalAlignment="Center" Margin="0,0,8,0" />
+                <TextBox x:Name="RateBox" Width="100" IsTabStop="False" Text="{Binding RateText, UpdateSourceTrigger=PropertyChanged}"
+                         ToolTip="{infra:Str RateTip}" />
+                <Button Content="↻" Command="{Binding ResetRateCommand}" Margin="6,0,0,0" IsTabStop="False" ToolTip="{infra:Str RateReset}" />
+                <TextBlock Text="{Binding RateInfo}" VerticalAlignment="Center" Margin="12,0,0,0" Opacity="0.8" />
+                <TextBlock Text="{Binding ConvertedText}" VerticalAlignment="Center" Margin="16,0,0,0" FontWeight="Bold"
+                           Foreground="{DynamicResource SystemControlForegroundAccentBrush}" />
+            </StackPanel>
+
+            <TextBlock Grid.Row="2" Grid.ColumnSpan="9" Text="{Binding ErrorMessage}" Margin="0,6,0,0"
                        Foreground="{StaticResource ExpenseBrush}">
                 <TextBlock.Style>
                     <Style TargetType="TextBlock">

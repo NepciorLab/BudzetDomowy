@@ -42,6 +42,10 @@ public sealed record Transaction
     public decimal Amount { get; init; }
     public string CurrencyCode { get; init; } = "PLN";
     public decimal ExchangeRateToPln { get; init; } = 1m;
+    /// <summary>Effective date of the NBP rate used (null for PLN or a rate typed by hand).</summary>
+    public DateOnly? ExchangeRateDate { get; init; }
+    /// <summary>True when the user typed the rate instead of taking the NBP one.</summary>
+    public bool ExchangeRateManual { get; init; }
     /// <summary>Amount converted to PLN and stored at entry time; all reports use this value.</summary>
     public decimal AmountPln { get; init; }
     public Guid? CategoryId { get; init; }

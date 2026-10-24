@@ -48,6 +48,17 @@ public partial class QuickAddBar : UserControl
         }, System.Windows.Threading.DispatcherPriority.Input);
     }
 
+    public void FocusCurrency() => CurrencyBox.Focus();
+
+    public void FocusRate()
+    {
+        if (RateBox.IsVisible)
+        {
+            RateBox.Focus();
+            RateBox.SelectAll();
+        }
+    }
+
     /// <summary>
     /// Enter moves to the next field (like Tab) after resolving what was typed; only Enter on the Add button saves.
     /// Ctrl+Enter saves from any field.

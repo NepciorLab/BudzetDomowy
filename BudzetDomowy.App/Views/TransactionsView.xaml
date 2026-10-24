@@ -125,6 +125,15 @@
                     </DataGridTemplateColumn.CellEditingTemplate>
                 </DataGridTemplateColumn>
 
+                <DataGridTemplateColumn Header="{infra:Str ColOriginal}" Width="170" IsReadOnly="True" SortMemberPath="Model.Amount">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding OriginalDisplay}" VerticalAlignment="Center" Margin="8,0" Opacity="0.8" TextTrimming="CharacterEllipsis"
+                                       ToolTip="{Binding OriginalDisplay}" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+
                 <DataGridTemplateColumn Header="{infra:Str ColCategory}" Width="2*" SortMemberPath="CategoryPath">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>

@@ -1,3 +1,4 @@
+using BudzetDomowy.Core.Currency;
 using BudzetDomowy.Core.Journal;
 using BudzetDomowy.Core.Services;
 using BudzetDomowy.Core.Storage;
@@ -22,8 +23,10 @@ public sealed class BudgetCore : IDisposable
     public TransactionService Transactions { get; }
     public CategoryService Categories { get; }
     public CategoryRuleService Rules { get; }
+    public EventService Events { get; }
+    public ExchangeRateService Rates { get; }
 
-    private BudgetCore(DeviceIdentity device, string dataFolder, LocalDatabase db, SyncOptions? syncOptions)
+    private BudgetCore(DeviceIdentity device, string dataFolder, LocalDatabase db, SyncOptions? syncOptions, IExchangeRateSource? rateSource)
     {
         Device = device;
         DataFolder = dataFolder;
@@ -38,15 +41,18 @@ public sealed class BudgetCore : IDisposable
         Transactions = new TransactionService(Recorder, device, Reader);
         Categories = new CategoryService(Recorder, Reader);
         Rules = new CategoryRuleService(Reader, Recorder);
+        Events = new EventService(Recorder, Reader, Transactions);
+        Rates = new ExchangeRateService(Reader, rateSource ?? new NbpClient());
     }
 
     /// <param name="localDataDir">Per-installation folder (outside OneDrive): device.json and the SQLite database.</param>
     /// <param name="dataFolder">The shared (OneDrive-synchronised) folder with the journals.</param>
-    public static BudgetCore Create(string localDataDir, string dataFolder, string? deviceName = null, SyncOptions? syncOptions = null)
+    public static BudgetCore Create(string localDataDir, string dataFolder, string? deviceName = null, SyncOptions? syncOptions = null,
+        IExchangeRateSource? rateSource = null)
     {
         var device = DeviceIdentity.LoadOrCreate(localDataDir, deviceName);
         var db = new LocalDatabase(Path.Combine(localDataDir, DatabaseFileName));
-        return new BudgetCore(device, dataFolder, db, syncOptions);
+        return new BudgetCore(device, dataFolder, db, syncOptions, rateSource);
     }
 
     public void Dispose() => Sync.Dispose();

@@ -62,6 +62,13 @@ public sealed class TransactionRowViewModel : ObservableObject
         }
     }
 
+    public bool IsForeign => !Model.CurrencyCode.Equals("PLN", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>The amount as typed, with the rate used (empty for PLN).</summary>
+    public string OriginalDisplay => IsForeign
+        ? $"{Model.Amount.ToString("N2", CultureInfo.CurrentCulture)} {Model.CurrencyCode} · {Res.Get("RateShort")} {Model.ExchangeRateToPln.ToString("0.####", CultureInfo.CurrentCulture)}{(Model.ExchangeRateManual ? " ✎" : "")}"
+        : "";
+
     public string AmountDisplay =>
         (IsIncome ? "+" : "−") + Model.AmountPln.ToString("C2", CultureInfo.CurrentCulture);
 
@@ -143,5 +150,5 @@ public sealed class TransactionRowViewModel : ObservableObject
 
     private static bool SameVisible(Transaction a, Transaction b) =>
         a.Date == b.Date && a.Type == b.Type && a.Amount == b.Amount && a.AmountPln == b.AmountPln
-        && a.CurrencyCode == b.CurrencyCode && a.CategoryId == b.CategoryId && a.Place == b.Place && a.Note == b.Note && a.EventId == b.EventId;
+        && a.CurrencyCode == b.CurrencyCode && a.ExchangeRateToPln == b.ExchangeRateToPln && a.CategoryId == b.CategoryId && a.Place == b.Place && a.Note == b.Note && a.EventId == b.EventId;
 }

@@ -20,7 +20,7 @@ public sealed class LocalReader
         var where = new List<string>();
         if (from is not null) { where.Add("date >= $from"); cmd.Parameters.AddWithValue("$from", Materializer.Day(from.Value)); }
         if (to is not null) { where.Add("date <= $to"); cmd.Parameters.AddWithValue("$to", Materializer.Day(to.Value)); }
-        cmd.CommandText = "SELECT id, date, type, amount_cents, currency_code, exchange_rate, amount_pln_cents, category_id, note, event_id, created_at, created_by_device, place FROM transactions"
+        cmd.CommandText = "SELECT id, date, type, amount_cents, currency_code, exchange_rate, amount_pln_cents, category_id, note, event_id, created_at, created_by_device, place, rate_date, rate_manual FROM transactions"
                           + (where.Count > 0 ? " WHERE " + string.Join(" AND ", where) : "")
                           + " ORDER BY date, created_at, id";
 
@@ -44,6 +44,8 @@ public sealed class LocalReader
                     CreatedAt = DateTimeOffset.Parse(r.GetString(10), CultureInfo.InvariantCulture),
                     CreatedByDeviceId = r.GetString(11),
                     Place = r.GetString(12),
+                    ExchangeRateDate = r.IsDBNull(13) ? null : ParseDay(r.GetString(13)),
+                    ExchangeRateManual = r.GetInt32(14) != 0,
                 });
             }
         }
@@ -170,6 +172,72 @@ public sealed class LocalReader
             r.IsDBNull(4) ? null : DateTimeOffset.Parse(r.GetString(4), CultureInfo.InvariantCulture)));
 
     // ----- local exchange rate cache -----
+
+    public void SaveExchangeRates(IEnumerable<ExchangeRate> rates)
+    {
+        using var conn = _db.Open();
+        using var tx = conn.BeginTransaction();
+        foreach (var rate in rates)
+        {
+            using var cmd = conn.CreateCommand();
+            cmd.Transaction = tx;
+            cmd.CommandText = "INSERT OR REPLACE INTO exchange_rates (currency_code, date, rate, source, fetched_at) VALUES ($c, $d, $r, $s, $f)";
+            cmd.Parameters.AddWithValue("$c", rate.CurrencyCode);
+            cmd.Parameters.AddWithValue("$d", Materializer.Day(rate.Date));
+            cmd.Parameters.AddWithValue("$r", Materializer.Dec(rate.Rate));
+            cmd.Parameters.AddWithValue("$s", rate.Source.ToString());
+            cmd.Parameters.AddWithValue("$f", rate.FetchedAt.ToString("o", CultureInfo.InvariantCulture));
+            cmd.ExecuteNonQuery();
+        }
+        tx.Commit();
+    }
+
+    /// <summary>Latest cached NBP rate strictly before <paramref name="date"/>.</summary>
+    public ExchangeRate? GetRateBefore(string currencyCode, DateOnly date) => Query(
+        "SELECT currency_code, date, rate, source, fetched_at FROM exchange_rates WHERE currency_code = $c AND source = 'Nbp' AND date < $d ORDER BY date DESC LIMIT 1",
+        MapRate, ("$c", currencyCode), ("$d", Materializer.Day(date))).FirstOrDefault();
+
+    /// <summary>Most recent cached NBP rate of any date.</summary>
+    public ExchangeRate? GetLatestRate(string currencyCode) => Query(
+        "SELECT currency_code, date, rate, source, fetched_at FROM exchange_rates WHERE currency_code = $c AND source = 'Nbp' ORDER BY date DESC LIMIT 1",
+        MapRate, ("$c", currencyCode)).FirstOrDefault();
+
+    /// <summary>Remembers that every NBP publication day between the two dates is in the cache.</summary>
+    public void AddRateCoverage(string currencyCode, DateOnly from, DateOnly to)
+    {
+        using var conn = _db.Open();
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = "INSERT OR IGNORE INTO exchange_rate_coverage (currency_code, from_date, to_date) VALUES ($c, $f, $t)";
+        cmd.Parameters.AddWithValue("$c", currencyCode);
+        cmd.Parameters.AddWithValue("$f", Materializer.Day(from));
+        cmd.Parameters.AddWithValue("$t", Materializer.Day(to));
+        cmd.ExecuteNonQuery();
+    }
+
+    public bool HasRateCoverage(string currencyCode, DateOnly from, DateOnly to)
+    {
+        using var conn = _db.Open();
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = "SELECT 1 FROM exchange_rate_coverage WHERE currency_code = $c AND from_date <= $f AND to_date >= $t LIMIT 1";
+        cmd.Parameters.AddWithValue("$c", currencyCode);
+        cmd.Parameters.AddWithValue("$f", Materializer.Day(from));
+        cmd.Parameters.AddWithValue("$t", Materializer.Day(to));
+        return cmd.ExecuteScalar() is not null;
+    }
+
+    /// <summary>Currencies of the most recently entered transactions, newest first.</summary>
+    public IReadOnlyList<string> GetRecentCurrencies(int limit = 8) => Query(
+        "SELECT currency_code FROM transactions GROUP BY currency_code ORDER BY MAX(created_at) DESC LIMIT $n",
+        r => r.GetString(0), ("$n", limit));
+
+    private static ExchangeRate MapRate(SqliteDataReader r) => new()
+    {
+        CurrencyCode = r.GetString(0),
+        Date = ParseDay(r.GetString(1)),
+        Rate = decimal.Parse(r.GetString(2), CultureInfo.InvariantCulture),
+        Source = Enum.Parse<ExchangeRateSource>(r.GetString(3)),
+        FetchedAt = DateTimeOffset.Parse(r.GetString(4), CultureInfo.InvariantCulture),
+    };
 
     public void SaveExchangeRate(ExchangeRate rate)
     {

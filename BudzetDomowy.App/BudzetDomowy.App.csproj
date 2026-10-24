@@ -6,6 +6,7 @@
 
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <PackageReference Include="LiveChartsCore.SkiaSharpView.WPF" Version="2.0.0-rc5.4" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.1" />
     <PackageReference Include="ModernWpfUI" Version="0.9.6" />
   </ItemGroup>
@@ -17,6 +18,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
     <!-- Icon of the .exe (Explorer, taskbar); regenerate with tools\MakeIcon.ps1 -->
+    <!-- LiveCharts pulls in .NET Framework builds of OpenTK/SkiaSharp views; they work fine in WPF on .NET 8 -->
+    <NoWarn>$(NoWarn);NU1701</NoWarn>
     <ApplicationIcon>Assets\BudzetDomowy.ico</ApplicationIcon>
   </PropertyGroup>
 
