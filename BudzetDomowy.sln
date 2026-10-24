@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BudzetDomowy.App", "BudzetD
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BudzetDomowy.Tests", "BudzetDomowy.Tests\BudzetDomowy.Tests.csproj", "{3B1D27CD-BBB3-482F-A73A-B96A6653923A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BudzetDomowy.UiTests", "BudzetDomowy.UiTests\BudzetDomowy.UiTests.csproj", "{78313D2B-7062-43CE-8501-6C875070E120}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -30,5 +32,9 @@ Global
 		{3B1D27CD-BBB3-482F-A73A-B96A6653923A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3B1D27CD-BBB3-482F-A73A-B96A6653923A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3B1D27CD-BBB3-482F-A73A-B96A6653923A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{78313D2B-7062-43CE-8501-6C875070E120}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{78313D2B-7062-43CE-8501-6C875070E120}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{78313D2B-7062-43CE-8501-6C875070E120}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{78313D2B-7062-43CE-8501-6C875070E120}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

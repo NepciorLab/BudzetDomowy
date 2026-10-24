@@ -1,4 +1,4 @@
-﻿using System.Globalization;
+using System.Globalization;
 using System.Windows;
 using System.Windows.Markup;
 using BudzetDomowy.App.Infrastructure;
@@ -59,6 +59,10 @@ public partial class App : Application
             .AddSingleton<TransactionsViewModel>()
             .AddSingleton<CategoriesViewModel>()
             .AddSingleton<EventsViewModel>()
+            .AddSingleton<DashboardViewModel>()
+            .AddSingleton<BudgetsViewModel>()
+            .AddSingleton<ReportsViewModel>()
+            .AddSingleton<RecurringViewModel>()
             .AddSingleton<SettingsViewModel>()
             .AddSingleton<MainViewModel>()
             .AddSingleton<MainWindow>()

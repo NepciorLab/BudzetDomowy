@@ -4,7 +4,7 @@
         xmlns:ui="http://schemas.modernwpf.com/2019"
         xmlns:infra="clr-namespace:BudzetDomowy.App.Infrastructure"
         ui:WindowHelper.UseModernWindowStyle="True"
-        Icon="pack://application:,,,/Assets/BudzetDomowy.ico"
+        Icon="pack://application:,,,/BudzetDomowy.App;component/Assets/BudzetDomowy.ico"
         Title="{infra:Str WizardTitle}" Width="680" Height="560" MinWidth="560" MinHeight="480"
         WindowStartupLocation="CenterScreen">
     <Window.Resources>

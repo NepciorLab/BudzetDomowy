@@ -16,6 +16,7 @@ public sealed partial class SettingsViewModel : ObservableObject
     private readonly SettingsStore _store;
 
     public CategoriesViewModel Categories { get; }
+    public RecurringViewModel Recurring { get; }
 
     public IReadOnlyList<ThemeOption> Themes { get; } =
     [
@@ -31,11 +32,12 @@ public sealed partial class SettingsViewModel : ObservableObject
     public string DeviceName => _core.Device.DeviceName;
     public string DeviceId => _core.Device.DeviceId;
 
-    public SettingsViewModel(BudgetCore core, SettingsStore store, CategoriesViewModel categories)
+    public SettingsViewModel(BudgetCore core, SettingsStore store, CategoriesViewModel categories, RecurringViewModel recurring)
     {
         _core = core;
         _store = store;
         Categories = categories;
+        Recurring = recurring;
         _selectedTheme = Themes.First(t => t.Choice == store.Current.Theme);
     }
 

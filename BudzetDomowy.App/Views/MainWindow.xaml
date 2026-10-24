@@ -6,13 +6,22 @@
         xmlns:vm="clr-namespace:BudzetDomowy.App.ViewModels"
         xmlns:views="clr-namespace:BudzetDomowy.App.Views"
         ui:WindowHelper.UseModernWindowStyle="True"
-        Icon="pack://application:,,,/Assets/BudzetDomowy.ico"
+        Icon="pack://application:,,,/BudzetDomowy.App;component/Assets/BudzetDomowy.ico"
         Title="{Binding WindowTitle}" Width="1280" Height="800" MinWidth="980" MinHeight="560"
         WindowStartupLocation="CenterScreen">
     <Window.Resources>
         <infra:BoolToVisibilityConverter x:Key="BoolToVis" />
         <DataTemplate DataType="{x:Type vm:TransactionsViewModel}">
             <views:TransactionsView />
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:DashboardViewModel}">
+            <views:DashboardView />
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:BudgetsViewModel}">
+            <views:BudgetsView />
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:ReportsViewModel}">
+            <views:ReportsView />
         </DataTemplate>
         <DataTemplate DataType="{x:Type vm:EventsViewModel}">
             <views:EventsView />

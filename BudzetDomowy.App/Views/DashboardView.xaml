@@ -1,0 +1,240 @@
+<UserControl x:Class="BudzetDomowy.App.Views.DashboardView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="http://schemas.modernwpf.com/2019"
+             xmlns:infra="clr-namespace:BudzetDomowy.App.Infrastructure"
+             xmlns:lvc="clr-namespace:LiveChartsCore.SkiaSharpView.WPF;assembly=LiveChartsCore.SkiaSharpView.WPF">
+    <UserControl.Resources>
+        <infra:BoolToVisibilityConverter x:Key="BoolToVis" />
+        <infra:HexToBrushConverter x:Key="HexToBrush" />
+        <Style x:Key="Card" TargetType="Border">
+            <Setter Property="CornerRadius" Value="10" />
+            <Setter Property="Padding" Value="16,12" />
+            <Setter Property="Margin" Value="0,0,12,12" />
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}" />
+        </Style>
+        <Style x:Key="BudgetBarStyle" TargetType="ProgressBar" BasedOn="{StaticResource DefaultProgressBarStyle}">
+            <Setter Property="Minimum" Value="0" />
+            <Setter Property="Maximum" Value="1" />
+            <Setter Property="Height" Value="8" />
+            <Setter Property="Foreground" Value="{StaticResource IncomeBrush}" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding Status}" Value="Warning">
+                    <Setter Property="Foreground" Value="{StaticResource WarningBrush}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Status}" Value="Over">
+                    <Setter Property="Foreground" Value="{StaticResource ExpenseBrush}" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+    </UserControl.Resources>
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="16,12,4,12">
+            <!-- Month switch -->
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                <Button Content="◀" Command="{Binding PreviousMonthCommand}" Width="40" ToolTip="{infra:Str DashPrevMonth}" />
+                <TextBlock Text="{Binding MonthTitle}" FontSize="24" FontWeight="SemiBold" Width="260" TextAlignment="Center" VerticalAlignment="Center" />
+                <Button Content="▶" Command="{Binding NextMonthCommand}" Width="40" ToolTip="{infra:Str DashNextMonth}" />
+                <Button Content="{infra:Str DashToday}" Command="{Binding ThisMonthCommand}" Margin="12,0,0,0" />
+            </StackPanel>
+
+            <!-- Tiles -->
+            <WrapPanel>
+                <Border Style="{StaticResource Card}" MinWidth="220">
+                    <StackPanel>
+                        <TextBlock Text="{infra:Str DashIncome}" Opacity="0.7" />
+                        <TextBlock Text="{Binding IncomeText}" FontSize="26" FontWeight="Bold" Foreground="{StaticResource IncomeBrush}" />
+                        <TextBlock Text="{Binding IncomeChange}" Opacity="0.7" />
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource Card}" MinWidth="220">
+                    <StackPanel>
+                        <TextBlock Text="{infra:Str DashExpenses}" Opacity="0.7" />
+                        <TextBlock Text="{Binding ExpenseText}" FontSize="26" FontWeight="Bold" Foreground="{StaticResource ExpenseBrush}" />
+                        <TextBlock Text="{Binding ExpenseChange}" Opacity="0.7" />
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource Card}" MinWidth="220">
+                    <StackPanel>
+                        <TextBlock Text="{infra:Str DashBalance}" Opacity="0.7" />
+                        <TextBlock Text="{Binding BalanceText}" FontSize="26" FontWeight="Bold">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="{StaticResource IncomeBrush}" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding BalanceNegative}" Value="True">
+                                            <Setter Property="Foreground" Value="{StaticResource ExpenseBrush}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </StackPanel>
+                </Border>
+            </WrapPanel>
+
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" MinWidth="420" />
+                    <ColumnDefinition Width="*" MinWidth="360" />
+                </Grid.ColumnDefinitions>
+
+                <!-- Categories chart -->
+                <Border Style="{StaticResource Card}" VerticalAlignment="Top">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <Button Content="←" Command="{Binding BackCommand}" Margin="0,0,10,0"
+                                    Visibility="{Binding CanGoBack, Converter={StaticResource BoolToVis}}" ToolTip="{infra:Str DashBack}" />
+                            <TextBlock Text="{Binding ChartTitle}" FontWeight="SemiBold" FontSize="15" VerticalAlignment="Center" />
+                        </StackPanel>
+                        <TextBlock Text="{infra:Str DashNoExpenses}" Opacity="0.6" Margin="0,16" HorizontalAlignment="Center">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding HasSlices}" Value="False">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                        <Grid Margin="0,8,0,0" Visibility="{Binding HasSlices, Converter={StaticResource BoolToVis}}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="230" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <lvc:PieChart Series="{Binding PieSeries}" LegendPosition="Hidden" Height="220" />
+                            <ItemsControl Grid.Column="1" ItemsSource="{Binding Slices}" VerticalAlignment="Center" Margin="8,0,0,0">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Button Command="{Binding DataContext.DrillIntoCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                CommandParameter="{Binding}" HorizontalContentAlignment="Stretch" Background="Transparent"
+                                                BorderThickness="0" Padding="4,4" HorizontalAlignment="Stretch" ToolTip="{infra:Str DashDrillTip}">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="20" />
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                    <ColumnDefinition Width="54" />
+                                                    <ColumnDefinition Width="14" />
+                                                </Grid.ColumnDefinitions>
+                                                <Ellipse Width="12" Height="12" Fill="{Binding Color, Converter={StaticResource HexToBrush}}" HorizontalAlignment="Left" />
+                                                <TextBlock Grid.Column="1" Text="{Binding Name}" TextTrimming="CharacterEllipsis" />
+                                                <TextBlock Grid.Column="2" Text="{Binding AmountText}" FontWeight="SemiBold" Margin="8,0" />
+                                                <TextBlock Grid.Column="3" Text="{Binding ShareText}" TextAlignment="Right" Opacity="0.7" />
+                                                <TextBlock Grid.Column="4" Text="›" Opacity="0.7" HorizontalAlignment="Right"
+                                                           Visibility="{Binding CanDrill, Converter={StaticResource BoolToVis}}" />
+                                            </Grid>
+                                        </Button>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- Budgets and active event -->
+                <StackPanel Grid.Column="1">
+                    <Border Style="{StaticResource Card}">
+                        <StackPanel>
+                            <TextBlock Text="{infra:Str DashBudgets}" FontWeight="SemiBold" FontSize="15" />
+                            <TextBlock Text="{infra:Str DashNoBudgets}" Opacity="0.6" Margin="0,8,0,0" TextWrapping="Wrap">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding HasBudgets}" Value="False">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                            <ItemsControl ItemsSource="{Binding BudgetBars}" Margin="0,8,0,0">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Margin="0,6">
+                                            <Grid>
+                                                <TextBlock Text="{Binding Path}" TextTrimming="CharacterEllipsis" FontWeight="SemiBold" Margin="0,0,70,0" />
+                                                <TextBlock Text="{Binding PercentText}" HorizontalAlignment="Right" FontWeight="SemiBold" />
+                                            </Grid>
+                                            <ProgressBar Value="{Binding Fraction, Mode=OneWay}" Style="{StaticResource BudgetBarStyle}" Margin="0,4" />
+                                            <TextBlock Text="{Binding Text}" Opacity="0.7" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Style="{StaticResource Card}" Visibility="{Binding HasActiveEvent, Converter={StaticResource BoolToVis}}">
+                        <StackPanel>
+                            <TextBlock Text="{infra:Str DashActiveEvent}" Opacity="0.7" />
+                            <TextBlock Text="{Binding EventName}" FontSize="18" FontWeight="Bold" />
+                            <TextBlock Text="{Binding EventDates}" Opacity="0.7" />
+                            <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                                <TextBlock Text="{Binding EventSpent}" FontSize="22" FontWeight="Bold" Foreground="{StaticResource ExpenseBrush}" />
+                                <TextBlock Text="{Binding EventPerDay}" Margin="12,0,0,0" VerticalAlignment="Bottom" Opacity="0.7" />
+                            </StackPanel>
+                            <ProgressBar Minimum="0" Maximum="1" Value="{Binding EventFraction, Mode=OneWay}" Height="8" Margin="0,8,0,0"
+                                         Visibility="{Binding EventHasPlan, Converter={StaticResource BoolToVis}}">
+                                <ProgressBar.Style>
+                                    <Style TargetType="ProgressBar" BasedOn="{StaticResource DefaultProgressBarStyle}">
+                                        <Setter Property="Foreground" Value="{StaticResource IncomeBrush}" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding EventOver}" Value="True">
+                                                <Setter Property="Foreground" Value="{StaticResource ExpenseBrush}" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ProgressBar.Style>
+                            </ProgressBar>
+                            <TextBlock Text="{Binding EventPlan}" Opacity="0.7" Margin="0,4,0,0" />
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </Grid>
+
+            <!-- Recent -->
+            <Border Style="{StaticResource Card}">
+                <StackPanel>
+                    <TextBlock Text="{infra:Str DashRecent}" FontWeight="SemiBold" FontSize="15" Margin="0,0,0,6" />
+                    <ItemsControl ItemsSource="{Binding Recent}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Margin="0,4">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="110" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="130" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="{Binding Date, StringFormat='dd.MM.yyyy'}" Opacity="0.7" />
+                                    <TextBlock Grid.Column="1" Text="{Binding Place}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                                    <StackPanel Grid.Column="2" Orientation="Horizontal">
+                                        <Ellipse Width="10" Height="10" Margin="0,0,8,0" Fill="{Binding CategoryColor, Converter={StaticResource HexToBrush}}" />
+                                        <TextBlock Text="{Binding Category}" TextTrimming="CharacterEllipsis" />
+                                    </StackPanel>
+                                    <TextBlock Grid.Column="3" Text="{Binding AmountText}" TextAlignment="Right" FontWeight="SemiBold">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Foreground" Value="{StaticResource ExpenseBrush}" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsIncome}" Value="True">
+                                                        <Setter Property="Foreground" Value="{StaticResource IncomeBrush}" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

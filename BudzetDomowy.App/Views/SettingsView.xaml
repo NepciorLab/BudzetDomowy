@@ -4,7 +4,8 @@
              xmlns:ui="http://schemas.modernwpf.com/2019"
              xmlns:infra="clr-namespace:BudzetDomowy.App.Infrastructure"
              xmlns:vm="clr-namespace:BudzetDomowy.App.ViewModels"
-             xmlns:controls="clr-namespace:BudzetDomowy.App.Controls">
+             xmlns:controls="clr-namespace:BudzetDomowy.App.Controls"
+             xmlns:local="clr-namespace:BudzetDomowy.App.Views">
     <UserControl.Resources>
         <infra:BoolToVisibilityConverter x:Key="BoolToVis" />
         <infra:HexToBrushConverter x:Key="HexToBrush" />
@@ -134,6 +135,10 @@
                     </StackPanel>
                 </ScrollViewer>
             </Grid>
+        </TabItem>
+        <!-- Recurring entries -->
+        <TabItem Header="{infra:Str SettingsRecurring}">
+            <local:RecurringView DataContext="{Binding Recurring}" />
         </TabItem>
     </TabControl>
 </UserControl>

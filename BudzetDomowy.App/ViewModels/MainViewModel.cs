@@ -42,7 +42,8 @@ public sealed partial class MainViewModel : ObservableObject
     public event Action? SyncDetailsRequested;
 
     public MainViewModel(BudgetCore core, QuickAddViewModel quickAdd, TransactionsViewModel transactions,
-        SettingsViewModel settings, EventsViewModel events, ToastService toast)
+        SettingsViewModel settings, EventsViewModel events, DashboardViewModel dashboard, BudgetsViewModel budgets,
+        ReportsViewModel reports, ToastService toast)
     {
         Core = core;
         QuickAdd = quickAdd;
@@ -60,11 +61,11 @@ public sealed partial class MainViewModel : ObservableObject
 
         _pages = new Dictionary<string, object>
         {
-            ["dashboard"] = new PlaceholderViewModel(Res.Get("NavDashboard")),
+            ["dashboard"] = dashboard,
             ["transactions"] = transactions,
-            ["budgets"] = new PlaceholderViewModel(Res.Get("NavBudgets")),
+            ["budgets"] = budgets,
             ["events"] = events,
-            ["reports"] = new PlaceholderViewModel(Res.Get("NavReports")),
+            ["reports"] = reports,
             ["settings"] = settings,
         };
 
@@ -80,6 +81,25 @@ public sealed partial class MainViewModel : ObservableObject
         core.Sync.StatusChanged += (_, s) => Application.Current.Dispatcher.BeginInvoke(() => ShowStatus(s));
         ShowStatus(core.Sync.Status);
         core.Sync.Start();
+
+        // recurring entries that fell due while the program was closed (and again every few hours if it stays open)
+        _recurringTimer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromHours(4) };
+        _recurringTimer.Tick += async (_, _) => await GenerateRecurringAsync();
+        _recurringTimer.Start();
+        _ = GenerateRecurringAsync();
+    }
+
+    private readonly System.Windows.Threading.DispatcherTimer _recurringTimer;
+
+    private async Task GenerateRecurringAsync()
+    {
+        try
+        {
+            var run = await Core.Recurring.GenerateDueAsync(DateOnly.FromDateTime(DateTime.Today));
+            if (run.Created > 0) Toast.Show(Res.Format("RecurGeneratedToast", run.Created));
+        }
+        catch (UpdateRequiredException) { /* shown by the sync indicator */ }
+        catch (Exception) { /* a failed background run is retried at the next tick */ }
     }
 
     /// <summary>Weekday, day, month and year in capitals, e.g. SOBOTA, 24 PAŹDZIERNIKA 2026.</summary>

@@ -228,6 +228,92 @@ Del – usuń zaznaczone transakcje</value></data>
   <data name="EventSaved" xml:space="preserve"><value>Zapisano.</value></data>
   <data name="EventDeleted" xml:space="preserve"><value>Usunięto wydarzenie „{0}”. Wpisy zostały zachowane.</value></data>
   <data name="NewEventName" xml:space="preserve"><value>Nowe wydarzenie</value></data>
+  <data name="DashPrevMonth" xml:space="preserve"><value>Poprzedni miesiąc</value></data>
+  <data name="DashNextMonth" xml:space="preserve"><value>Następny miesiąc</value></data>
+  <data name="DashToday" xml:space="preserve"><value>Bieżący</value></data>
+  <data name="DashIncome" xml:space="preserve"><value>Przychody</value></data>
+  <data name="DashExpenses" xml:space="preserve"><value>Wydatki</value></data>
+  <data name="DashBalance" xml:space="preserve"><value>Bilans</value></data>
+  <data name="DashChange" xml:space="preserve"><value>{0} {1}% względem poprzedniego miesiąca</value></data>
+  <data name="DashNoChange" xml:space="preserve"><value>bez zmian względem poprzedniego miesiąca</value></data>
+  <data name="DashNoPrevious" xml:space="preserve"><value>brak danych z poprzedniego miesiąca</value></data>
+  <data name="DashExpensesByCategory" xml:space="preserve"><value>Wydatki według kategorii</value></data>
+  <data name="DashInCategory" xml:space="preserve"><value>Kategoria: {0}</value></data>
+  <data name="DashBack" xml:space="preserve"><value>Wróć do wszystkich kategorii</value></data>
+  <data name="DashDrillTip" xml:space="preserve"><value>Kliknij, aby zobaczyć podkategorie</value></data>
+  <data name="DashNoExpenses" xml:space="preserve"><value>Brak wydatków w tym okresie.</value></data>
+  <data name="DashOwnPart" xml:space="preserve"><value>{0} (bez podkategorii)</value></data>
+  <data name="DashBudgets" xml:space="preserve"><value>Budżety</value></data>
+  <data name="DashNoBudgets" xml:space="preserve"><value>Nie ustawiono jeszcze limitów. Zrobisz to na ekranie Budżety.</value></data>
+  <data name="DashBudgetOf" xml:space="preserve"><value>{0} z {1}</value></data>
+  <data name="DashActiveEvent" xml:space="preserve"><value>Trwające wydarzenie</value></data>
+  <data name="DashPerDay" xml:space="preserve"><value>{0} na dzień</value></data>
+  <data name="DashPlanOf" xml:space="preserve"><value>{0} z planowanych {1}</value></data>
+  <data name="DashRecent" xml:space="preserve"><value>Ostatnie wpisy</value></data>
+  <data name="BudgetsCopy" xml:space="preserve"><value>Kopiuj z poprzedniego miesiąca</value></data>
+  <data name="BudgetsCopyTip" xml:space="preserve"><value>Przenosi limity obowiązujące w poprzednim miesiącu na wybrany miesiąc.</value></data>
+  <data name="BudgetsHint" xml:space="preserve"><value>Wpisz miesięczny limit przy kategorii. Zmiana obowiązuje od wybranego miesiąca do kolejnej zmiany; puste pole zdejmuje limit. Limit kategorii nadrzędnej obejmuje jej podkategorie.</value></data>
+  <data name="BudgetsLimit" xml:space="preserve"><value>Limit miesięczny</value></data>
+  <data name="BudgetsSpent" xml:space="preserve"><value>Wydano</value></data>
+  <data name="BudgetsProgress" xml:space="preserve"><value>Wykorzystanie</value></data>
+  <data name="BudgetsSpentOf" xml:space="preserve"><value>{0}</value></data>
+  <data name="BudgetsTotal" xml:space="preserve"><value>Suma limitów głównych kategorii: {0}</value></data>
+  <data name="BudgetsCopied" xml:space="preserve"><value>Skopiowano limitów: {0}.</value></data>
+  <data name="BudgetsNothingToCopy" xml:space="preserve"><value>Nie ma nic do skopiowania – limity są już takie same.</value></data>
+  <data name="BudgetsHistory" xml:space="preserve"><value>Historia limitu:</value></data>
+  <data name="BudgetsHistoryItem" xml:space="preserve"><value>od {0}: {1}</value></data>
+  <data name="BudgetsHistoryOff" xml:space="preserve"><value>od {0}: bez limitu</value></data>
+  <data name="ReportMonth" xml:space="preserve"><value>Miesiąc</value></data>
+  <data name="ReportYear" xml:space="preserve"><value>Rok</value></data>
+  <data name="ReportIncome" xml:space="preserve"><value>Przychody</value></data>
+  <data name="ReportExpenses" xml:space="preserve"><value>Wydatki</value></data>
+  <data name="ReportBalance" xml:space="preserve"><value>Bilans</value></data>
+  <data name="ReportCompareWith" xml:space="preserve"><value>Porównanie z:</value></data>
+  <data name="ReportChange" xml:space="preserve"><value>Zmiana</value></data>
+  <data name="ReportTrend12" xml:space="preserve"><value>Ostatnie 12 miesięcy</value></data>
+  <data name="ReportTrendYear" xml:space="preserve"><value>Przychody i wydatki w roku {0}</value></data>
+  <data name="ReportCategories" xml:space="preserve"><value>Kategorie wydatków</value></data>
+  <data name="ReportTop5" xml:space="preserve"><value>Najwięcej wydano na:</value></data>
+  <data name="ReportDrill" xml:space="preserve"><value>Podział z podkategoriami:</value></data>
+  <data name="ReportEvents" xml:space="preserve"><value>Wydarzenia</value></data>
+  <data name="ReportDates" xml:space="preserve"><value>Daty</value></data>
+  <data name="AvgTitle" xml:space="preserve"><value>Średnie wydatki</value></data>
+  <data name="AvgProrate" xml:space="preserve"><value>Bieżący niepełny miesiąc liczony proporcjonalnie</value></data>
+  <data name="AvgProrateTip" xml:space="preserve"><value>Włączone: miesiąc, który trwa, liczy się tylko w części (np. 10 dni z 31). Wyłączone: do średniej miesięcznej używane są tylko pełne, zakończone miesiące.</value></data>
+  <data name="AvgPerDay" xml:space="preserve"><value>Na dzień</value></data>
+  <data name="AvgPerWeek" xml:space="preserve"><value>Na tydzień</value></data>
+  <data name="AvgPerMonth" xml:space="preserve"><value>Na miesiąc</value></data>
+  <data name="AvgIncomePerMonth" xml:space="preserve"><value>Przychody na miesiąc</value></data>
+  <data name="AvgMethodBase" xml:space="preserve"><value>Sposób liczenia: wydatki z zakresu dzielone są przez liczbę dni, tygodni (dni / 7) i miesięcy; dni, które jeszcze nie nastąpiły, nie są liczone.</value></data>
+  <data name="AvgMethodProrate" xml:space="preserve"><value>Liczone dni: {0}. Liczba miesięcy: {1} – niepełny miesiąc wchodzi proporcjonalnie do upływu czasu.</value></data>
+  <data name="AvgMethodExclude" xml:space="preserve"><value>Użyto tylko pełnych, zakończonych miesięcy (liczba: {0}); niepełny miesiąc pominięto.</value></data>
+  <data name="SettingsRecurring" xml:space="preserve"><value>Wpisy cykliczne</value></data>
+  <data name="RecurNew" xml:space="preserve"><value>Nowy wpis cykliczny</value></data>
+  <data name="RecurGenerateNow" xml:space="preserve"><value>Utwórz zaległe teraz</value></data>
+  <data name="RecurGenerateTip" xml:space="preserve"><value>Tworzy wpisy, których termin już minął. Program robi to też sam przy starcie.</value></data>
+  <data name="RecurHint" xml:space="preserve"><value>Wpis cykliczny tworzy transakcje w ustalone dni (np. czynsz 5. dnia miesiąca). Program robi to przy starcie; dwa komputery nie tworzą duplikatów.</value></data>
+  <data name="RecurFrequency" xml:space="preserve"><value>Powtarzaj</value></data>
+  <data name="RecurWeekly" xml:space="preserve"><value>co tydzień</value></data>
+  <data name="RecurMonthly" xml:space="preserve"><value>co miesiąc</value></data>
+  <data name="RecurYearly" xml:space="preserve"><value>co rok</value></data>
+  <data name="RecurWeekday" xml:space="preserve"><value>Dzień tygodnia</value></data>
+  <data name="RecurDayOfMonth" xml:space="preserve"><value>Dzień miesiąca</value></data>
+  <data name="RecurStart" xml:space="preserve"><value>Początek</value></data>
+  <data name="RecurEnd" xml:space="preserve"><value>Koniec (opcjonalnie)</value></data>
+  <data name="RecurUntitled" xml:space="preserve"><value>Wpis cykliczny</value></data>
+  <data name="RecurNotYet" xml:space="preserve"><value>jeszcze nie utworzono wpisów</value></data>
+  <data name="RecurLast" xml:space="preserve"><value>ostatnio: {0}</value></data>
+  <data name="RecurUntil" xml:space="preserve"><value>do {0}</value></data>
+  <data name="RecurEveryWeek" xml:space="preserve"><value>co tydzień: {0}, od {1}</value></data>
+  <data name="RecurEveryMonth" xml:space="preserve"><value>co miesiąc, {0}. dnia, od {1}</value></data>
+  <data name="RecurEveryYear" xml:space="preserve"><value>co rok, {0} {1}, od {2}</value></data>
+  <data name="RecurFillIn" xml:space="preserve"><value>Uzupełnij pola i zapisz.</value></data>
+  <data name="RecurEndBeforeStart" xml:space="preserve"><value>Koniec nie może być przed początkiem.</value></data>
+  <data name="RecurDeleted" xml:space="preserve"><value>Usunięto wpis cykliczny „{0}”. Utworzone wcześniej transakcje zostały.</value></data>
+  <data name="RecurGenerated" xml:space="preserve"><value>Utworzono wpisów: {0}.</value></data>
+  <data name="RecurNothingDue" xml:space="preserve"><value>Nic nie czeka na utworzenie.</value></data>
+  <data name="RecurWaitingForRate" xml:space="preserve"><value>Wpis w obcej walucie czeka na kurs NBP (brak połączenia).</value></data>
+  <data name="RecurGeneratedToast" xml:space="preserve"><value>Utworzono wpisy cykliczne: {0}.</value></data>
   <data name="EventPlannedField" xml:space="preserve"><value>Plan (zł)</value></data>
   <data name="EventPlannedHint" xml:space="preserve"><value>np. 5000 (opcjonalnie)</value></data>
 </root>

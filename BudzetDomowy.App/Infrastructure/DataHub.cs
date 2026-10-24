@@ -8,8 +8,9 @@ namespace BudzetDomowy.App.Infrastructure;
 /// Raises one coalesced "data changed" notification on the UI thread whenever local edits happen or
 /// synchronisation brought changes from another device.
 /// </summary>
-public sealed class DataHub
+public sealed class DataHub : IDisposable
 {
+    private bool _stopped;
     private readonly Dispatcher _dispatcher;
     private readonly DispatcherTimer _timer;
 
@@ -22,7 +23,7 @@ public sealed class DataHub
         _timer.Tick += (_, _) =>
         {
             _timer.Stop();
-            Changed?.Invoke(this, EventArgs.Empty);
+            if (!_stopped) Changed?.Invoke(this, EventArgs.Empty);
         };
         core.Recorder.Changed += (_, _) => Request();
         core.Sync.StatusChanged += (_, s) =>
@@ -33,7 +34,16 @@ public sealed class DataHub
 
     public void Request()
     {
+        if (_stopped) return;
         if (_dispatcher.CheckAccess()) _timer.Start();
         else _dispatcher.BeginInvoke(() => _timer.Start());
+    }
+
+    /// <summary>Stops notifying (pending notifications are dropped).</summary>
+    public void Dispose()
+    {
+        _stopped = true;
+        if (_dispatcher.CheckAccess()) _timer.Stop();
+        else _dispatcher.Invoke(() => _timer.Stop());
     }
 }

@@ -1,0 +1,109 @@
+<UserControl x:Class="BudzetDomowy.App.Views.RecurringView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="http://schemas.modernwpf.com/2019"
+             xmlns:infra="clr-namespace:BudzetDomowy.App.Infrastructure"
+             xmlns:controls="clr-namespace:BudzetDomowy.App.Controls">
+    <UserControl.Resources>
+        <infra:BoolToVisibilityConverter x:Key="BoolToVis" />
+        <infra:BoolToVisibilityConverter x:Key="NotVis" Invert="True" />
+    </UserControl.Resources>
+    <Grid Margin="0,16,0,0">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" MinWidth="260" />
+            <ColumnDefinition Width="16" />
+            <ColumnDefinition Width="1.3*" MinWidth="360" />
+        </Grid.ColumnDefinitions>
+
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                <Button Content="{infra:Str RecurNew}" Command="{Binding NewCommand}" Style="{StaticResource AccentButtonStyle}" Margin="0,0,8,0" />
+                <Button Content="{infra:Str RecurGenerateNow}" Command="{Binding GenerateNowCommand}" ToolTip="{infra:Str RecurGenerateTip}" />
+            </StackPanel>
+            <TextBlock Grid.Row="1" Text="{infra:Str RecurHint}" TextWrapping="Wrap" Opacity="0.7" Margin="0,0,0,8" />
+            <ListBox Grid.Row="2" ItemsSource="{Binding Items}" SelectedItem="{Binding Selected, Mode=TwoWay}" HorizontalContentAlignment="Stretch"
+                     BorderThickness="1" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <StackPanel Margin="0,4">
+                            <Grid>
+                                <TextBlock Text="{Binding Title}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" Margin="0,0,110,0" />
+                                <TextBlock Text="{Binding AmountText}" HorizontalAlignment="Right" FontWeight="SemiBold" />
+                            </Grid>
+                            <TextBlock Text="{Binding Schedule}" Opacity="0.7" TextWrapping="Wrap" />
+                            <TextBlock Text="{Binding LastText}" Opacity="0.55" />
+                        </StackPanel>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </Grid>
+
+        <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <StackPanel Orientation="Horizontal">
+                    <RadioButton Content="{infra:Str TypeExpense}" IsChecked="{Binding IsExpense, Mode=OneWay}"
+                                 GroupName="rtype" Click="Expense_Click" MinWidth="0" />
+                    <RadioButton Content="{infra:Str TypeIncome}" IsChecked="{Binding EditIsIncome, Mode=OneWay}"
+                                 GroupName="rtype" Click="Income_Click" MinWidth="0" Margin="12,0,0,0" />
+                </StackPanel>
+                <Grid Margin="0,10,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="10" />
+                        <ColumnDefinition Width="110" />
+                    </Grid.ColumnDefinitions>
+                    <TextBox Text="{Binding EditAmount, UpdateSourceTrigger=PropertyChanged}" ui:ControlHelper.Header="{infra:Str QuickAmount}" />
+                    <ComboBox Grid.Column="2" ItemsSource="{Binding Currencies}" DisplayMemberPath="Code" SelectedValuePath="Code"
+                              SelectedValue="{Binding EditCurrency, Mode=TwoWay}" HorizontalAlignment="Stretch"
+                              ui:ControlHelper.Header="{infra:Str QuickCurrency}" />
+                </Grid>
+                <controls:FilterComboBox Choices="{Binding Categories}" DisplayMemberPath="DisplayName" SelectedValuePath="Id"
+                                         SelectedValue="{Binding EditCategoryId, Mode=TwoWay}" HorizontalAlignment="Stretch" Margin="0,10,0,0"
+                                         ui:ControlHelper.Header="{infra:Str QuickCategory}" ui:ControlHelper.PlaceholderText="{infra:Str QuickCategoryHint}" />
+                <Grid Margin="0,10,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="10" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <TextBox Text="{Binding EditPlace, UpdateSourceTrigger=PropertyChanged}" ui:ControlHelper.Header="{infra:Str QuickPlace}" />
+                    <TextBox Grid.Column="2" Text="{Binding EditNote, UpdateSourceTrigger=PropertyChanged}" ui:ControlHelper.Header="{infra:Str QuickNote}" />
+                </Grid>
+                <Grid Margin="0,10,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="10" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <ComboBox ItemsSource="{Binding Frequencies}" SelectedItem="{Binding EditFrequency, Mode=TwoWay}" HorizontalAlignment="Stretch"
+                              ui:ControlHelper.Header="{infra:Str RecurFrequency}" />
+                    <ComboBox Grid.Column="2" ItemsSource="{Binding Weekdays}" SelectedValuePath="Day" DisplayMemberPath="Label"
+                              SelectedValue="{Binding EditWeekday, Mode=TwoWay}" HorizontalAlignment="Stretch"
+                              ui:ControlHelper.Header="{infra:Str RecurWeekday}" Visibility="{Binding IsWeekly, Converter={StaticResource BoolToVis}}" />
+                    <ComboBox Grid.Column="2" ItemsSource="{Binding MonthDays}" SelectedItem="{Binding EditMonthDay, Mode=TwoWay}" HorizontalAlignment="Stretch"
+                              ui:ControlHelper.Header="{infra:Str RecurDayOfMonth}" Visibility="{Binding IsWeekly, Converter={StaticResource NotVis}}" />
+                </Grid>
+                <Grid Margin="0,10,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="10" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <DatePicker SelectedDate="{Binding EditStart, Mode=TwoWay}" HorizontalAlignment="Stretch" ui:ControlHelper.Header="{infra:Str RecurStart}" />
+                    <DatePicker Grid.Column="2" SelectedDate="{Binding EditEnd, Mode=TwoWay}" HorizontalAlignment="Stretch" ui:ControlHelper.Header="{infra:Str RecurEnd}" />
+                </Grid>
+                <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
+                    <Button Content="{infra:Str CategorySave}" Command="{Binding SaveCommand}" Style="{StaticResource AccentButtonStyle}" Margin="0,0,8,0" />
+                    <Button Content="{infra:Str CategoryRemove}" Command="{Binding DeleteCommand}"
+                            Visibility="{Binding HasSelection, Converter={StaticResource BoolToVis}}" />
+                </StackPanel>
+                <TextBlock Text="{Binding Message}" TextWrapping="Wrap" Margin="0,10,0,0" Opacity="0.85" />
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

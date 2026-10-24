@@ -22,17 +22,17 @@ public sealed class TransactionService
 
     /// <summary>Adds a transaction with a single position. The PLN amount is computed and stored with the rate used.</summary>
     public Transaction Add(DateOnly date, TransactionType type, decimal amount, Guid? categoryId, string? note, Guid? eventId, string? place = null,
-        string currency = "PLN", decimal rateToPln = 1m, DateOnly? rateDate = null, bool rateManual = false)
+        string currency = "PLN", decimal rateToPln = 1m, DateOnly? rateDate = null, bool rateManual = false,
+        Guid? id = null, DateTimeOffset? createdAt = null)
     {
         if (amount <= 0) throw new ArgumentOutOfRangeException(nameof(amount), "Amount must be positive.");
         if (rateToPln <= 0) throw new ArgumentOutOfRangeException(nameof(rateToPln), "Exchange rate must be positive.");
         currency = string.IsNullOrWhiteSpace(currency) ? "PLN" : currency.Trim().ToUpperInvariant();
         if (currency == "PLN") (rateToPln, rateDate, rateManual) = (1m, null, false);
 
-        var id = Guid.NewGuid();
         var t = new Transaction
         {
-            Id = id,
+            Id = id ?? Guid.NewGuid(),
             Date = date,
             Type = type,
             Amount = amount,
@@ -45,7 +45,7 @@ public sealed class TransactionService
             Place = (place ?? "").Trim(),
             Note = (note ?? "").Trim(),
             EventId = eventId,
-            CreatedAt = _now(),
+            CreatedAt = createdAt ?? _now(),
             CreatedByDeviceId = _device.DeviceId,
             Lines = [new TransactionLine { Id = Guid.NewGuid(), CategoryId = categoryId, Amount = amount, Description = (note ?? "").Trim() }],
         };

@@ -25,6 +25,8 @@ public sealed class BudgetCore : IDisposable
     public CategoryRuleService Rules { get; }
     public EventService Events { get; }
     public ExchangeRateService Rates { get; }
+    public BudgetService Budgets { get; }
+    public RecurringService Recurring { get; }
 
     private BudgetCore(DeviceIdentity device, string dataFolder, LocalDatabase db, SyncOptions? syncOptions, IExchangeRateSource? rateSource)
     {
@@ -43,6 +45,8 @@ public sealed class BudgetCore : IDisposable
         Rules = new CategoryRuleService(Reader, Recorder);
         Events = new EventService(Recorder, Reader, Transactions);
         Rates = new ExchangeRateService(Reader, rateSource ?? new NbpClient());
+        Budgets = new BudgetService(Recorder, Reader);
+        Recurring = new RecurringService(Recorder, Reader, Transactions, Rates);
     }
 
     /// <param name="localDataDir">Per-installation folder (outside OneDrive): device.json and the SQLite database.</param>
