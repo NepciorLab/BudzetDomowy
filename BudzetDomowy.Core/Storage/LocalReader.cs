@@ -136,6 +136,19 @@ public sealed class LocalReader
             UseCount = r.GetInt32(4),
         });
 
+    /// <summary>Number of transactions that use the category directly or through one of their lines.</summary>
+    public int CountTransactionsInCategory(Guid categoryId)
+    {
+        using var conn = _db.Open();
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = """
+            SELECT COUNT(*) FROM transactions
+            WHERE category_id = $c OR id IN (SELECT transaction_id FROM transaction_lines WHERE category_id = $c)
+            """;
+        cmd.Parameters.AddWithValue("$c", Materializer.Id(categoryId));
+        return Convert.ToInt32(cmd.ExecuteScalar(), CultureInfo.InvariantCulture);
+    }
+
     /// <summary>True if the entity was deleted (a tombstone exists).</summary>
     public bool IsTombstone(string entityType, Guid id)
     {

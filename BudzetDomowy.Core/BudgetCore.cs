@@ -1,0 +1,53 @@
+using BudzetDomowy.Core.Journal;
+using BudzetDomowy.Core.Services;
+using BudzetDomowy.Core.Storage;
+using BudzetDomowy.Core.Sync;
+
+namespace BudzetDomowy.Core;
+
+/// <summary>Composition root of the Core library: one instance per running application (or test device).</summary>
+public sealed class BudgetCore : IDisposable
+{
+    public const string DatabaseFileName = "budzet.db";
+
+    public DeviceIdentity Device { get; }
+    public string DataFolder { get; }
+    public LocalDatabase Database { get; }
+    public Materializer Materializer { get; }
+    public LocalReader Reader { get; }
+    public HybridLogicalClock Clock { get; }
+    public SyncGuard Guard { get; }
+    public EventRecorder Recorder { get; }
+    public SyncService Sync { get; }
+    public TransactionService Transactions { get; }
+    public CategoryService Categories { get; }
+    public CategoryRuleService Rules { get; }
+
+    private BudgetCore(DeviceIdentity device, string dataFolder, LocalDatabase db, SyncOptions? syncOptions)
+    {
+        Device = device;
+        DataFolder = dataFolder;
+        Database = db;
+        Materializer = new Materializer(db);
+        Reader = new LocalReader(db);
+        Clock = new HybridLogicalClock(initial: Materializer.MaxHlc());
+        Guard = new SyncGuard();
+        var writer = new JournalWriter(dataFolder, device.DeviceId);
+        Recorder = new EventRecorder(device, Clock, writer, Materializer, Guard);
+        Sync = new SyncService(dataFolder, db, Materializer, Reader, Clock, Guard, syncOptions);
+        Transactions = new TransactionService(Recorder, device, Reader);
+        Categories = new CategoryService(Recorder, Reader);
+        Rules = new CategoryRuleService(Reader, Recorder);
+    }
+
+    /// <param name="localDataDir">Per-installation folder (outside OneDrive): device.json and the SQLite database.</param>
+    /// <param name="dataFolder">The shared (OneDrive-synchronised) folder with the journals.</param>
+    public static BudgetCore Create(string localDataDir, string dataFolder, string? deviceName = null, SyncOptions? syncOptions = null)
+    {
+        var device = DeviceIdentity.LoadOrCreate(localDataDir, deviceName);
+        var db = new LocalDatabase(Path.Combine(localDataDir, DatabaseFileName));
+        return new BudgetCore(device, dataFolder, db, syncOptions);
+    }
+
+    public void Dispose() => Sync.Dispose();
+}
