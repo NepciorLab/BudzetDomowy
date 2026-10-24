@@ -58,17 +58,19 @@ public static class ComparisonReports
         var starts = months.Select(m => new DateOnly(m.Year, m.Month, 1)).Distinct().OrderBy(m => m).ToList();
 
         // category -> amount per month at the chosen level
-        var perMonth = new List<Dictionary<Guid?, decimal>>();
-        var names = new Dictionary<Guid?, string>();
+        // Guid.Empty stands for "no category" (a dictionary cannot have a null key)
+        var perMonth = new List<Dictionary<Guid, decimal>>();
+        var names = new Dictionary<Guid, string>();
         foreach (var month in starts)
         {
             var level = LevelOf(PeriodReports.Breakdown(list, cats, month, PeriodReports.MonthEnd(month), type), parentCategoryId);
-            var dict = new Dictionary<Guid?, decimal>();
+            var dict = new Dictionary<Guid, decimal>();
             foreach (var item in level)
             {
                 // an "own" share of the parent keeps the parent's id so it forms one label for every month
-                dict[item.CategoryId] = dict.GetValueOrDefault(item.CategoryId) + item.Amount;
-                names.TryAdd(item.CategoryId, item.Name);
+                var key = item.CategoryId ?? Guid.Empty;
+                dict[key] = dict.GetValueOrDefault(key) + item.Amount;
+                names.TryAdd(key, item.Name);
             }
             perMonth.Add(dict);
         }
@@ -79,7 +81,7 @@ public static class ComparisonReports
         var hasOthers = ranked.Count > maxCategories;
 
         var labels = kept.Select(id => names[id]).ToList();
-        var ids = kept.ToList();
+        var ids = kept.Select(k => k == Guid.Empty ? (Guid?)null : k).ToList();
         if (hasOthers) { labels.Add(OthersLabel); ids.Add(null); }
 
         var series = new List<MonthSeries>();

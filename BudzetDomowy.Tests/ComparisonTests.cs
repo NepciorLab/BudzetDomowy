@@ -53,6 +53,21 @@ public class ComparisonTests
     }
 
     [Fact]
+    public void MonthsByCategory_CountsEntriesWithoutACategory()
+    {
+        var tx = new[]
+        {
+            Make.Expense("2026-10-03", 50), Make.Expense("2026-09-03", 70), Make.Expense("2026-10-04", 20, Id("Auto")),
+        };
+
+        var cmp = ComparisonReports.MonthsByCategory(tx, Cats, [new DateOnly(2026, 9, 1), new DateOnly(2026, 10, 1)], TransactionType.Expense);
+        var none = cmp.CategoryIds.ToList().IndexOf(null);
+        Assert.True(none >= 0);
+        Assert.Equal(70m, cmp.Series[0].Values[none]);
+        Assert.Equal(50m, cmp.Series[1].Values[none]);
+    }
+
+    [Fact]
     public void MonthsByCategory_CanDrillIntoOneCategory()
     {
         var tx = new[]
