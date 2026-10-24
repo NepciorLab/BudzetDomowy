@@ -488,3 +488,6 @@ _sample/
 
 # The WPF project folder is named *.App, which the macOS bundle rule above would ignore
 !BudzetDomowy.App/
+
+# Release output of tools\publish.ps1
+dist/

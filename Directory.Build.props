@@ -5,7 +5,7 @@
     <FileVersion>0.1.0.0</FileVersion>
     <InformationalVersion>0.1.0</InformationalVersion>
     <IncludeSourceRevisionInIdentifier>false</IncludeSourceRevisionInIdentifier>
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
     <Product>Budżet domowy</Product>
-    <Authors>Przemysław Madoń</Authors>
   </PropertyGroup>
 </Project>
