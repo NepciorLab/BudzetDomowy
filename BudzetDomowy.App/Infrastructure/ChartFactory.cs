@@ -128,6 +128,45 @@ public static class ChartFactory
         },
     ];
 
+    /// <summary>A line per category over the same points (markers only while the lines are short enough for them to be readable).</summary>
+    public static IReadOnlyList<ISeries> CategoryLines(IReadOnlyList<(string Name, string Color, IReadOnlyList<decimal> Values)> lines)
+    {
+        var points = lines.Count == 0 ? 0 : lines.Max(l => l.Values.Count);
+        var marker = points <= 48 ? 8 : 0;
+        return lines.Select(l =>
+        {
+            var color = ParseColor(l.Color);
+            return (ISeries)new LineSeries<double>
+            {
+                Name = l.Name,
+                Values = l.Values.Select(v => (double)v).ToArray(),
+                Fill = null,
+                LineSmoothness = 0,
+                Stroke = new SolidColorPaint(color) { StrokeThickness = 2.5f },
+                GeometrySize = marker,
+                GeometryFill = new SolidColorPaint(color),
+                GeometryStroke = new SolidColorPaint(color) { StrokeThickness = 2 },
+                YToolTipLabelFormatter = MoneyTip,
+            };
+        }).ToList();
+    }
+
+    /// <summary>The axis of a time line: one position per point, but only about a dozen labels written (the others are left empty so they never overlap).</summary>
+    public static IReadOnlyList<Axis> BucketAxes(IReadOnlyList<string> labels)
+    {
+        var step = Math.Max(1, (int)Math.Ceiling(labels.Count / 12.0));
+        return
+        [
+            new Axis
+            {
+                Labels = labels.Select((text, i) => i % step == 0 ? text : "").ToArray(),
+                LabelsPaint = TextPaint(),
+                TextSize = 12,
+                SeparatorsPaint = null,
+            },
+        ];
+    }
+
     /// <summary>One column each for the income, the expenses and the balance of everything shown (the balance may be negative).</summary>
     public static IReadOnlyList<ISeries> SumColumns(decimal income, decimal expense, string incomeName, string expenseName, string balanceName,
         bool showIncome = true, bool showExpense = true)

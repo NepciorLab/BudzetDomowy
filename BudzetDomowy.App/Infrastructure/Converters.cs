@@ -42,6 +42,15 @@ public sealed class NullToVisibilityConverter : IValueConverter
 }
 
 /// <summary>"#RRGGBB" text to a brush; empty or invalid gives a transparent brush.</summary>
+/// <summary>A day number (as used by the range slider) written as a date.</summary>
+public sealed class DayNumberToDateConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture) =>
+        value is double d && d >= 0 && d <= DateOnly.MaxValue.DayNumber ? DateOnly.FromDayNumber((int)d).ToString("d", culture) : "";
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => throw new NotSupportedException();
+}
+
 public sealed class HexToBrushConverter : IValueConverter
 {
     public object Convert(object value, Type targetType, object parameter, CultureInfo culture)

@@ -10,6 +10,7 @@
         <infra:BoolToVisibilityConverter x:Key="BoolToVis" />
         <infra:BoolToVisibilityConverter x:Key="NotVis" Invert="True" />
         <infra:HexToBrushConverter x:Key="HexToBrush" />
+        <infra:DayNumberToDateConverter x:Key="DayToDate" />
         <Style x:Key="Card" TargetType="Border">
             <Setter Property="CornerRadius" Value="10" />
             <Setter Property="Padding" Value="16,12" />
@@ -35,6 +36,7 @@
                 <TabItem Header="{infra:Str ReportTabOverview}" />
                 <TabItem Header="{infra:Str ReportTabCompare}" />
                 <TabItem Header="{infra:Str ReportTabPlaces}" />
+                <TabItem Header="{infra:Str ReportTabCharts}" />
             </TabControl>
 
             <!-- Period: everything, year, month; arrows; Excel on the right -->
@@ -495,6 +497,126 @@
                                     </DataGrid.Columns>
                                 </DataGrid>
                             </StackPanel>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+            </Grid>
+
+            <!-- ================= charts: lines for chosen categories over a range ================= -->
+            <Grid Visibility="{Binding IsCharts, Converter={StaticResource BoolToVis}}">
+            <StackPanel DataContext="{Binding Charts}">
+
+                <!-- the range: two date fields and a bar with two handles over all the data -->
+                <Border Style="{StaticResource Card}">
+                    <StackPanel>
+                        <TextBlock Text="{infra:Str ChartRangeTitle}" Style="{StaticResource Heading}" />
+                        <TextBlock Text="{infra:Str ChartNoData}" Opacity="0.7" Visibility="{Binding NoData, Converter={StaticResource BoolToVis}}" />
+                        <StackPanel IsEnabled="{Binding HasData}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <DatePicker x:Name="ChartFromBox" SelectedDate="{Binding FromDate, Mode=TwoWay}" Width="170" ui:ControlHelper.Header="{infra:Str FilterFrom}" />
+                                <TextBlock Grid.Column="1" Text="{Binding RangeText}" HorizontalAlignment="Center" VerticalAlignment="Bottom" Opacity="0.75" Margin="0,0,0,8" />
+                                <DatePicker x:Name="ChartToBox" Grid.Column="2" SelectedDate="{Binding ToDate, Mode=TwoWay}" Width="170" ui:ControlHelper.Header="{infra:Str FilterTo}" />
+                            </Grid>
+                            <controls:RangeSlider x:Name="ChartRange" Minimum="{Binding RangeMin}" Maximum="{Binding RangeMax}" LowerValue="{Binding LowerDay, Mode=TwoWay}"
+                                                  UpperValue="{Binding UpperDay, Mode=TwoWay}" ToolTipConverter="{StaticResource DayToDate}" Margin="0,6,0,0" />
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock x:Name="ChartMinText" Text="{Binding MinText}" Opacity="0.7" FontSize="12" ToolTip="{infra:Str ChartFirstEntry}" />
+                                <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center">
+                                    <TextBlock Text="{infra:Str ChartStepLabel}" VerticalAlignment="Center" Opacity="0.75" Margin="0,0,10,0" />
+                                    <RadioButton x:Name="ChartStepWeek" Content="{infra:Str ChartStepWeek}" GroupName="chartstep" IsChecked="{Binding IsWeek, Mode=OneWay}"
+                                                 Command="{Binding SetStepCommand}" CommandParameter="Week" MinWidth="0" />
+                                    <RadioButton x:Name="ChartStepMonth" Content="{infra:Str ChartStepMonth}" GroupName="chartstep" IsChecked="{Binding IsMonthStep, Mode=OneWay}"
+                                                 Command="{Binding SetStepCommand}" CommandParameter="Month" MinWidth="0" Margin="8,0,0,0" />
+                                    <RadioButton x:Name="ChartStepYear" Content="{infra:Str ChartStepYear}" GroupName="chartstep" IsChecked="{Binding IsYearStep, Mode=OneWay}"
+                                                 Command="{Binding SetStepCommand}" CommandParameter="Year" MinWidth="0" Margin="8,0,0,0" />
+                                </StackPanel>
+                                <TextBlock x:Name="ChartMaxText" Grid.Column="2" Text="{Binding MaxText}" Opacity="0.7" FontSize="12" HorizontalAlignment="Right" ToolTip="{infra:Str ChartLastEntry}" />
+                            </Grid>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- the categories: one box to add (it filters while typing), the chosen ones as tags -->
+                <Border Style="{StaticResource Card}">
+                    <StackPanel>
+                        <TextBlock Text="{infra:Str ChartCategoriesTitle}" Style="{StaticResource Heading}" />
+                        <StackPanel Orientation="Horizontal">
+                            <controls:FilterComboBox x:Name="ChartCategoryBox" Choices="{Binding Choices}" DisplayMemberPath="DisplayName" SelectedValuePath="Id"
+                                                     SelectedValue="{Binding PickedCategory, Mode=TwoWay}" Width="380"
+                                                     ui:ControlHelper.PlaceholderText="{infra:Str ChartAddCategory}" ToolTip="{infra:Str ChartAddCategoryTip}" />
+                            <Button x:Name="ChartQuickButton" Content="{infra:Str ChartQuick}" Click="ChartQuick_Click" Margin="8,0,0,0" ToolTip="{infra:Str ChartQuickTip}">
+                                <Button.ContextMenu>
+                                    <ContextMenu>
+                                        <MenuItem x:Name="QuickExpenses5" Header="{infra:Str ChartQuickExpenses5}" Click="QuickExpenses5_Click" />
+                                        <MenuItem x:Name="QuickExpenses10" Header="{infra:Str ChartQuickExpenses10}" Click="QuickExpenses10_Click" />
+                                        <MenuItem x:Name="QuickIncome" Header="{infra:Str ChartQuickIncome}" Click="QuickIncome_Click" />
+                                    </ContextMenu>
+                                </Button.ContextMenu>
+                            </Button>
+                            <Button x:Name="ChartClearButton" Content="{infra:Str ChartClear}" Command="{Binding ClearChipsCommand}" Margin="8,0,0,0" />
+                        </StackPanel>
+                        <TextBlock Text="{Binding Status}" Foreground="{StaticResource WarningBrush}" Margin="0,6,0,0">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                    <Style.Triggers>
+                                        <Trigger Property="Text" Value="">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                        <ItemsControl x:Name="ChipsList" ItemsSource="{Binding Chips}" Margin="0,10,0,0">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border CornerRadius="14" Padding="10,3,3,3" Margin="0,0,8,8" Background="{DynamicResource SystemControlBackgroundBaseLowBrush}">
+                                        <StackPanel Orientation="Horizontal">
+                                            <Ellipse Width="12" Height="12" VerticalAlignment="Center" Fill="{Binding Color, Converter={StaticResource HexToBrush}}" />
+                                            <TextBlock Text="{Binding Name}" Margin="8,0,0,0" VerticalAlignment="Center" />
+                                            <TextBlock Text="{Binding TotalText}" Margin="8,0,0,0" FontSize="12" Opacity="0.65" VerticalAlignment="Center" ToolTip="{infra:Str ChartTotalTip}" />
+                                            <Button Content="▸" Width="26" Height="26" Padding="0" MinWidth="0" Margin="6,0,0,0" Background="Transparent" BorderThickness="0"
+                                                    ToolTip="{infra:Str ChartSplit}" Visibility="{Binding HasChildren, Converter={StaticResource BoolToVis}}"
+                                                    Command="{Binding DataContext.SplitChipCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" CommandParameter="{Binding}" />
+                                            <Button Content="✕" Width="26" Height="26" Padding="0" MinWidth="0" Margin="2,0,0,0" Background="Transparent" BorderThickness="0"
+                                                    ToolTip="{infra:Str ChartRemove}"
+                                                    Command="{Binding DataContext.RemoveChipCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" CommandParameter="{Binding}" />
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+
+                <!-- the chart -->
+                <Border Style="{StaticResource Card}" Visibility="{Binding HasData, Converter={StaticResource BoolToVis}}">
+                    <StackPanel>
+                        <Grid>
+                            <TextBlock Text="{infra:Str ChartTitle}" Style="{StaticResource Heading}" />
+                            <TextBlock Text="{Binding PointsText}" HorizontalAlignment="Right" Opacity="0.7" />
+                        </Grid>
+                        <Grid>
+                            <lvc:CartesianChart x:Name="CategoriesChart" Series="{Binding Series}" XAxes="{Binding XAxes}" YAxes="{Binding YAxes}"
+                                                LegendPosition="Bottom" LegendTextPaint="{Binding LegendTextPaint}" Height="440" />
+                            <TextBlock x:Name="ChartHint" Text="{infra:Str ChartPickHint}" Opacity="0.65" HorizontalAlignment="Center" VerticalAlignment="Center" TextAlignment="Center"
+                                       IsHitTestVisible="False" Visibility="{Binding ShowHint, Converter={StaticResource BoolToVis}}" />
                         </Grid>
                     </StackPanel>
                 </Border>

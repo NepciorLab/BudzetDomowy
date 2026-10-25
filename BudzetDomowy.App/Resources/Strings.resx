@@ -734,6 +734,35 @@ Dodaj rachunki przyciskiem „Zaplanuj płatności”.</value></data>
   <data name="BulkAmountInvalid" xml:space="preserve"><value>Podaj kwotę większą od zera (liczbę albo działanie).</value></data>
   <data name="AmountChangedCount" xml:space="preserve"><value>Zmieniono kwotę wpisów: {0}</value></data>
   <data name="BusyAmount" xml:space="preserve"><value>Zmiana kwoty wpisów: {0}…</value></data>
+  <data name="ReportTabCharts" xml:space="preserve"><value>Wykresy</value></data>
+  <data name="ChartRangeTitle" xml:space="preserve"><value>Zakres dat</value></data>
+  <data name="ChartNoData" xml:space="preserve"><value>Nie ma jeszcze żadnych wpisów, więc nie ma czego rysować.</value></data>
+  <data name="ChartRangeText" xml:space="preserve"><value>Zakres: {0} dni</value></data>
+  <data name="ChartFirstEntry" xml:space="preserve"><value>Data pierwszego wpisu w programie</value></data>
+  <data name="ChartLastEntry" xml:space="preserve"><value>Data ostatniego wpisu w programie</value></data>
+  <data name="ChartStepLabel" xml:space="preserve"><value>Punkt na wykresie:</value></data>
+  <data name="ChartStepWeek" xml:space="preserve"><value>tydzień</value></data>
+  <data name="ChartStepMonth" xml:space="preserve"><value>miesiąc</value></data>
+  <data name="ChartStepYear" xml:space="preserve"><value>rok</value></data>
+  <data name="ChartStepWeeks" xml:space="preserve"><value>tygodni</value></data>
+  <data name="ChartStepMonths" xml:space="preserve"><value>miesięcy</value></data>
+  <data name="ChartStepYears" xml:space="preserve"><value>lat</value></data>
+  <data name="ChartPointsText" xml:space="preserve"><value>Punktów na wykresie: {0} ({1})</value></data>
+  <data name="ChartCategoriesTitle" xml:space="preserve"><value>Kategorie na wykresie</value></data>
+  <data name="ChartAddCategory" xml:space="preserve"><value>Dodaj kategorię lub podkategorię (zacznij pisać)…</value></data>
+  <data name="ChartAddCategoryTip" xml:space="preserve"><value>Wpisz kilka liter, wybierz z listy: kategoria trafi na wykres jako znacznik, razem ze swoimi podkategoriami.</value></data>
+  <data name="ChartQuick" xml:space="preserve"><value>Szybki wybór ▾</value></data>
+  <data name="ChartQuickTip" xml:space="preserve"><value>Wstawia od razu największe kategorie z wybranego zakresu (zastępuje obecny wybór).</value></data>
+  <data name="ChartQuickExpenses5" xml:space="preserve"><value>5 największych kategorii wydatków</value></data>
+  <data name="ChartQuickExpenses10" xml:space="preserve"><value>10 największych kategorii wydatków</value></data>
+  <data name="ChartQuickIncome" xml:space="preserve"><value>Największe kategorie przychodów</value></data>
+  <data name="ChartClear" xml:space="preserve"><value>Wyczyść</value></data>
+  <data name="ChartSplit" xml:space="preserve"><value>Zastąp podkategoriami (każda dostanie własną linię)</value></data>
+  <data name="ChartRemove" xml:space="preserve"><value>Usuń z wykresu</value></data>
+  <data name="ChartTotalTip" xml:space="preserve"><value>Suma w wybranym zakresie</value></data>
+  <data name="ChartTitle" xml:space="preserve"><value>Wykres liniowy</value></data>
+  <data name="ChartPickHint" xml:space="preserve"><value>Dodaj kategorie nad wykresem, a pojawią się tu ich linie.</value></data>
+  <data name="ChartTooMany" xml:space="preserve"><value>Na wykresie może być najwyżej {0} kategorii naraz: usuń którąś, żeby dodać następną.</value></data>
   <data name="PeriodAll" xml:space="preserve"><value>Wszystko</value></data>
   <data name="PeriodAllTitle" xml:space="preserve"><value>Wszystkie wpisy</value></data>
 </root>

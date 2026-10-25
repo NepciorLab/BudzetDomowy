@@ -101,7 +101,7 @@ public class V6UiTests
         var scroll = UiHost.Descendants<ScrollViewer>(view).First(s => s.Content is StackPanel);
         Assert.False(UiHost.Descendants<TabControl>(scroll).Any());                       // the tabs are not inside what scrolls
         Assert.Equal(System.Windows.Media.Brushes.Transparent, tabs.Background);          // the same look as the tabs of Settings
-        Assert.Equal(3, tabs.Items.Count);
+        Assert.Equal(4, tabs.Items.Count);                                                  // overview, comparisons, places, charts
         Assert.Equal(new Settings_TabLook().Border, tabs.BorderThickness.Left);
     });
 

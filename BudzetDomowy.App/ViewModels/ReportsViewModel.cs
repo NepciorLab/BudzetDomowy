@@ -19,7 +19,7 @@ public sealed record BreakdownNode(string Name, string Color, string AmountText,
 
 public sealed record EventRow(string Name, string Dates, string Spent, string PerDay, string Plan);
 
-public enum ReportTab { Overview, Compare, Places }
+public enum ReportTab { Overview, Compare, Places, Charts }
 
 /// <summary>What the trend chart of the overview shows: everything, only the income, or only the expenses.</summary>
 public enum TrendShow { All, Income, Expense }
@@ -31,7 +31,7 @@ public sealed partial class ReportsViewModel : ObservableObject, IPeriodNavigabl
     private readonly SettingsStore _store;
 
     [ObservableProperty, NotifyPropertyChangedFor(nameof(IsOverview)), NotifyPropertyChangedFor(nameof(IsCompare)),
-        NotifyPropertyChangedFor(nameof(IsPlaces)), NotifyPropertyChangedFor(nameof(ShowPeriod))] private ReportTab _tab;
+        NotifyPropertyChangedFor(nameof(IsPlaces)), NotifyPropertyChangedFor(nameof(IsCharts)), NotifyPropertyChangedFor(nameof(ShowPeriod))] private ReportTab _tab;
 
     /// <summary>The tab strip works with an index; it is the same choice as <see cref="Tab"/>.</summary>
     public int TabIndex
@@ -43,15 +43,23 @@ public sealed partial class ReportsViewModel : ObservableObject, IPeriodNavigabl
         }
     }
 
-    partial void OnTabChanged(ReportTab value) => OnPropertyChanged(nameof(TabIndex));
+    partial void OnTabChanged(ReportTab value)
+    {
+        OnPropertyChanged(nameof(TabIndex));
+        if (value == ReportTab.Charts) Charts.EnsureFresh();
+    }
 
     public bool IsOverview => Tab == ReportTab.Overview;
     public bool IsCompare => Tab == ReportTab.Compare;
     public bool IsPlaces => Tab == ReportTab.Places;
-    public bool ShowPeriod => Tab != ReportTab.Compare;
+    public bool IsCharts => Tab == ReportTab.Charts;
+
+    /// <summary>The overview and the places follow the period chosen at the top; the comparison and the charts have their own ranges.</summary>
+    public bool ShowPeriod => Tab is ReportTab.Overview or ReportTab.Places;
 
     public CompareViewModel Compare { get; }
     public PlacesViewModel Places { get; }
+    public ChartsViewModel Charts { get; }
 
     /// <summary>Everything, one year or one month; remembered for the next start of the program.</summary>
     [ObservableProperty, NotifyPropertyChangedFor(nameof(IsAll)), NotifyPropertyChangedFor(nameof(IsYear)), NotifyPropertyChangedFor(nameof(IsMonth)),
@@ -133,6 +141,7 @@ public sealed partial class ReportsViewModel : ObservableObject, IPeriodNavigabl
         _scope = store.Current.ReportsPeriod;
         Compare = new CompareViewModel(core);
         Places = new PlacesViewModel(core);
+        Charts = new ChartsViewModel(core);
         var today = DateTime.Today;
         _avgFrom = new DateTime(today.Year, 1, 1);
         _avgTo = today;
@@ -141,6 +150,8 @@ public sealed partial class ReportsViewModel : ObservableObject, IPeriodNavigabl
             Reload();
             Compare.Refresh();
             Places.Reload();
+            if (IsCharts) Charts.Reload();
+            else Charts.Stale = true;
         };
         Reload();
     }
