@@ -28,6 +28,9 @@
                 <views:RecurringView />
             </Grid>
         </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:PaymentsViewModel}">
+            <views:PaymentsView />
+        </DataTemplate>
         <DataTemplate DataType="{x:Type vm:EventsViewModel}">
             <views:EventsView />
         </DataTemplate>

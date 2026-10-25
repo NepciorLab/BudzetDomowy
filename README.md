@@ -2,7 +2,7 @@
 
 Program dla Windows 11 do wpisywania przychodów i wydatków oraz pilnowania budżetu domowego. Pracują w nim dwie osoby na dwóch komputerach na wspólnych danych. Interfejs jest po polsku, walutą bazową jest złoty.
 
-Wersja **0.6.0**.
+Wersja **0.7.0**.
 
 ## Uruchomienie
 
@@ -51,7 +51,20 @@ U góry każdego ekranu są dwa przyciski z podpowiedzią klawiszy: **W – nowy
 
 Ekrany: **Pulpit** (miesiąc, kafelki, wykres kategorii z podkategoriami, paski budżetów, ostatnie wpisy, trwające wydarzenie), **Transakcje** (edycja w miejscu, filtry, przeglądanie tygodniowe, miesięczne, roczne, całe (*Wszystko*) albo w dowolnym zakresie, domyślnie bieżący miesiąc; na dole sumy wszystkich pasujących wpisów, a obok po prawej zaznaczonych; ikona Excela w prawym górnym rogu eksportuje to, co widać), **Budżety** (limity miesięczne z historią zmian), **Wydarzenia** (np. wakacje: koszty osobno, koszt na dzień, porównanie z planem), **Wpisy cykliczne** (osobny ekran: każdy wpis ma wymaganą nazwę; po kliknięciu wpisu widać jego szczegóły tylko do odczytu, a przycisk *Zmień* włącza edycję i zamienia się w *Zapisz zmiany*; pole *Potwierdzaj wykonanie* sprawia, że przy każdym terminie program pyta „czy to miało miejsce?”: Tak dodaje wpis, Nie pomija ten termin na zawsze, Później pyta przy następnym uruchomieniu; pytania pokazują się tylko, gdy okno programu jest widoczne), **Raporty** (zakładki: *Przegląd* – u góry wybierasz kolejno **Wszystko, Rok, Miesiąc** (domyślnie zawsze rok; wybór jest zapamiętywany do następnego uruchomienia; „Wszystko” obejmuje cały okres bez porównania, a ikona Excela eksportuje wtedy listę wszystkich transakcji), porównanie z poprzednim okresem (tylko tych zakresów, które istnieją: bieżący okres do dziś i poprzedni do tego samego dnia sprzed miesiąca/roku, a gdy dane zaczynają się później – od tego dnia; przy takim skróceniu pod tabelą jest uwaga, że przegląd jest niepełny), trend z wykresem sum (przychody, wydatki, bilans) obok, średnie na dzień, tydzień i miesiąc dla wybranej kategorii; *Porównania* – lata obok siebie miesiąc po miesiącu albo wybrane miesiące obok siebie kategoria po kategorii, osobno dla wydatków i przychodów, wykres słupkowy, liniowy albo *Średnie* (dla każdego roku średnia miesięczna narastająco: styczeń, średnia stycznia i lutego, średnia trzech pierwszych miesięcy…); *Miejsca* – sumy według miejsc w wybranym okresie), **Ustawienia** (wygląd, kategorie z wyborem ikony z listy i koloru, import i eksport, diagnostyka, skróty klawiszowe).
 
-Skróty ekranów: Ctrl+1 … Ctrl+7 (Pulpit, Transakcje, Budżety, Wydarzenia, Wpisy cykliczne, Raporty, Ustawienia).
+Skróty ekranów: Ctrl+1 … Ctrl+8 (Pulpit, Transakcje, Budżety, Wydarzenia, Wpisy cykliczne, Płatności, Raporty, Ustawienia).
+
+### Płatności (rachunki do zapłacenia)
+
+Ekran **Płatności** służy do planowania opłat, np. rachunku z elektrowni z kilkoma terminami, tytułami i kwotami.
+
+* **Odbiorcy**: nazwa i numer rachunku bankowego. Numer jest sprawdzany (26 cyfr i suma kontrolna), program podpowiada, ile cyfr jeszcze brakuje, a po wyjściu z pola pokazuje numer w standardowych grupach (`61 1090 1014 0000 0712 1981 2874`). Można podać kategorię, do której trafią zapłacone rachunki; bez niej program użyje kategorii ze słownika miejsc. Odbiorcę dodajesz w oknie **Zaplanuj płatności** (przycisk *Nowy odbiorca…*) albo na liście **Odbiorcy**.
+* **Zaplanuj płatności**: wybierasz odbiorcę, potem wpisujesz wiersze: termin, tytuł płatności i kwota (kwota może być działaniem). **Enter** w kwocie dodaje następny wiersz (z tym samym terminem); Enter w pustym wierszu przechodzi do przycisku **Zatwierdź**.
+* **Zapłać** przy każdej płatności pokazuje **kod QR** do zeskanowania w aplikacji banku (standard ZBP „2D”: `|PL|rachunek|kwota w groszach|odbiorca|tytuł|||`), numer rachunku i kwotę do skopiowania oraz przyciski **Oznacz jako zapłaconą** i **Oznacz jako zaplanowaną**. Nazwa odbiorcy w kodzie ma najwyżej 20 znaków, tytuł 32 (dłuższe program skraca i o tym informuje); kwota powyżej 9 999,99 zł nie mieści się w kodzie, więc kod jej nie zawiera.
+* **Zapłacona**: wydatek trafia do transakcji z **dzisiejszą datą** (miejsce = odbiorca, notatka = tytuł), a płatność znika z listy.
+* **Zaplanowana** (przelew ustawiony w banku na później): płatność zostaje na liście, nie przypomina się, a gdy minie jej termin, program sam wpisze ją do transakcji **z datą terminu** i zdejmie z listy.
+* **Przypomnienia**: na 3 dni przed terminem (i po nim) program pyta o każdą płatność nieoznaczoną jako zapłacona ani zaplanowana, przy każdym uruchomieniu, aż ją załatwisz. Przyciski: **Przypomnij później** (zapyta znowu przy następnym uruchomieniu), **Zapłać teraz** (kod QR), **Zapłacono**.
+* Płatności i odbiorcy synchronizują się między komputerami jak reszta danych. Program w starszej wersji, który nie zna płatności, poprosi o aktualizację.
+* Uwaga: strona ZBP z odnośnika (`zbp.pl/.../Standard-kodowania-informacji`) opisuje inny standard; kod QR jest zbudowany wg rekomendacji ZBP „Standard 2D” (przelew krajowy), sprawdzonej na implementacji referencyjnej. Warto raz sprawdzić zeskanowanie w swoim banku.
 
 ### Wygląd
 

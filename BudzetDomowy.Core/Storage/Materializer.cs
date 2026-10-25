@@ -178,6 +178,8 @@ public sealed class Materializer
             EntityTypes.Budget => JournalJson.FromPayload<Budget>(ev.Payload),
             EntityTypes.RecurringTransaction => JournalJson.FromPayload<RecurringTransaction>(ev.Payload),
             EntityTypes.CategoryRule => JournalJson.FromPayload<CategoryRule>(ev.Payload),
+            EntityTypes.Payee => JournalJson.FromPayload<Payee>(ev.Payload),
+            EntityTypes.PlannedPayment => JournalJson.FromPayload<PlannedPayment>(ev.Payload),
             _ => null,
         };
         // The envelope's EntityId is authoritative; a payload with another id is inconsistent.
@@ -192,6 +194,8 @@ public sealed class Materializer
         Budget b => b.Id,
         RecurringTransaction r => r.Id,
         CategoryRule r => r.Id,
+        Payee p => p.Id,
+        PlannedPayment p => p.Id,
         _ => Guid.Empty,
     };
 
@@ -243,6 +247,21 @@ public sealed class Materializer
                     ("$id", Id(k.Id)), ("$pat", k.Pattern), ("$cat", Id(k.CategoryId)), ("$ev", Id(k.EventId)),
                     ("$cnt", k.UseCount));
                 break;
+            case Payee p:
+                Exec(conn, tx, """
+                    INSERT OR REPLACE INTO payees (id, name, account, category_id)
+                    VALUES ($id, $name, $acc, $cat)
+                    """,
+                    ("$id", Id(p.Id)), ("$name", p.Name), ("$acc", p.AccountNumber), ("$cat", Id(p.CategoryId)));
+                break;
+            case PlannedPayment p:
+                Exec(conn, tx, """
+                    INSERT OR REPLACE INTO planned_payments (id, payee_id, due_date, title, amount_cents, status)
+                    VALUES ($id, $payee, $due, $title, $amt, $status)
+                    """,
+                    ("$id", Id(p.Id)), ("$payee", Id(p.PayeeId)), ("$due", Day(p.DueDate)), ("$title", p.Title),
+                    ("$amt", Money.ToCents(p.Amount)), ("$status", p.Status.ToString()));
+                break;
             default:
                 throw new InvalidOperationException($"No projection for {type}.");
         }
@@ -284,6 +303,8 @@ public sealed class Materializer
             EntityTypes.Budget => "budgets",
             EntityTypes.RecurringTransaction => "recurring_transactions",
             EntityTypes.CategoryRule => "category_rules",
+            EntityTypes.Payee => "payees",
+            EntityTypes.PlannedPayment => "planned_payments",
             _ => throw new InvalidOperationException($"No projection for {type}."),
         };
         Exec(conn, tx, $"DELETE FROM {table} WHERE id = $id", ("$id", Id(id)));

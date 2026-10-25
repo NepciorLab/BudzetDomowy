@@ -151,6 +151,24 @@ public sealed class LocalDatabase
         """
         ALTER TABLE recurring_transactions ADD COLUMN name TEXT NOT NULL DEFAULT '';
         """,
+        // v6: payees and planned payments
+        """
+        CREATE TABLE payees (
+            id          TEXT PRIMARY KEY,
+            name        TEXT NOT NULL,
+            account     TEXT NOT NULL,
+            category_id TEXT
+        );
+        CREATE TABLE planned_payments (
+            id           TEXT PRIMARY KEY,
+            payee_id     TEXT NOT NULL,
+            due_date     TEXT NOT NULL,
+            title        TEXT NOT NULL,
+            amount_cents INTEGER NOT NULL,
+            status       TEXT NOT NULL
+        );
+        CREATE INDEX ix_planned_payments_due ON planned_payments(due_date);
+        """,
     ];
 
     public static int CurrentVersion => Migrations.Length;
@@ -209,7 +227,7 @@ public sealed class LocalDatabase
         foreach (var table in new[]
                  {
                      "entity_state", "journal_offsets", "transactions", "transaction_lines", "categories",
-                     "special_events", "budgets", "recurring_transactions", "category_rules",
+                     "special_events", "budgets", "recurring_transactions", "category_rules", "payees", "planned_payments",
                  })
         {
             using var cmd = conn.CreateCommand();

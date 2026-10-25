@@ -25,7 +25,7 @@ public class Phase6UiTests
         Assert.True(device.EventCount > 10);
         Assert.Contains("TEST-PC", device.Name);
         Assert.Matches(@"\d", device.JournalSize);
-        Assert.Contains("0.6.0", vm.Version);
+        Assert.Contains("0.7.0", vm.Version);
 
         var before = app.Core.Reader.GetTransactions().Count;
         UiHost.RunAsync(async () =>
@@ -65,7 +65,7 @@ public class Phase6UiTests
         var keys = UiHost.Texts(second);
         UiHost.Render(second, 1100, 760, "settings-shortcuts");
         Assert.Contains("F1", keys);
-        Assert.Equal(20, vm.Shortcuts.Count);
+        Assert.Equal(21, vm.Shortcuts.Count);
     });
 
     [Fact]

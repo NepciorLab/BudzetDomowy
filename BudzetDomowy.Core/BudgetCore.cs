@@ -31,6 +31,7 @@ public sealed class BudgetCore : IDisposable
     public BudgetService Budgets { get; }
     public RecurringService Recurring { get; }
     public ImportService Import { get; }
+    public PaymentService Payments { get; }
 
     /// <summary>Daily copies of the journals, kept in the shared data folder so that every computer sees them.</summary>
     public BackupService Backups { get; }
@@ -55,6 +56,7 @@ public sealed class BudgetCore : IDisposable
         Budgets = new BudgetService(Recorder, Reader);
         Recurring = new RecurringService(Recorder, Reader, Transactions, Rates);
         Import = new ImportService(Reader, Transactions, Categories);
+        Payments = new PaymentService(Recorder, Reader, Transactions);
         Backups = new BackupService(dataFolder, Path.Combine(dataFolder, "Backups"));
     }
 

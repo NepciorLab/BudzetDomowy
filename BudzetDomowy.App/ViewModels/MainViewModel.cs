@@ -54,7 +54,7 @@ public sealed partial class MainViewModel : ObservableObject
 
     public MainViewModel(BudgetCore core, IEntryLauncher launcher, TransactionsViewModel transactions,
         SettingsViewModel settings, EventsViewModel events, DashboardViewModel dashboard, BudgetsViewModel budgets,
-        ReportsViewModel reports, RecurringViewModel recurring, ToastService toast, RecurringRunner runner, SettingsStore store)
+        ReportsViewModel reports, RecurringViewModel recurring, PaymentsViewModel payments, ToastService toast, RecurringRunner runner, SettingsStore store)
     {
         Core = core;
         _runner = runner;
@@ -72,6 +72,7 @@ public sealed partial class MainViewModel : ObservableObject
             new("budgets", Res.Get("NavBudgets"), "", ShortcutMap.Instance.DisplayOf("Go.budgets")),
             new("events", Res.Get("NavEvents"), "", ShortcutMap.Instance.DisplayOf("Go.events")),
             new("recurring", Res.Get("NavRecurring"), "", ShortcutMap.Instance.DisplayOf("Go.recurring")),
+            new("payments", Res.Get("NavPayments"), "", ShortcutMap.Instance.DisplayOf("Go.payments")),
             new("reports", Res.Get("NavReports"), "", ShortcutMap.Instance.DisplayOf("Go.reports")),
             new("settings", Res.Get("NavSettings"), "", ShortcutMap.Instance.DisplayOf("Go.settings")),
         ];
@@ -83,6 +84,7 @@ public sealed partial class MainViewModel : ObservableObject
             ["budgets"] = budgets,
             ["events"] = events,
             ["recurring"] = recurring,
+            ["payments"] = payments,
             ["reports"] = reports,
             ["settings"] = settings,
         };

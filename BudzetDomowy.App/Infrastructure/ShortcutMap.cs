@@ -26,7 +26,7 @@ public sealed class ShortcutMap
     public const string GoPrefix = "Go.";
 
     /// <summary>Screens in the order of the navigation list (the id is the page key).</summary>
-    public static readonly string[] Pages = ["dashboard", "transactions", "budgets", "events", "recurring", "reports", "settings"];
+    public static readonly string[] Pages = ["dashboard", "transactions", "budgets", "events", "recurring", "payments", "reports", "settings"];
 
     public static IReadOnlyList<ShortcutDef> Definitions { get; } =
     [

@@ -90,6 +90,40 @@ public sealed class FakeEntryLauncher : IEntryLauncher
     public void Open(bool income) => Opened.Add(income);
 }
 
+/// <summary>Scripted payment windows: what was asked for is recorded, the answers are set by the test.</summary>
+public sealed class FakePaymentDialogs : IPaymentDialogs
+{
+    public int EntriesOpened { get; private set; }
+    public int PayeeListsOpened { get; private set; }
+    public Queue<Payee?> PayeeAnswers { get; } = new();
+    public Queue<PayResult> PayAnswers { get; } = new();
+    public List<PlannedPayment> Shown { get; } = [];
+
+    public void OpenEntry() => EntriesOpened++;
+    public void ManagePayees() => PayeeListsOpened++;
+    public Payee? EditPayee(Payee? existing) => PayeeAnswers.Count > 0 ? PayeeAnswers.Dequeue() : null;
+
+    public PayResult ShowPay(PlannedPayment payment)
+    {
+        Shown.Add(payment);
+        return PayAnswers.Count > 0 ? PayAnswers.Dequeue() : PayResult.None;
+    }
+}
+
+/// <summary>Answers the payment reminders from a queue instead of opening a window.</summary>
+public sealed class FakePaymentReminderPrompt : IPaymentReminderPrompt
+{
+    public bool CanAsk { get; set; } = true;
+    public Queue<ReminderAnswer> Answers { get; } = new();
+    public List<PaymentReminder> Asked { get; } = [];
+
+    public ReminderAnswer Ask(PaymentReminder reminder)
+    {
+        Asked.Add(reminder);
+        return Answers.Count > 0 ? Answers.Dequeue() : ReminderAnswer.Later;
+    }
+}
+
 /// <summary>Counts restarts instead of starting a new process.</summary>
 public sealed class FakeRestarter : IAppRestarter
 {
@@ -118,6 +152,12 @@ public sealed class TestApp : IDisposable
             .AddSingleton(new SettingsStore(new AppSettings()))
             .AddSingleton<DataHub>()
             .AddSingleton<ToastService>()
+            .AddSingleton<FakePaymentDialogs>()
+            .AddSingleton<IPaymentDialogs>(sp => sp.GetRequiredService<FakePaymentDialogs>())
+            .AddSingleton<FakePaymentReminderPrompt>()
+            .AddSingleton<IPaymentReminderPrompt>(sp => sp.GetRequiredService<FakePaymentReminderPrompt>())
+            .AddSingleton<PaymentReminderRunner>()
+            .AddSingleton<PaymentsViewModel>()
             .AddSingleton<FakeEntryLauncher>()
             .AddSingleton<IEntryLauncher>(sp => sp.GetRequiredService<FakeEntryLauncher>())
             .AddSingleton<TransactionsViewModel>()

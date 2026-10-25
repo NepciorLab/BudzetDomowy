@@ -15,11 +15,16 @@ public static class EntityTypes
     public const string Budget = "Budget";
     public const string RecurringTransaction = "RecurringTransaction";
     public const string CategoryRule = "CategoryRule";
+    public const string Payee = "Payee";
+    public const string PlannedPayment = "PlannedPayment";
 
     public static readonly IReadOnlyList<string> All =
     [
-        Transaction, Category, SpecialEvent, Budget, RecurringTransaction, CategoryRule,
+        Transaction, Category, SpecialEvent, Budget, RecurringTransaction, CategoryRule, Payee, PlannedPayment,
     ];
+
+    /// <summary>Kinds that older versions of the program do not know: their events carry a newer schema number, so an older program offers the update instead of failing.</summary>
+    public static bool NeedsNewerSchema(string entityType) => entityType is Payee or PlannedPayment;
 
     public static bool IsKnown(string entityType) => All.Contains(entityType);
 }
@@ -117,6 +122,37 @@ public sealed record RecurringTransaction
 
     /// <summary>Occurrences the user answered "no" to: they are never booked and never asked about again.</summary>
     public IReadOnlyList<DateOnly> SkippedDates { get; init; } = [];
+}
+
+/// <summary>Who is paid: a name and a domestic bank account (26 digits, no spaces).</summary>
+public sealed record Payee
+{
+    public Guid Id { get; init; }
+    public string Name { get; init; } = "";
+    public string AccountNumber { get; init; } = "";
+
+    /// <summary>Expense category given to the payments of this payee when they are booked (optional).</summary>
+    public Guid? CategoryId { get; init; }
+}
+
+public enum PaymentStatus
+{
+    /// <summary>To be paid: the program reminds about it.</summary>
+    Pending,
+
+    /// <summary>The transfer is set up in the bank for a later day: no reminders; it counts as paid once its due date has passed.</summary>
+    Scheduled,
+}
+
+/// <summary>A bill to pay: to whom, by when, what for and how much. It disappears from the list when it is paid (and is booked as a transaction).</summary>
+public sealed record PlannedPayment
+{
+    public Guid Id { get; init; }
+    public Guid PayeeId { get; init; }
+    public DateOnly DueDate { get; init; }
+    public string Title { get; init; } = "";
+    public decimal Amount { get; init; }
+    public PaymentStatus Status { get; init; } = PaymentStatus.Pending;
 }
 
 /// <summary>Learned mapping from a note pattern to a category (and optionally an event).</summary>

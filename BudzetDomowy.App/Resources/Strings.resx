@@ -610,6 +610,78 @@ Pobrać i zainstalować ją teraz? Program uruchomi się ponownie.</value></data
   <data name="ReportAll" xml:space="preserve"><value>Wszystko</value></data>
   <data name="ReportAllTitle" xml:space="preserve"><value>Cały okres</value></data>
   <data name="ReportTrendAll" xml:space="preserve"><value>Przychody i wydatki w całym okresie (najwyżej ostatnie 5 lat)</value></data>
+  <data name="NavPayments" xml:space="preserve"><value>Płatności</value></data>
+  <data name="PayAddButton" xml:space="preserve"><value>Zaplanuj płatności</value></data>
+  <data name="PayPayees" xml:space="preserve"><value>Odbiorcy</value></data>
+  <data name="PayEmpty" xml:space="preserve"><value>Brak zaplanowanych płatności.
+Dodaj rachunki przyciskiem „Zaplanuj płatności”.</value></data>
+  <data name="PaySummary" xml:space="preserve"><value>Do zapłaty: {0} na {1}; zaplanowanych w banku: {2}.</value></data>
+  <data name="PayColDue" xml:space="preserve"><value>Termin</value></data>
+  <data name="PayColTitle" xml:space="preserve"><value>Tytuł płatności</value></data>
+  <data name="PayColAmount" xml:space="preserve"><value>Kwota</value></data>
+  <data name="PayColStatus" xml:space="preserve"><value>Stan</value></data>
+  <data name="PayStatusPending" xml:space="preserve"><value>Do zapłaty</value></data>
+  <data name="PayStatusScheduled" xml:space="preserve"><value>Zaplanowana</value></data>
+  <data name="PayButton" xml:space="preserve"><value>Zapłać</value></data>
+  <data name="PayDeleteTip" xml:space="preserve"><value>Usuń płatność z listy</value></data>
+  <data name="PayDeleteTitle" xml:space="preserve"><value>Usuwanie płatności</value></data>
+  <data name="PayDeleteQuestion" xml:space="preserve"><value>Usunąć z listy płatność dla {0} ({1}, {2})? Nie zostanie dodana do transakcji.</value></data>
+  <data name="PayDeleted" xml:space="preserve"><value>Płatność usunięta z listy.</value></data>
+  <data name="PayDueToday" xml:space="preserve"><value>termin dzisiaj</value></data>
+  <data name="PayDueTomorrow" xml:space="preserve"><value>termin jutro</value></data>
+  <data name="PayDueInDays" xml:space="preserve"><value>termin za {0} dni</value></data>
+  <data name="PayLateOne" xml:space="preserve"><value>po terminie (wczoraj)</value></data>
+  <data name="PayLateDays" xml:space="preserve"><value>po terminie ({0} dni)</value></data>
+  <data name="PayEntryTitle" xml:space="preserve"><value>Planowanie płatności</value></data>
+  <data name="PayPayee" xml:space="preserve"><value>Odbiorca</value></data>
+  <data name="PayPayeeHint" xml:space="preserve"><value>wybierz z listy albo dodaj nowego</value></data>
+  <data name="PayNewPayee" xml:space="preserve"><value>Nowy odbiorca…</value></data>
+  <data name="PayTitleHint" xml:space="preserve"><value>np. Faktura 10/2026, rata 2</value></data>
+  <data name="PayAddRow" xml:space="preserve"><value>Dodaj kolejny wiersz</value></data>
+  <data name="PayChoosePayee" xml:space="preserve"><value>Wybierz odbiorcę albo dodaj nowego.</value></data>
+  <data name="PayNothingTyped" xml:space="preserve"><value>Wpisz przynajmniej jedną płatność (tytuł i kwotę).</value></data>
+  <data name="PayRowBadAmount" xml:space="preserve"><value>Wiersz {0}: wpisz kwotę większą od zera (liczbę albo działanie).</value></data>
+  <data name="PayRowNoDate" xml:space="preserve"><value>Wiersz {0}: podaj termin płatności.</value></data>
+  <data name="PayAdded" xml:space="preserve"><value>Dodano płatności: {0} (odbiorca: {1}).</value></data>
+  <data name="PayeesTitle" xml:space="preserve"><value>Odbiorcy płatności</value></data>
+  <data name="PayeeAdd" xml:space="preserve"><value>Dodaj odbiorcę</value></data>
+  <data name="PayeeEditButton" xml:space="preserve"><value>Zmień</value></data>
+  <data name="PayeeNew" xml:space="preserve"><value>Nowy odbiorca</value></data>
+  <data name="PayeeEdit" xml:space="preserve"><value>Odbiorca płatności</value></data>
+  <data name="PayeeName" xml:space="preserve"><value>Nazwa odbiorcy</value></data>
+  <data name="PayeeNameHint" xml:space="preserve"><value>np. Tauron, Spółdzielnia Mieszkaniowa</value></data>
+  <data name="PayeeAccount" xml:space="preserve"><value>Numer rachunku bankowego</value></data>
+  <data name="PayeeCategory" xml:space="preserve"><value>Kategoria wydatku (opcjonalnie)</value></data>
+  <data name="PayeeCategoryHint" xml:space="preserve"><value>do tej kategorii trafią zapłacone rachunki</value></data>
+  <data name="PayeeNameRequired" xml:space="preserve"><value>Podaj nazwę odbiorcy.</value></data>
+  <data name="PayeeAccountRequired" xml:space="preserve"><value>Podaj numer rachunku.</value></data>
+  <data name="PayeeAccountWrong" xml:space="preserve"><value>Numer rachunku jest niepoprawny.</value></data>
+  <data name="PayeeDeleteTitle" xml:space="preserve"><value>Usuwanie odbiorcy</value></data>
+  <data name="PayeeDeleteQuestion" xml:space="preserve"><value>Usunąć odbiorcę {0}?</value></data>
+  <data name="PayeeInUse" xml:space="preserve"><value>Odbiorca {0} ma jeszcze płatności na liście – najpierw je zapłać albo usuń.</value></data>
+  <data name="AccountOk" xml:space="preserve"><value>✔ Numer jest poprawny.</value></data>
+  <data name="AccountBadCheck" xml:space="preserve"><value>✘ Suma kontrolna się nie zgadza – sprawdź cyfry.</value></data>
+  <data name="AccountLength" xml:space="preserve"><value>Wpisano cyfr: {0} z {1}.</value></data>
+  <data name="AccountBadChars" xml:space="preserve"><value>✘ W numerze mogą być tylko cyfry (oraz spacje i myślniki).</value></data>
+  <data name="PayWindowTitle" xml:space="preserve"><value>Zapłać</value></data>
+  <data name="QrHint" xml:space="preserve"><value>Zeskanuj kod w aplikacji swojego banku (płatność QR).</value></data>
+  <data name="QrShortened" xml:space="preserve"><value>Nazwa odbiorcy lub tytuł nie mieściły się w kodzie QR (20 i 32 znaki) albo miały znaki, których standard nie dopuszcza – zostały skrócone.</value></data>
+  <data name="QrAmountOmitted" xml:space="preserve"><value>Kwota nie mieści się w kodzie QR (najwyżej 9 999,99 zł) – kod jej nie zawiera, wpisz ją w banku.</value></data>
+  <data name="PayCopy" xml:space="preserve"><value>Kopiuj</value></data>
+  <data name="PayCopyAmount" xml:space="preserve"><value>Kopiuj kwotę</value></data>
+  <data name="PayScheduledNow" xml:space="preserve"><value>Ta płatność jest zaplanowana w banku.</value></data>
+  <data name="PayMarkPaid" xml:space="preserve"><value>Oznacz jako zapłaconą</value></data>
+  <data name="PayMarkPaidTip" xml:space="preserve"><value>Płatność trafi do transakcji z dzisiejszą datą i zniknie z listy.</value></data>
+  <data name="PayMarkScheduled" xml:space="preserve"><value>Oznacz jako zaplanowaną</value></data>
+  <data name="PayMarkScheduledTip" xml:space="preserve"><value>Przelew jest ustawiony w banku na później: przypomnienia ustaną, a po terminie płatność wpisze się sama do transakcji.</value></data>
+  <data name="PayBackToPending" xml:space="preserve"><value>Wróć do „do zapłaty”</value></data>
+  <data name="PayPaidToast" xml:space="preserve"><value>Zapłacono {0} dla {1}.</value></data>
+  <data name="PayReminderTitle" xml:space="preserve"><value>Przypomnienie o płatności</value></data>
+  <data name="PayReminderQuestion" xml:space="preserve"><value>Czas opłacić rachunek</value></data>
+  <data name="PayReminderHint" xml:space="preserve"><value>Przypomnij później – zapytam przy następnym uruchomieniu. Zapłać teraz – pokażę kod QR. Zapłacono – wpiszę płatność do transakcji z dzisiejszą datą.</value></data>
+  <data name="PayReminderLater" xml:space="preserve"><value>Przypomnij później</value></data>
+  <data name="PayReminderPayNow" xml:space="preserve"><value>Zapłać teraz</value></data>
+  <data name="PayReminderPaid" xml:space="preserve"><value>Zapłacono</value></data>
   <data name="PeriodAll" xml:space="preserve"><value>Wszystko</value></data>
   <data name="PeriodAllTitle" xml:space="preserve"><value>Wszystkie wpisy</value></data>
 </root>

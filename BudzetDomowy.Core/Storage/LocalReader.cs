@@ -111,6 +111,27 @@ public sealed class LocalReader
             ValidFromMonth = ParseDay(r.GetString(3)),
         });
 
+    public IReadOnlyList<Payee> GetPayees() => Query("SELECT id, name, account, category_id FROM payees ORDER BY name COLLATE NOCASE, id",
+        r => new Payee
+        {
+            Id = Guid.Parse(r.GetString(0)),
+            Name = r.GetString(1),
+            AccountNumber = r.GetString(2),
+            CategoryId = Guid_(r, 3),
+        });
+
+    public IReadOnlyList<PlannedPayment> GetPlannedPayments() => Query(
+        "SELECT id, payee_id, due_date, title, amount_cents, status FROM planned_payments ORDER BY due_date, title, id",
+        r => new PlannedPayment
+        {
+            Id = Guid.Parse(r.GetString(0)),
+            PayeeId = Guid.Parse(r.GetString(1)),
+            DueDate = ParseDay(r.GetString(2)),
+            Title = r.GetString(3),
+            Amount = Money.FromCents(r.GetInt64(4)),
+            Status = Enum.Parse<PaymentStatus>(r.GetString(5)),
+        });
+
     public IReadOnlyList<RecurringTransaction> GetRecurringTransactions() => Query(
         "SELECT id, type, amount, currency_code, category_id, note, event_id, frequency, day, start_date, end_date, last_generated_date, place, confirm_each, skipped_dates, name FROM recurring_transactions ORDER BY start_date, id",
         r => new RecurringTransaction

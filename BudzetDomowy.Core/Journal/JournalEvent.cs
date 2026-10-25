@@ -9,7 +9,11 @@ public enum EventOperation { Upsert, Delete }
 /// <summary>One line of a device journal. The payload of an Upsert is the complete entity (never a patch).</summary>
 public sealed record JournalEvent
 {
-    public const int CurrentSchemaVersion = 1;
+    /// <summary>The newest event schema this program reads. Kinds that exist since schema 2 (payees, planned payments) are written with it.</summary>
+    public const int CurrentSchemaVersion = 2;
+
+    /// <summary>What every event of the older kinds is written with, so older programs keep reading them.</summary>
+    public const int BaseSchemaVersion = 1;
 
     public Guid EventId { get; init; }
     public string DeviceId { get; init; } = "";
@@ -19,7 +23,7 @@ public sealed record JournalEvent
     public EventOperation Operation { get; init; }
     /// <summary>Entity JSON for Upsert; null for Delete.</summary>
     public JsonNode? Payload { get; init; }
-    public int SchemaVersion { get; init; } = CurrentSchemaVersion;
+    public int SchemaVersion { get; init; } = BaseSchemaVersion;
 }
 
 public static class JournalJson

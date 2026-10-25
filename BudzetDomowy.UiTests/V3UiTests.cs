@@ -162,7 +162,7 @@ public class V3UiTests
         Assert.Equal("dashboard", MainViewModel.StartPageKey(store.Current));
 
         var settings = app.Get<SettingsViewModel>();
-        Assert.Equal(8, settings.StartPages.Count);
+        Assert.Equal(9, settings.StartPages.Count);
         Assert.Equal("Ostatnio wybrana", settings.StartPages[0].Label);
         Assert.Equal("Pulpit", settings.SelectedStartPage.Label);
 
@@ -184,13 +184,13 @@ public class V3UiTests
         store.Update(s => s with { StartPage = "last", LastPage = "events" });
         var main = new MainViewModel(app.Core, app.Get<IEntryLauncher>(), app.Get<TransactionsViewModel>(), app.Get<SettingsViewModel>(),
             app.Get<EventsViewModel>(), app.Get<DashboardViewModel>(), app.Get<BudgetsViewModel>(), app.Get<ReportsViewModel>(),
-            app.Get<RecurringViewModel>(), app.Get<ToastService>(), app.Get<RecurringRunner>(), store);
+            app.Get<RecurringViewModel>(), app.Get<PaymentsViewModel>(), app.Get<ToastService>(), app.Get<RecurringRunner>(), store);
         Assert.Equal("events", main.SelectedNav!.Key);
 
         store.Update(s => s with { StartPage = "settings" });
         var other = new MainViewModel(app.Core, app.Get<IEntryLauncher>(), app.Get<TransactionsViewModel>(), app.Get<SettingsViewModel>(),
             app.Get<EventsViewModel>(), app.Get<DashboardViewModel>(), app.Get<BudgetsViewModel>(), app.Get<ReportsViewModel>(),
-            app.Get<RecurringViewModel>(), app.Get<ToastService>(), app.Get<RecurringRunner>(), store);
+            app.Get<RecurringViewModel>(), app.Get<PaymentsViewModel>(), app.Get<ToastService>(), app.Get<RecurringRunner>(), store);
         Assert.Equal("settings", other.SelectedNav!.Key);
     });
 
@@ -360,12 +360,12 @@ public class V3UiTests
 
         Assert.True(Has(Key.F1, ModifierKeys.None));
         Assert.True(Has(Key.D2, ModifierKeys.Control));
-        Assert.Equal(11, window.InputBindings.Count);
+        Assert.Equal(12, window.InputBindings.Count);
 
         map.Set(ShortcutMap.GoPrefix + "reports", Key.R, ModifierKeys.Control | ModifierKeys.Alt);
         Assert.True(Has(Key.R, ModifierKeys.Control | ModifierKeys.Alt));
-        Assert.False(Has(Key.D6, ModifierKeys.Control));
-        Assert.Equal(11, window.InputBindings.Count);
+        Assert.False(Has(Key.D7, ModifierKeys.Control));
+        Assert.Equal(12, window.InputBindings.Count);
 
         var nav = app.Get<MainViewModel>().NavItems.First(n => n.Key == "reports");
         Assert.Equal("Ctrl + Alt + R", nav.Shortcut);                                   // the navigation hint follows too

@@ -40,6 +40,8 @@ public sealed class EventRecorder
     public JournalEvent Save(Budget b) => Upsert(EntityTypes.Budget, b.Id, b);
     public JournalEvent Save(RecurringTransaction r) => Upsert(EntityTypes.RecurringTransaction, r.Id, r);
     public JournalEvent Save(CategoryRule r) => Upsert(EntityTypes.CategoryRule, r.Id, r);
+    public JournalEvent Save(Payee p) => Upsert(EntityTypes.Payee, p.Id, p);
+    public JournalEvent Save(PlannedPayment p) => Upsert(EntityTypes.PlannedPayment, p.Id, p);
 
     private JournalEvent Record(string entityType, Guid id, EventOperation op, JsonNode? payload)
     {
@@ -59,6 +61,7 @@ public sealed class EventRecorder
                 EntityId = id,
                 Operation = op,
                 Payload = payload,
+                SchemaVersion = EntityTypes.NeedsNewerSchema(entityType) ? JournalEvent.CurrentSchemaVersion : JournalEvent.BaseSchemaVersion,
             };
 
             var (start, end) = _writer.Append(ev);

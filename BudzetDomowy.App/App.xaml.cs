@@ -106,6 +106,10 @@ public partial class App : Application
             .AddSingleton<DataHub>()
             .AddSingleton<ToastService>()
             .AddSingleton<IEntryLauncher, WpfEntryLauncher>()
+            .AddSingleton<IPaymentDialogs, WpfPaymentDialogs>()
+            .AddSingleton<IPaymentReminderPrompt, WpfPaymentReminderPrompt>()
+            .AddSingleton<PaymentReminderRunner>()
+            .AddSingleton<PaymentsViewModel>()
             .AddSingleton<TransactionsViewModel>()
             .AddSingleton<CategoriesViewModel>()
             .AddSingleton<EventsViewModel>()
@@ -147,6 +151,7 @@ public partial class App : Application
         ShutdownMode = ShutdownMode.OnMainWindowClose;
         main.Show();
         watcher.Observe(_core.Sync.Status);
+        services.GetRequiredService<PaymentReminderRunner>().Start(TimeSpan.FromSeconds(4), TimeSpan.FromHours(1));
         services.GetRequiredService<BackupViewModel>().StartDaily(TimeSpan.FromSeconds(25), TimeSpan.FromHours(3));
         StartUpdateCheck(services);
     }
