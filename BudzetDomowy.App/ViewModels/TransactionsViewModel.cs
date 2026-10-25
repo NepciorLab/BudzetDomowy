@@ -59,6 +59,12 @@ public sealed partial class TransactionsViewModel : ObservableObject, IPeriodNav
     [ObservableProperty] private Guid _eventFilter = Guid.Empty;
     [ObservableProperty] private TypeFilterOption? _typeFilter;
     [ObservableProperty] private string _search = "";
+
+    /// <summary>The amount range of the filter, as typed (a number with a comma or a dot); empty means no limit on that side.</summary>
+    [ObservableProperty] private string _amountFrom = "";
+    [ObservableProperty] private string _amountTo = "";
+    [ObservableProperty] private bool _amountFromInvalid;
+    [ObservableProperty] private bool _amountToInvalid;
     // totals of everything the filters let through, and separately of the selected rows
     [ObservableProperty] private string _allLabel = "";
     [ObservableProperty] private string _allExpenseText = "";
@@ -105,6 +111,18 @@ public sealed partial class TransactionsViewModel : ObservableObject, IPeriodNav
     partial void OnEventFilterChanged(Guid value) => Reload();
     partial void OnTypeFilterChanged(TypeFilterOption? value) => Reload();
     partial void OnSearchChanged(string value) => Reload();
+    partial void OnAmountFromChanged(string value) => Reload();
+    partial void OnAmountToChanged(string value) => Reload();
+
+    /// <summary>One side of the amount range: null when empty or not understood (the box then shows it as wrong).</summary>
+    private static decimal? Bound(string text, out bool invalid)
+    {
+        invalid = false;
+        if (string.IsNullOrWhiteSpace(text)) return null;
+        if (AmountParser.TryParse(text, out var value) && value >= 0) return value;
+        invalid = true;
+        return null;
+    }
 
     /// <summary>The grid is in the middle of a cell edit: do not rebuild rows under it.</summary>
     public void SetEditing(bool editing)
@@ -157,6 +175,14 @@ public sealed partial class TransactionsViewModel : ObservableObject, IPeriodNav
         }
         if (EventFilter != Guid.Empty) query = query.Where(x => x.EventId == EventFilter);
         if (TypeFilter?.Type is { } type) query = query.Where(x => x.Type == type);
+
+        var low = Bound(AmountFrom, out var fromInvalid);
+        var high = Bound(AmountTo, out var toInvalid);
+        AmountFromInvalid = fromInvalid;
+        AmountToInvalid = toInvalid;
+        if (low is { } lo && high is { } hi && lo > hi) (low, high) = (hi, lo);                // "from 200 to 50" means the same range
+        if (low is { } min) query = query.Where(x => x.AmountPln >= min);                       // the amount in złoty, as in the totals
+        if (high is { } max) query = query.Where(x => x.AmountPln <= max);
 
         var needle = Search.Trim();
         if (needle.Length > 0)
@@ -408,6 +434,44 @@ public sealed partial class TransactionsViewModel : ObservableObject, IPeriodNav
         _toast.Show(Res.Format("CategoryChangedCount", ids.Count), () => Restore(before));
     }
 
+    /// <summary>Gives all selected entries the same amount (in each one's currency); a big selection is changed in the background with a note on the bar.</summary>
+    public void ChangeAmountOfSelected(decimal amount)
+    {
+        var ids = _selected.Select(r => r.Id).ToList();
+        if (ids.Count == 0 || amount <= 0) return;
+        if (BusyStatus.IsBulk(ids.Count))
+        {
+            Running = ChangeAmountBulkAsync(ids, amount);
+            return;
+        }
+        IReadOnlyList<Transaction> before;
+        try
+        {
+            before = _core.Transactions.ChangeAmount(ids, amount);
+        }
+        catch (UpdateRequiredException)
+        {
+            _toast.Show(Res.Get("UpdateRequiredShort"));
+            return;
+        }
+        _toast.Show(Res.Format("AmountChangedCount", ids.Count), () => Restore(before));
+    }
+
+    private async Task ChangeAmountBulkAsync(List<Guid> ids, decimal amount)
+    {
+        IReadOnlyList<Transaction> before = [];
+        try
+        {
+            await BusyStatus.Instance.RunAsync(Res.Format("BusyAmount", ids.Count), () => before = _core.Transactions.ChangeAmount(ids, amount));
+        }
+        catch (UpdateRequiredException)
+        {
+            _toast.Show(Res.Get("UpdateRequiredShort"));
+            return;
+        }
+        _toast.Show(Res.Format("AmountChangedCount", ids.Count), () => Restore(before));
+    }
+
     /// <summary>Exports what the table shows right now (the period and the filters apply).</summary>
     [RelayCommand]
     private void ExportXlsx() => _exports.Transactions(Rows.Select(r => r.Model).ToList(), csv: false);
@@ -419,10 +483,13 @@ public sealed partial class TransactionsViewModel : ObservableObject, IPeriodNav
         EventFilter = Guid.Empty;
         TypeFilter = TypeFilters[0];
         Search = "";
+        AmountFrom = "";
+        AmountTo = "";
     }
 
     /// <summary>Whether any of the filters under the period is set (Esc then clears them).</summary>
-    public bool HasActiveFilters => CategoryFilter is not null || EventFilter != Guid.Empty || TypeFilter?.Type is not null || Search.Length > 0;
+    public bool HasActiveFilters => CategoryFilter is not null || EventFilter != Guid.Empty || TypeFilter?.Type is not null || Search.Length > 0
+        || AmountFrom.Trim().Length > 0 || AmountTo.Trim().Length > 0;
 
     public bool ClearFiltersIfAny()
     {

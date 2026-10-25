@@ -142,17 +142,38 @@ public static class ChartFactory
         return bars;
     }
 
-    /// <summary>Money axis that may go below zero.</summary>
-    public static IReadOnlyList<Axis> SignedMoneyAxes() =>
-    [
-        new Axis
+    /// <summary>
+    /// Money axis that may go below zero. When the values the chart will show are given, the axis leaves room above the highest bar
+    /// (and below the lowest) for the figure written at its end: otherwise the tallest bar reaches the top and its label is cut off.
+    /// </summary>
+    public static IReadOnlyList<Axis> SignedMoneyAxes(IEnumerable<decimal>? values = null)
+    {
+        var axis = new Axis
         {
             LabelsPaint = TextPaint(),
             TextSize = 12,
             SeparatorsPaint = GridPaint(),
             Labeler = v => v.ToString("N0", System.Globalization.CultureInfo.CurrentCulture),
-        },
-    ];
+        };
+
+        var list = (values ?? []).Select(v => (double)v).ToList();
+        if (list.Count > 0)
+        {
+            var high = Math.Max(0, list.Max());
+            var low = Math.Min(0, list.Min());
+            var room = (high - low) * LabelRoom;
+            if (room > 0)
+            {
+                axis.MaxLimit = high > 0 ? high + room : 0;
+                axis.MinLimit = low < 0 ? low - room : 0;
+                if (high == 0) axis.MaxLimit = room;                         // only negative bars: the zero line still has space above it
+            }
+        }
+        return [axis];
+    }
+
+    /// <summary>Share of the value range kept free above the highest bar for its figure.</summary>
+    private const double LabelRoom = 0.16;
 
     public static IReadOnlyList<Axis> MoneyAxes() =>
     [

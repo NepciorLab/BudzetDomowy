@@ -83,6 +83,19 @@ public sealed class TransactionService
         foreach (var t in versions) _recorder.Save(t);
     }
 
+    /// <summary>
+    /// Gives many transactions the same amount (in each one's own currency; the amount in złoty follows its rate). Returns the previous
+    /// versions for undo.
+    /// </summary>
+    public IReadOnlyList<Transaction> ChangeAmount(IEnumerable<Guid> ids, decimal amount)
+    {
+        if (amount <= 0) throw new ArgumentOutOfRangeException(nameof(amount), "Amount must be positive.");
+        var wanted = ids.ToHashSet();
+        var before = _reader.GetTransactions().Where(t => wanted.Contains(t.Id)).ToList();
+        foreach (var t in before) Update(t with { Amount = amount });
+        return before;
+    }
+
     /// <summary>Changes the category of many transactions. Returns the previous versions for undo.</summary>
     public IReadOnlyList<Transaction> ChangeCategory(IEnumerable<Guid> ids, Guid? categoryId)
     {

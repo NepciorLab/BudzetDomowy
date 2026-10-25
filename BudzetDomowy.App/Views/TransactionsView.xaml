@@ -71,6 +71,31 @@
                       ui:ControlHelper.Header="{infra:Str FilterEvent}" />
             <ComboBox ItemsSource="{Binding TypeFilters}" SelectedItem="{Binding TypeFilter, Mode=TwoWay}" Width="130" Margin="0,0,8,8"
                       ui:ControlHelper.Header="{infra:Str FilterType}" />
+            <!-- the amount range: only entries whose amount lies between the two numbers (both included) -->
+            <TextBox x:Name="AmountFromBox" Text="{Binding AmountFrom, UpdateSourceTrigger=PropertyChanged}" Width="100" Margin="0,0,8,8" TextAlignment="Right"
+                     ui:ControlHelper.Header="{infra:Str FilterAmountFrom}" ui:ControlHelper.PlaceholderText="0,00">
+                <TextBox.Style>
+                    <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding AmountFromInvalid}" Value="True">
+                                <Setter Property="Foreground" Value="{StaticResource ExpenseBrush}" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBox.Style>
+            </TextBox>
+            <TextBox x:Name="AmountToBox" Text="{Binding AmountTo, UpdateSourceTrigger=PropertyChanged}" Width="100" Margin="0,0,8,8" TextAlignment="Right"
+                     ui:ControlHelper.Header="{infra:Str FilterAmountTo}" ui:ControlHelper.PlaceholderText="∞">
+                <TextBox.Style>
+                    <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding AmountToInvalid}" Value="True">
+                                <Setter Property="Foreground" Value="{StaticResource ExpenseBrush}" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBox.Style>
+            </TextBox>
             <TextBox Text="{Binding Search, UpdateSourceTrigger=PropertyChanged}" Width="220" Margin="0,0,8,8"
                      ui:ControlHelper.Header="{infra:Str FilterSearch}"
                      ui:ControlHelper.PlaceholderText="{infra:Str FilterSearchHint}" />
@@ -96,6 +121,24 @@
                         </ui:Flyout>
                     </ui:FlyoutService.Flyout>
         </Button>
+        <!-- the same for "change the amount" of the selected rows -->
+        <Button x:Name="AmountFlyoutAnchor" Grid.Row="2" Width="1" Height="1" MinWidth="0" MinHeight="0" Padding="0" Opacity="0" Focusable="False"
+                IsHitTestVisible="False" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,40,0,0">
+            <ui:FlyoutService.Flyout>
+                <ui:Flyout x:Name="AmountFlyout" Opening="AmountFlyout_Opening" Opened="AmountFlyout_Opened" Placement="Bottom">
+                    <StackPanel Width="320">
+                        <TextBox x:Name="AmountBox" PreviewKeyDown="AmountBox_PreviewKeyDown" TextAlignment="Right"
+                                 ui:ControlHelper.Header="{infra:Str BulkNewAmount}" ui:ControlHelper.PlaceholderText="0,00" ToolTip="{infra:Str EntryAmountTip}" />
+                        <TextBlock Text="{infra:Str BulkAmountHint}" TextWrapping="Wrap" Opacity="0.7" FontSize="12" Margin="0,6,0,0" />
+                        <TextBlock x:Name="AmountError" Foreground="{StaticResource ExpenseBrush}" TextWrapping="Wrap" Margin="0,6,0,0" Visibility="Collapsed" />
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
+                            <Button Content="{infra:Str Cancel}" Click="AmountCancel_Click" Margin="0,0,8,0" />
+                            <Button x:Name="AmountApplyButton" Content="{infra:Str BulkApply}" Click="AmountApply_Click" Style="{StaticResource AccentButtonStyle}" />
+                        </StackPanel>
+                    </StackPanel>
+                </ui:Flyout>
+            </ui:FlyoutService.Flyout>
+        </Button>
         <DataGrid x:Name="Grid" Grid.Row="2" ItemsSource="{Binding Rows}"
                   infra:GridBehaviors.ColumnChooserKey="transactions"
                   infra:GridBehaviors.AutoFit="{Binding AutoFitColumns, Source={x:Static infra:UiPreferences.Instance}}" AutoGenerateColumns="False"
@@ -108,6 +151,7 @@
             <DataGrid.ContextMenu>
                 <ContextMenu>
                     <MenuItem Header="{infra:Str BulkChangeCategory}" Click="MenuChangeCategory_Click" />
+                    <MenuItem x:Name="MenuChangeAmount" Header="{infra:Str BulkChangeAmount}" Click="MenuChangeAmount_Click" />
                     <MenuItem Header="{infra:Str BulkDelete}" InputGestureText="Del" Click="MenuDelete_Click" />
                 </ContextMenu>
             </DataGrid.ContextMenu>

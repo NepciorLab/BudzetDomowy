@@ -292,7 +292,13 @@ public sealed partial class ReportsViewModel : ObservableObject, IPeriodNavigabl
         SumSeries = ChartFactory.SumColumns(points.Sum(p => p.Income), points.Sum(p => p.Expense),
             Res.Get("ReportIncome"), Res.Get("ReportExpenses"), Res.Get("ReportBalance"), showIncome, showExpense);
         SumXAxes = ChartFactory.LabelAxes([""]);
-        SumYAxes = ChartFactory.SignedMoneyAxes();
+        var totalIncome = points.Sum(p => p.Income);
+        var totalExpense = points.Sum(p => p.Expense);
+        var barValues = new List<decimal>();
+        if (showIncome) barValues.Add(totalIncome);
+        if (showExpense) barValues.Add(totalExpense);
+        if (showIncome && showExpense) barValues.Add(totalIncome - totalExpense);
+        SumYAxes = ChartFactory.SignedMoneyAxes(barValues);                      // with room for the figure above the highest bar
         SumTitle = Res.Get("ReportSumTitle");
 
         // categories

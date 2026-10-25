@@ -726,6 +726,14 @@ Dodaj rachunki przyciskiem „Zaplanuj płatności”.</value></data>
   <data name="ImportOnlySkipped" xml:space="preserve"><value>Pominięte</value></data>
   <data name="ImportOnlyEdited" xml:space="preserve"><value>Poprawione</value></data>
   <data name="ImportShown" xml:space="preserve"><value>Pokazano: {0} z {1}</value></data>
+  <data name="FilterAmountFrom" xml:space="preserve"><value>Kwota od</value></data>
+  <data name="FilterAmountTo" xml:space="preserve"><value>Kwota do</value></data>
+  <data name="BulkChangeAmount" xml:space="preserve"><value>Zmień kwotę…</value></data>
+  <data name="BulkNewAmount" xml:space="preserve"><value>Nowa kwota</value></data>
+  <data name="BulkAmountHint" xml:space="preserve"><value>Wszystkie zaznaczone wpisy dostaną tę kwotę (w swojej walucie). Można wpisać działanie.</value></data>
+  <data name="BulkAmountInvalid" xml:space="preserve"><value>Podaj kwotę większą od zera (liczbę albo działanie).</value></data>
+  <data name="AmountChangedCount" xml:space="preserve"><value>Zmieniono kwotę wpisów: {0}</value></data>
+  <data name="BusyAmount" xml:space="preserve"><value>Zmiana kwoty wpisów: {0}…</value></data>
   <data name="PeriodAll" xml:space="preserve"><value>Wszystko</value></data>
   <data name="PeriodAllTitle" xml:space="preserve"><value>Wszystkie wpisy</value></data>
 </root>

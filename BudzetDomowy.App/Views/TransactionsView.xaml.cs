@@ -109,6 +109,40 @@ public partial class TransactionsView : UserControl
 
     private void BulkCancel_Click(object sender, RoutedEventArgs e) => BulkFlyout.Hide();
 
+    // ----- the same amount for all selected rows -----
+
+    private void MenuChangeAmount_Click(object sender, RoutedEventArgs e) => AmountFlyout.ShowAt(AmountFlyoutAnchor);
+
+    private void AmountFlyout_Opening(object? sender, object e)
+    {
+        AmountBox.Text = "";
+        AmountError.Visibility = Visibility.Collapsed;
+    }
+
+    private void AmountFlyout_Opened(object? sender, object e) => AmountBox.Focus();
+
+    private void AmountCancel_Click(object sender, RoutedEventArgs e) => AmountFlyout.Hide();
+
+    private void AmountBox_PreviewKeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key != Key.Enter) return;
+        e.Handled = true;
+        AmountApply_Click(sender, e);
+    }
+
+    /// <summary>Accepts a number or a calculation; anything else keeps the window open with a message.</summary>
+    private void AmountApply_Click(object sender, RoutedEventArgs e)
+    {
+        if (!BudzetDomowy.Core.Services.AmountExpression.TryEvaluate(AmountBox.Text, out var amount) || amount <= 0)
+        {
+            AmountError.Text = Res.Get("BulkAmountInvalid");
+            AmountError.Visibility = Visibility.Visible;
+            return;
+        }
+        Vm?.ChangeAmountOfSelected(Math.Round(amount, 2, MidpointRounding.AwayFromZero));
+        AmountFlyout.Hide();
+    }
+
     private void BulkApply_Click(object sender, RoutedEventArgs e)
     {
         BulkCombo.Commit();
