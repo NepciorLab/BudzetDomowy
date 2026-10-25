@@ -480,6 +480,186 @@ public sealed class KorektaToolTests : IDisposable
         encoder.Save(stream);
     }
 
+    // ----- the month-by-month check of the history -----
+
+    /// <summary>Three months of 2026: in each two expenses (place "Sklep" and "Kiosk") and an income.</summary>
+    private BudgetCore SeedMonths()
+    {
+        var core = MainProgram();
+        foreach (var month in new[] { 1, 2, 3 })
+        {
+            core.Transactions.Add(new DateOnly(2026, month, 3), TransactionType.Expense, 100m, null, $"a{month}", null, place: "Sklep");
+            core.Transactions.Add(new DateOnly(2026, month, 20), TransactionType.Expense, 50m, null, $"b{month}", null, place: "Kiosk");
+            core.Transactions.Add(new DateOnly(2026, month, 10), TransactionType.Income, 1000m, null, $"p{month}", null, place: "Firma");
+        }
+        return core;
+    }
+
+    private static async Task ShiftAsync(K.MainViewModel vm, Func<K.TxRow, bool> where, string amount, bool decrease = true)
+    {
+        Select(vm, where);
+        vm.ShiftDecrease = decrease;
+        vm.ShiftAmountText = amount;
+        vm.PlanShiftCommand.Execute(null);
+        await vm.ApplyCommand.ExecuteAsync(null);
+    }
+
+    [Fact]
+    public void TheHistory_ChecksEveryMonthAgainstTheStateWithoutAnyCorrection()
+    {
+        var core = SeedMonths();
+        UiHost.RunAsync(async () =>
+        {
+            var vm = await OpenAsync(new FakeUi());
+            await ShiftAsync(vm, r => r.Place == "Sklep" && r.Date.Month <= 2, "10");                   // -10 in January and in February
+            await ShiftAsync(vm, r => r.Place == "Kiosk" && r.Date.Month == 3, "5", decrease: false);    // +5 in March
+            Assert.Equal(2, vm.History.Count);
+
+            vm.SelectedHistory = null;
+            await vm.AuditSelectedCommand.ExecuteAsync(null);
+            Assert.Null(vm.MonthReport);
+            Assert.Contains("Zaznacz na liście korektę", vm.Status);
+
+            vm.SelectedHistory = vm.History.Single(h => h.Title.StartsWith("Zmniejszenie"));
+            await vm.AuditSelectedCommand.ExecuteAsync(null);
+            var first = vm.MonthReport!;
+            Assert.True(first.IsOk);
+            Assert.StartsWith("Sumy różnią się w 2 z 3 miesięcy – tak, jak zapowiadały korekty.", first.Headline);
+            Assert.Contains("Uwzględniono korekty: 1.", first.Headline);
+            Assert.Equal("Różnice w sumach: wydatki -20,00 zł. Miesiące (2): 2026-01 (wydatki -10,00 zł), 2026-02 (wydatki -10,00 zł).", Plain(first.Differences));
+            Assert.Equal("", first.Unexpected);
+            Assert.Equal(["2026-01", "2026-02"], first.Rows.Select(r => r.DateText));
+            Assert.Equal(["Bez żadnej korekty", "Po wybranych korektach", "Różnica", "Zapowiedziana różnica"], first.Totals.Select(t => t.Label));
+            Assert.Equal(("450,00", "430,00", "-20,00"), (first.Totals[0].Expense, first.Totals[1].Expense, first.Totals[2].Expense));
+            first.ShowUnchanged = true;
+            Assert.Equal(["2026-01", "2026-02", "2026-03"], first.Rows.Select(r => r.DateText));
+            Assert.Equal("bez zmian", first.Rows[2].State);
+
+            vm.SelectedHistory = vm.History.Single(h => h.Title.StartsWith("Zwiększenie"));
+            await vm.AuditSelectedCommand.ExecuteAsync(null);
+            var both = vm.MonthReport!;
+            Assert.True(both.IsOk);
+            Assert.StartsWith("Sumy różnią się w 3 z 3 miesięcy", both.Headline);
+            Assert.Contains("wydatki -15,00 zł. Miesiące (3): 2026-01 (wydatki -10,00 zł), 2026-02 (wydatki -10,00 zł), 2026-03 (wydatki +5,00 zł)", Plain(both.Differences));
+
+            await vm.AuditAllCommand.ExecuteAsync(null);
+            Assert.Equal("Stan po wszystkich korektach (z cofnięciami)", vm.MonthReport!.Caption);
+            Assert.True(vm.MonthReport.IsOk);
+        });
+    }
+
+    [Fact]
+    public void TheHistory_SaysThatNothingDiffersWhenTheSumsOfEveryMonthAreTheSame()
+    {
+        var core = SeedMonths();
+        var sweets = core.Reader.GetCategories().First(c => c.Name == "Cukiernicze").Id;
+        UiHost.RunAsync(async () =>
+        {
+            var vm = await OpenAsync(new FakeUi());
+            Select(vm, r => r.Place == "Sklep");
+            vm.SplitCategory = vm.ChoiceCategories.First(c => c.Id == sweets);
+            vm.SplitAllText = "30";
+            vm.SplitFillAllCommand.Execute(null);
+            vm.PlanSplitCommand.Execute(null);
+            await vm.ApplyCommand.ExecuteAsync(null);
+
+            vm.SelectedHistory = vm.History[0];
+            await vm.AuditSelectedCommand.ExecuteAsync(null);
+
+            var report = vm.MonthReport!;
+            Assert.True(report.IsOk);
+            Assert.StartsWith("✔ W każdym z 3 miesięcy sumy przychodów i wydatków są takie same przed korektami w ogóle i po korektach do wybranej.", report.Headline);
+            Assert.Equal("Zmieniła się tylko liczba wpisów: +3 (co zapowiadały korekty).", report.Differences);
+            Assert.False(report.HasUnexpected);
+            Assert.Empty(report.Rows.Where(r => r.IncomeChange != "0,00" || r.ExpenseChange != "0,00"));
+        });
+    }
+
+    [Fact]
+    public void TheHistory_NamesTheTotalDifferencesAndTheMonths_WhenSomethingIsNotAsPromised()
+    {
+        var core = SeedMonths();
+        UiHost.RunAsync(async () =>
+        {
+            var vm = await OpenAsync(new FakeUi());
+            await ShiftAsync(vm, r => r.Place == "Sklep", "10");                                          // -10 in each of the three months
+
+            core.Sync.SyncOnce();
+            var march = core.Reader.GetTransactions().Single(t => t.Place == "Sklep" && t.Date.Month == 3);
+            core.Transactions.Update(march with { Amount = 100m });                                       // the user restores March by hand
+
+            vm.SelectedHistory = vm.History[0];
+            await vm.AuditSelectedCommand.ExecuteAsync(null);
+
+            var report = vm.MonthReport!;
+            Assert.False(report.IsOk);
+            Assert.StartsWith("✖ Niezgodności z zapowiedzią korekt w 1 z 3 miesięcy.", report.Headline);
+            Assert.Equal("Różnice w sumach: wydatki -20,00 zł. Miesiące (2): 2026-01 (wydatki -10,00 zł), 2026-02 (wydatki -10,00 zł).", Plain(report.Differences));
+            Assert.Equal("Niezgodne z zapowiedzią (rzeczywista zmiana minus zapowiedziana): wydatki +10,00 zł. Miesiące (1): 2026-03 (wydatki +10,00 zł).", Plain(report.Unexpected));
+            Assert.Equal("NIEZGODNE", report.Rows.Single(r => r.DateText == "2026-03").State);
+        });
+    }
+
+    [Fact]
+    public void TheMonthlyReportGoesToExcel_AndTheHistoryTabShowsTheResult()
+    {
+        SeedMonths();
+        var ui = new FakeUi { SavePath = Path.Combine(_root, "miesiace.xlsx") };
+        UiHost.RunAsync(async () =>
+        {
+            var vm = await OpenAsync(ui);
+            await ShiftAsync(vm, r => r.Place == "Sklep" && r.Date.Month <= 2, "10");
+            var window = new K.MainWindow(vm);
+            var content = (FrameworkElement)window.Content;
+            var tabs = Assert.IsType<TabControl>(window.FindName("Tabs"));
+            tabs.SelectedIndex = 2;
+            vm.SelectedHistory = vm.History[0];
+            UiHost.Layout(content, 1340, 860);
+            Assert.True(((Button)window.FindName("HistoryAuditButton")!).IsEnabled);
+
+            await vm.AuditSelectedCommand.ExecuteAsync(null);
+            UiHost.Layout(content, 1340, 860);
+            var texts = UiHost.Texts(content);
+            Assert.Contains(texts, t => t.StartsWith("Sumy różnią się w 2 z 3 miesięcy"));
+            Assert.Contains(texts, t => Plain(t).StartsWith("Różnice w sumach: wydatki -20,00 zł. Miesiące (2): 2026-01"));
+            Assert.Equal(2, ((DataGrid)window.FindName("MonthsGrid")!).Items.Count);
+            ((CheckBox)window.FindName("ShowUnchangedBox")!).IsChecked = true;
+            UiHost.Layout(content, 1340, 860);
+            Assert.Equal(3, ((DataGrid)window.FindName("MonthsGrid")!).Items.Count);
+            Render(window, "korekta-miesiace");
+
+            await vm.ExportMonthsCommand.ExecuteAsync(null);
+            using var wb = new XLWorkbook(ui.SavePath);
+            Assert.Equal(["Podsumowanie", "Miesiące"], wb.Worksheets.Select(w => w.Name));
+            Assert.Equal(1 + 3, wb.Worksheet("Miesiące").RangeUsed()!.RowCount());                       // every month is in the file
+        });
+    }
+
+    [Fact]
+    public void ARecordFromAnOlderVersion_IsExplainedInsteadOfBeingChecked()
+    {
+        SeedMonths();
+        UiHost.RunAsync(async () =>
+        {
+            var vm = await OpenAsync(new FakeUi());
+            await ShiftAsync(vm, r => r.Place == "Sklep", "10");
+
+            // the record as the first version of the tool wrote it: no device and no time stamps
+            var file = Directory.GetFiles(Path.Combine(_data, "Korekty"), "korekta_*.json").Single();
+            var json = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(file))!.AsObject();
+            json["deviceId"] = "";
+            json["lastTimestamp"] = "";
+            File.WriteAllText(file, json.ToJsonString());
+            await vm.ReloadCommand.ExecuteAsync(null);
+
+            vm.SelectedHistory = vm.History[0];
+            await vm.AuditSelectedCommand.ExecuteAsync(null);
+
+            Assert.Null(vm.MonthReport);
+            Assert.StartsWith("Ta korekta powstała w starszej wersji narzędzia", vm.Status);
+        });
+    }
+
     // ----- small things -----
 
     [Fact]

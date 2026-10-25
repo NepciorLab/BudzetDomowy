@@ -112,6 +112,97 @@ public sealed record HistoryItem(CorrectionRecord Record)
     public string StateText => Record.Reverted ? "Cofnięta" : Record.AllOk ? "Kontrola OK" : "Kontrola: niezgodności";
 }
 
+/// <summary>The month-by-month check of the history of corrections, ready to show: what is the same, what differs and where.</summary>
+public sealed partial class MonthReportView : ObservableObject
+{
+    private readonly IReadOnlyList<DayRowView> _changed;
+    private readonly IReadOnlyList<DayRowView> _all;
+    private const int ListedInText = 12;
+
+    public MonthReportView(MonthlyAuditResult result, string caption)
+    {
+        Result = result;
+        Caption = caption;
+        var report = result.Report;
+        IsOk = report.AllOk;
+
+        var months = report.Differences;
+        var unexpected = report.Problems;
+        var inScope = $"Uwzględniono korekty: {result.CorrectionsIncluded}" + (result.UndosIncluded > 0 ? $", w tym cofnięcia: {result.UndosIncluded}" : "") + ".";
+
+        if (months.Count == 0 && report.AllOk)
+        {
+            Headline = $"✔ W każdym z {report.DaysChecked} miesięcy sumy przychodów i wydatków są takie same przed korektami w ogóle i po korektach do wybranej. {inScope}";
+            var entries = report.TotalChange.Count;
+            Differences = entries == 0 ? "" : $"Zmieniła się tylko liczba wpisów: {ReportView.Signed(entries)} (co zapowiadały korekty).";
+        }
+        else if (report.AllOk)
+        {
+            Headline = $"Sumy różnią się w {months.Count} z {report.DaysChecked} miesięcy – tak, jak zapowiadały korekty. {inScope}";
+            Differences = DifferencesText("Różnice w sumach", months, report.TotalChange, d => d.Actual);
+        }
+        else
+        {
+            Headline = $"✖ Niezgodności z zapowiedzią korekt w {unexpected.Count} z {report.DaysChecked} miesięcy. {inScope}";
+            Differences = months.Count == 0 ? "Sumy żadnego miesiąca się nie zmieniły." : DifferencesText("Różnice w sumach", months, report.TotalChange, d => d.Actual);
+        }
+        Unexpected = unexpected.Count == 0
+            ? ""
+            : DifferencesText("Niezgodne z zapowiedzią (rzeczywista zmiana minus zapowiedziana)", unexpected, report.TotalUnexpected, d => d.Actual - d.Expected);
+
+        _changed = report.Days.Select(Row).ToList();
+        _all = report.All.Select(Row).ToList();
+        Totals =
+        [
+            new("Bez żadnej korekty", ReportView.Money(report.TotalBefore.Income), ReportView.Money(report.TotalBefore.Expense), report.TotalBefore.Count.ToString(CultureInfo.CurrentCulture)),
+            new("Po wybranych korektach", ReportView.Money(report.TotalAfter.Income), ReportView.Money(report.TotalAfter.Expense), report.TotalAfter.Count.ToString(CultureInfo.CurrentCulture)),
+            new("Różnica", ReportView.Signed(report.TotalChange.Income), ReportView.Signed(report.TotalChange.Expense), ReportView.Signed(report.TotalChange.Count)),
+            new("Zapowiedziana różnica", ReportView.Signed(report.TotalExpected.Income), ReportView.Signed(report.TotalExpected.Expense), ReportView.Signed(report.TotalExpected.Count)),
+        ];
+    }
+
+    public MonthlyAuditResult Result { get; }
+    public string Caption { get; }
+    public bool IsOk { get; }
+    public string Headline { get; }
+
+    /// <summary>The total differences of the sums and the months they are in (empty when there are none).</summary>
+    public string Differences { get; }
+
+    /// <summary>The same for what differs from the promise (empty when everything is as promised).</summary>
+    public string Unexpected { get; }
+
+    public bool HasDifferences => Differences.Length > 0;
+    public bool HasUnexpected => Unexpected.Length > 0;
+    public IReadOnlyList<TotalRowView> Totals { get; }
+
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(Rows))] private bool _showUnchanged;
+
+    /// <summary>The months that changed or were promised to; with the box ticked, all months.</summary>
+    public IReadOnlyList<DayRowView> Rows => ShowUnchanged ? _all : _changed;
+
+    private static string Part(string name, decimal value) => value == 0 ? "" : $"{name} {ReportView.Signed(value)} zł";
+
+    private static string Describe(DaySum sum)
+    {
+        var parts = new[] { Part("przychody", sum.Income), Part("wydatki", sum.Expense) }.Where(t => t.Length > 0).ToList();
+        return parts.Count == 0 ? "bez zmiany sum" : string.Join(", ", parts);
+    }
+
+    /// <summary>"Różnice w sumach: przychody +5,00 zł, wydatki -20,00 zł. Miesiące: 2026-01 (wydatki -10,00 zł), 2026-02 (...)".</summary>
+    private static string DifferencesText(string label, IReadOnlyList<DayCheck> months, DaySum total, Func<DayCheck, DaySum> change)
+    {
+        var listed = months.Take(ListedInText).Select(m => $"{m.Date:yyyy-MM} ({Describe(change(m))})");
+        var more = months.Count > ListedInText ? $" … i jeszcze {months.Count - ListedInText} (wszystkie w tabeli i w Excelu)" : "";
+        return $"{label}: {Describe(total)}. Miesiące ({months.Count}): {string.Join(", ", listed)}{more}.";
+    }
+
+    private static DayRowView Row(DayCheck d) => new(d.Date.ToString("yyyy-MM"), ReportView.Money(d.Before.Income), ReportView.Money(d.After.Income),
+        ReportView.Signed(d.Actual.Income), ReportView.Signed(d.Expected.Income), ReportView.Money(d.Before.Expense), ReportView.Money(d.After.Expense),
+        ReportView.Signed(d.Actual.Expense), ReportView.Signed(d.Expected.Expense), d.Before.Count.ToString(CultureInfo.CurrentCulture),
+        d.After.Count.ToString(CultureInfo.CurrentCulture), d.Ok ? (d.Actual.IsEmpty && d.Expected.IsEmpty ? "bez zmian" : "OK") : "NIEZGODNE", d.Ok);
+}
+
 public sealed partial class MainViewModel : ObservableObject
 {
     private readonly IUi _ui;
@@ -600,6 +691,70 @@ public sealed partial class MainViewModel : ObservableObject
         finally
         {
             IsBusy = false;
+        }
+    }
+
+    // ----- the month-by-month check of the history -----
+
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(HasMonthReport))] private MonthReportView? _monthReport;
+
+    public bool HasMonthReport => MonthReport is not null;
+
+    [RelayCommand]
+    private async Task AuditSelectedAsync()
+    {
+        if (SelectedHistory is not { } item)
+        {
+            Status = "Zaznacz na liście korektę, do której mam sprawdzić miesiące.";
+            return;
+        }
+        await RunAuditAsync(history => HistoryAudit.Run(_session!.DataFolder, history, item.Record), $"Stan po korekcie „{item.Title}” z {item.WhenText}");
+    }
+
+    [RelayCommand]
+    private async Task AuditAllAsync() =>
+        await RunAuditAsync(history => HistoryAudit.RunToTheEnd(_session!.DataFolder, history), "Stan po wszystkich korektach (z cofnięciami)");
+
+    private async Task RunAuditAsync(Func<IReadOnlyList<CorrectionRecord>, MonthlyAuditResult> run, string caption)
+    {
+        if (_session is null || IsBusy) return;
+        var session = _session;
+        IsBusy = true;
+        Status = "Odtwarzanie danych z dzienników i porównywanie miesięcy…";
+        try
+        {
+            var result = await Task.Run(() => run(session.Runner.History()));
+            MonthReport = new MonthReportView(result, caption);
+            Status = result.Report.AllOk ? "Kontrola miesięcy zakończona: zgodnie z zapowiedzią." : "Kontrola miesięcy znalazła niezgodności.";
+        }
+        catch (AuditNotSupportedException e)
+        {
+            Status = e.Message;
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException or InvalidOperationException)
+        {
+            Status = "Nie udało się sprawdzić miesięcy: " + e.Message;
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    [RelayCommand]
+    private async Task ExportMonthsAsync()
+    {
+        if (MonthReport is not { } report) return;
+        var path = _ui.PickSaveFile($"Kontrola miesięcy {DateTime.Now:yyyy-MM-dd HHmm}.xlsx");
+        if (path is null) return;
+        try
+        {
+            await Task.Run(() => VerificationExport.Write(path, $"Kontrola miesięcy – {report.Caption}", report.Result.Report, monthly: true));
+            Status = "Raport zapisany: " + path;
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            Status = "Nie udało się zapisać raportu: " + e.Message;
         }
     }
 

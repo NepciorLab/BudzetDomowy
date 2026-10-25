@@ -16,8 +16,20 @@ public sealed record DayCheck(DateOnly Date, DaySum Before, DaySum After, DaySum
 /// </summary>
 public sealed record VerificationReport(IReadOnlyList<DayCheck> Days, int DaysChecked, DaySum TotalBefore, DaySum TotalAfter, DaySum TotalExpected)
 {
+    /// <summary>Every day (month) that was compared, also the ones that did not change; <see cref="Days"/> lists only the interesting ones.</summary>
+    public IReadOnlyList<DayCheck> All { get; init; } = Days;
+
     /// <summary>The days where the change is not the expected one.</summary>
     public IReadOnlyList<DayCheck> Problems => Days.Where(d => !d.Ok).ToList();
+
+    /// <summary>The days (months) whose sums of income or of expenses differ before and after (a changed number of entries alone is not a difference of the sums).</summary>
+    public IReadOnlyList<DayCheck> Differences => Days.Where(d => d.Actual.Income != 0 || d.Actual.Expense != 0).ToList();
+
+    /// <summary>The change of the totals, everything together.</summary>
+    public DaySum TotalChange => TotalAfter - TotalBefore;
+
+    /// <summary>What the totals changed against the promise, summed over the days (months) where they did not change as promised.</summary>
+    public DaySum TotalUnexpected => Problems.Aggregate(DaySum.Empty, (sum, d) => sum + (d.Actual - d.Expected));
 
     public bool AllOk => Problems.Count == 0 && TotalAfter - TotalBefore == TotalExpected;
 
@@ -36,14 +48,16 @@ public static class Verifier
     {
         var dates = before.Keys.Concat(after.Keys).Concat(expected.Keys).Distinct().OrderBy(d => d).ToList();
         var days = new List<DayCheck>();
+        var all = new List<DayCheck>();
         foreach (var date in dates)
         {
             var check = new DayCheck(date, before.GetValueOrDefault(date, DaySum.Empty), after.GetValueOrDefault(date, DaySum.Empty),
                 expected.GetValueOrDefault(date, DaySum.Empty));
+            all.Add(check);
             if (!check.Actual.IsEmpty || !check.Expected.IsEmpty) days.Add(check);
         }
 
-        return new VerificationReport(days, dates.Count, Sum(before.Values), Sum(after.Values), Sum(expected.Values));
+        return new VerificationReport(days, dates.Count, Sum(before.Values), Sum(after.Values), Sum(expected.Values)) { All = all };
     }
 
     private static DaySum Sum(IEnumerable<DaySum> values) => values.Aggregate(DaySum.Empty, (a, b) => a + b);

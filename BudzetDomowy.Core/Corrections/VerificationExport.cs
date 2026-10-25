@@ -7,19 +7,21 @@ public static class VerificationExport
 {
     private const string MoneyFormat = "#,##0.00;[Red]-#,##0.00";
 
-    public static void Write(string path, string title, VerificationReport report)
+    /// <summary>With <paramref name="monthly"/> the rows are months (named by their first day) instead of days.</summary>
+    public static void Write(string path, string title, VerificationReport report, bool monthly = false)
     {
+        var unit = monthly ? "miesięcy" : "dni";
         using var wb = new XLWorkbook();
 
         var summary = wb.AddWorksheet("Podsumowanie");
         summary.Cell(1, 1).Value = title;
         summary.Cell(1, 1).Style.Font.Bold = true;
         summary.Cell(1, 1).Style.Font.FontSize = 14;
-        summary.Cell(2, 1).Value = report.AllOk ? "Wynik kontroli: wszystko się zgadza." : $"Wynik kontroli: NIEZGODNOŚCI w dniach: {report.Problems.Count}.";
+        summary.Cell(2, 1).Value = report.AllOk ? "Wynik kontroli: wszystko się zgadza." : $"Wynik kontroli: NIEZGODNOŚCI ({unit}): {report.Problems.Count}.";
         summary.Cell(2, 1).Style.Font.Bold = true;
-        summary.Cell(3, 1).Value = "Sprawdzonych dni (z danymi):";
+        summary.Cell(3, 1).Value = $"Sprawdzonych {unit} (z danymi):";
         summary.Cell(3, 2).Value = report.DaysChecked;
-        summary.Cell(4, 1).Value = "Dni ze zmianą lub zapowiedzią zmiany:";
+        summary.Cell(4, 1).Value = monthly ? "Miesiące ze zmianą lub zapowiedzią zmiany:" : "Dni ze zmianą lub zapowiedzią zmiany:";
         summary.Cell(4, 2).Value = report.ChangedDays;
 
         string[] heads = ["", "Przychody", "Wydatki", "Wpisy"];
@@ -31,20 +33,20 @@ public static class VerificationExport
         Row(summary, 10, "Zmiana zapowiedziana", report.TotalExpected);
         summary.Columns().AdjustToContents();
 
-        var days = wb.AddWorksheet("Dni");
+        var days = wb.AddWorksheet(monthly ? "Miesiące" : "Dni");
         string[] dayHeads =
         [
-            "Data", "Przychody przed", "Przychody po", "Zmiana przychodów", "Zapowiedź", "Wydatki przed", "Wydatki po", "Zmiana wydatków", "Zapowiedź",
+            monthly ? "Miesiąc" : "Data", "Przychody przed", "Przychody po", "Zmiana przychodów", "Zapowiedź", "Wydatki przed", "Wydatki po", "Zmiana wydatków", "Zapowiedź",
             "Wpisy przed", "Wpisy po", "Stan",
         ];
         for (var c = 0; c < dayHeads.Length; c++) days.Cell(1, c + 1).Value = dayHeads[c];
         days.Range(1, 1, 1, dayHeads.Length).Style.Font.Bold = true;
 
         var row = 2;
-        foreach (var d in report.Days)
+        foreach (var d in monthly ? report.All : report.Days)         // the months: every one of them, also the unchanged
         {
             days.Cell(row, 1).Value = d.Date.ToDateTime(TimeOnly.MinValue);
-            days.Cell(row, 1).Style.DateFormat.Format = "yyyy-MM-dd";
+            days.Cell(row, 1).Style.DateFormat.Format = monthly ? "yyyy-MM" : "yyyy-MM-dd";
             days.Cell(row, 2).Value = d.Before.Income;
             days.Cell(row, 3).Value = d.After.Income;
             days.Cell(row, 4).Value = d.Actual.Income;

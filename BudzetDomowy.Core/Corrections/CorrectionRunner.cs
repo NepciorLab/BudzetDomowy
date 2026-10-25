@@ -39,6 +39,10 @@ public sealed class CorrectionRecord
     public DateTimeOffset AppliedAt { get; init; }
     public string Title { get; init; } = "";
     public string DeviceName { get; init; } = "";
+    /// <summary>The device the correction was written by (its events are told apart from the others by this id).</summary>
+    public string DeviceId { get; init; } = "";
+    /// <summary>The time stamp of the last event of the correction: everything up to it belongs to the state "after this correction".</summary>
+    public string LastTimestamp { get; init; } = "";
     /// <summary>The backup made right before the correction (file name in the backup folder); empty when none could be made.</summary>
     public string BackupFile { get; init; } = "";
     public List<RecordedChange> Changes { get; init; } = [];
@@ -49,6 +53,10 @@ public sealed class CorrectionRecord
     public bool AllOk { get; init; }
     public bool Reverted { get; set; }
     public DateTimeOffset? RevertedAt { get; set; }
+    /// <summary>The time stamp of the last event of the undo.</summary>
+    public string RevertTimestamp { get; set; } = "";
+    /// <summary>How the undo was expected to change the days (the reverse of what was written), for the check of the months.</summary>
+    public List<DayCheckRow> RevertExpected { get; set; } = [];
 
     /// <summary>File name inside the "Korekty" folder.</summary>
     public string FileName => $"korekta_{AppliedAt.ToLocalTime():yyyyMMdd-HHmmss}_{Id.ToString("N")[..8]}.json";
@@ -106,7 +114,12 @@ public sealed class CorrectionRunner
         var before = DaySnapshot.Build(current.Values);
         var backup = _core.Backups.Create(BackupKind.Manual);
 
-        foreach (var c in plan.Changes) _core.Recorder.Save(c.After);
+        var last = HlcTimestamp.Zero;
+        foreach (var c in plan.Changes)
+        {
+            var ev = _core.Recorder.Save(c.After);
+            if (ev.Timestamp > last) last = ev.Timestamp;
+        }
 
         var after = DaySnapshot.Build(_core.Reader.GetTransactions());
         var report = Verifier.Compare(before, after, plan.ExpectedDeltas());
@@ -117,6 +130,8 @@ public sealed class CorrectionRunner
             AppliedAt = _now(),
             Title = plan.Title,
             DeviceName = _core.Device.DeviceName,
+            DeviceId = _core.Device.DeviceId.ToLowerInvariant(),
+            LastTimestamp = last.ToString(),
             BackupFile = backup?.FileName ?? "",
             Changes = plan.Changes.Select(c => new RecordedChange
             {
@@ -182,14 +197,26 @@ public sealed class CorrectionRunner
             }
         }
 
-        foreach (var t in restores) _core.Recorder.Save(t);
-        foreach (var id in removals) _core.Recorder.Delete(EntityTypes.Transaction, id);
+        var last = HlcTimestamp.Zero;
+        foreach (var t in restores)
+        {
+            var ev = _core.Recorder.Save(t);
+            if (ev.Timestamp > last) last = ev.Timestamp;
+        }
+        foreach (var id in removals)
+        {
+            var ev = _core.Recorder.Delete(EntityTypes.Transaction, id);
+            if (ev.Timestamp > last) last = ev.Timestamp;
+        }
 
         var after = DaySnapshot.Build(_core.Reader.GetTransactions());
         var report = Verifier.Compare(before, after, expected.Where(kv => !kv.Value.IsEmpty).ToDictionary(kv => kv.Key, kv => kv.Value));
 
         record.Reverted = true;
         record.RevertedAt = _now();
+        record.RevertTimestamp = last.ToString();
+        record.RevertExpected = expected.Where(kv => !kv.Value.IsEmpty).OrderBy(kv => kv.Key)
+            .Select(kv => new DayCheckRow { Date = kv.Key, Expected = ToRow(kv.Value, kv.Key) }).ToList();
         Save(record);
         return report;
     }
