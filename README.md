@@ -134,7 +134,7 @@ Wymagany jest .NET 8 SDK (Windows).
 dotnet build BudzetDomowy.sln
 dotnet test BudzetDomowy.sln                       # testy logiki i testy interfejsu (bez otwierania okien)
 .\tools\publish.ps1                                # dist\BudzetDomowy.exe i dist\BudzetDomowy-<wersja>.zip
-.\tools\MakeIcon.ps1                               # ikona .ico z BudzetDomowy.App\Assets\BudzetDomowy.png
+powershell -STA -File tools\MakeIcon.ps1           # ikona .ico (16-256 px, biel wokół rysunku przezroczysta) z BudzetDomowy.App\Assets\icon-source.webp
 ```
 
 Struktura: `BudzetDomowy.Core` (domena, dziennik zdarzeń, synchronizacja, bazy, usługi, import/eksport, bez WPF), `BudzetDomowy.App` (WPF, MVVM, zasoby tekstów w `Resources\Strings.resx`), `BudzetDomowy.Tests` (xUnit, w tym symulacje dwóch urządzeń), `BudzetDomowy.UiTests` (budują ekrany z prawdziwego XAML i rysują je do obrazów w pamięci, bez pokazywania okien). Specyfikacja projektu: `CLAUDE.md`.
