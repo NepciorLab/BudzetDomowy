@@ -37,11 +37,14 @@ public static class ChartFactory
         }).ToList();
 
     /// <summary>Income (green) and expense (red) columns per month.</summary>
-    public static IReadOnlyList<ISeries> IncomeExpenseColumns(IReadOnlyList<MonthPoint> points, string incomeName, string expenseName, bool lines = false) =>
-    [
-        Series(lines, incomeName, points.Select(p => p.Income), new SKColor(0x43, 0xA0, 0x47)),
-        Series(lines, expenseName, points.Select(p => p.Expense), new SKColor(0xE5, 0x39, 0x35)),
-    ];
+    public static IReadOnlyList<ISeries> IncomeExpenseColumns(IReadOnlyList<MonthPoint> points, string incomeName, string expenseName, bool lines = false,
+        bool showIncome = true, bool showExpense = true)
+    {
+        var series = new List<ISeries>();
+        if (showIncome) series.Add(Series(lines, incomeName, points.Select(p => p.Income), new SKColor(0x43, 0xA0, 0x47)));
+        if (showExpense) series.Add(Series(lines, expenseName, points.Select(p => p.Expense), new SKColor(0xE5, 0x39, 0x35)));
+        return series;
+    }
 
     /// <summary>A line through the points, in the given colour (used instead of columns when the user prefers lines).</summary>
     private static ISeries Line(string name, IEnumerable<decimal> values, SKColor color) => new LineSeries<double>
@@ -118,7 +121,8 @@ public static class ChartFactory
     ];
 
     /// <summary>One column each for the income, the expenses and the balance of everything shown (the balance may be negative).</summary>
-    public static IReadOnlyList<ISeries> SumColumns(decimal income, decimal expense, string incomeName, string expenseName, string balanceName)
+    public static IReadOnlyList<ISeries> SumColumns(decimal income, decimal expense, string incomeName, string expenseName, string balanceName,
+        bool showIncome = true, bool showExpense = true)
     {
         ISeries Bar(string name, decimal value, SKColor color) => new ColumnSeries<double>
         {
@@ -131,12 +135,11 @@ public static class ChartFactory
             DataLabelsPosition = DataLabelsPosition.End,
             DataLabelsFormatter = point => point.Coordinate.PrimaryValue.ToString("N0", System.Globalization.CultureInfo.CurrentCulture),
         };
-        return
-        [
-            Bar(incomeName, income, new SKColor(0x43, 0xA0, 0x47)),
-            Bar(expenseName, expense, new SKColor(0xE5, 0x39, 0x35)),
-            Bar(balanceName, income - expense, new SKColor(0xFB, 0x8C, 0x00)),
-        ];
+        var bars = new List<ISeries>();
+        if (showIncome) bars.Add(Bar(incomeName, income, new SKColor(0x43, 0xA0, 0x47)));
+        if (showExpense) bars.Add(Bar(expenseName, expense, new SKColor(0xE5, 0x39, 0x35)));
+        if (showIncome && showExpense) bars.Add(Bar(balanceName, income - expense, new SKColor(0xFB, 0x8C, 0x00)));      // the balance needs both
+        return bars;
     }
 
     /// <summary>Money axis that may go below zero.</summary>

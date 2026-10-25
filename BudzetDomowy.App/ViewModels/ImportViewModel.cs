@@ -63,11 +63,6 @@ public sealed partial class CategoryMapRow : ObservableObject
 public sealed record PlanRowView(string Sheet, int ExcelRow, string Date, string Amount, bool IsIncome, string Place, string Note, string Category,
     string Status, string Kind, int Index = -1, bool CanFix = false);
 
-public sealed record StatusFilter(string Key, string Label)
-{
-    public override string ToString() => Label;
-}
-
 public sealed partial class ImportViewModel : ObservableObject
 {
     private readonly BudgetCore _core;
@@ -81,12 +76,6 @@ public sealed partial class ImportViewModel : ObservableObject
 
     public ObservableCollection<SheetItem> Sheets { get; } = [];
     public ObservableCollection<CategoryMapRow> CategoryRows { get; } = [];
-
-    public IReadOnlyList<StatusFilter> Filters { get; } =
-    [
-        new("all", Res.Get("ImportFilterAll")), new("import", Res.Get("ImportFilterImport")), new("duplicate", Res.Get("ImportFilterDuplicates")),
-        new("problem", Res.Get("ImportFilterProblems")), new("skipped", Res.Get("ImportFilterSkipped")),
-    ];
 
     [ObservableProperty, NotifyPropertyChangedFor(nameof(IsStep1)), NotifyPropertyChangedFor(nameof(IsStep2)), NotifyPropertyChangedFor(nameof(IsStep3)),
         NotifyPropertyChangedFor(nameof(IsStep4)), NotifyPropertyChangedFor(nameof(CanGoBack)), NotifyPropertyChangedFor(nameof(CanGoNext)), NotifyPropertyChangedFor(nameof(IsDone))]
@@ -115,7 +104,17 @@ public sealed partial class ImportViewModel : ObservableObject
 
     // preview
     [ObservableProperty] private IReadOnlyList<PlanRowView> _previewRows = [];
-    [ObservableProperty] private StatusFilter? _filter;
+
+    // the preview can be narrowed with check boxes: nothing checked shows every row; the checked kinds of rows (any of them), and then the checked types
+    [ObservableProperty] private bool _onlyToImport;
+    [ObservableProperty] private bool _onlyWarnings;
+    [ObservableProperty] private bool _onlyDuplicates;
+    [ObservableProperty] private bool _onlyErrors;
+    [ObservableProperty] private bool _onlySkipped;
+    [ObservableProperty] private bool _onlyEdited;
+    [ObservableProperty] private bool _onlyIncome;
+    [ObservableProperty] private bool _onlyExpense;
+    [ObservableProperty] private string _shownText = "";
     [ObservableProperty, NotifyCanExecuteChangedFor(nameof(FixRowCommand))] private PlanRowView? _selectedPreviewRow;
     [ObservableProperty] private string _summary = "";
     [ObservableProperty] private string _result = "";
@@ -138,10 +137,32 @@ public sealed partial class ImportViewModel : ObservableObject
         _dialogs = dialogs;
         _store = store;
         _editor = editor;
-        _filter = Filters[0];
     }
 
-    partial void OnFilterChanged(StatusFilter? value) => ShowPreview();
+    protected override void OnPropertyChanged(System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        base.OnPropertyChanged(e);
+        if (e.PropertyName is nameof(OnlyToImport) or nameof(OnlyWarnings) or nameof(OnlyDuplicates) or nameof(OnlyErrors) or nameof(OnlySkipped)
+            or nameof(OnlyEdited) or nameof(OnlyIncome) or nameof(OnlyExpense))
+            ShowPreview();
+    }
+
+    public bool HasPreviewFilter => OnlyToImport || OnlyWarnings || OnlyDuplicates || OnlyErrors || OnlySkipped || OnlyEdited || OnlyIncome || OnlyExpense;
+
+    /// <summary>Whether a row passes the check boxes.</summary>
+    private bool PassesFilter(ImportRow r)
+    {
+        var anyKind = OnlyToImport || OnlyWarnings || OnlyDuplicates || OnlyErrors || OnlySkipped || OnlyEdited;
+        if (anyKind && !((OnlyToImport && r.WillBeImported) || (OnlyWarnings && r.Status == ImportRowStatus.Warning) || (OnlyDuplicates && r.Status == ImportRowStatus.Duplicate)
+                         || (OnlyErrors && r.Status == ImportRowStatus.Error) || (OnlySkipped && r.Status == ImportRowStatus.Skipped) || (OnlyEdited && r.IsEdited)))
+            return false;
+        if (OnlyIncome != OnlyExpense) return OnlyIncome ? r.Type == TransactionType.Income : r.Type == TransactionType.Expense;
+        return true;
+    }
+
+    [RelayCommand]
+    private void ClearPreviewFilter() =>
+        (OnlyToImport, OnlyWarnings, OnlyDuplicates, OnlyErrors, OnlySkipped, OnlyEdited, OnlyIncome, OnlyExpense) = (false, false, false, false, false, false, false, false);
 
     partial void OnIncomeCellChanged(string value) => UpdateIncomeCellHint();
     partial void OnIncomeLabelFoundChanged(bool value) => UpdateIncomeCellHint();
@@ -377,15 +398,10 @@ public sealed partial class ImportViewModel : ObservableObject
         var plan = _plan;
         Summary = Res.Format("ImportSummary", plan.ToImport, plan.Duplicates, plan.Warnings, plan.Errors, plan.Skipped);
 
-        IEnumerable<(ImportRow Row, int Index)> rows = plan.Rows.Select((r, i) => (r, i));
-        rows = Filter?.Key switch
-        {
-            "import" => rows.Where(x => x.Row.WillBeImported),
-            "duplicate" => rows.Where(x => x.Row.Status == ImportRowStatus.Duplicate),
-            "problem" => rows.Where(x => x.Row.Status is ImportRowStatus.Error or ImportRowStatus.Warning),
-            "skipped" => rows.Where(x => x.Row.Status == ImportRowStatus.Skipped),
-            _ => rows,
-        };
+        var matching = plan.Rows.Select((r, i) => (Row: r, Index: i)).Where(x => PassesFilter(x.Row)).ToList();
+        ShownText = HasPreviewFilter ? Res.Format("ImportShown", matching.Count, plan.Rows.Count) : "";
+        OnPropertyChanged(nameof(HasPreviewFilter));
+        var rows = matching;
 
         var categories = _core.Reader.GetCategories().ToDictionary(c => c.Id);
         PreviewRows = rows.Take(3000).Select(x =>

@@ -311,7 +311,7 @@ public sealed class V9UiTests : IDisposable
             Assert.Equal(("New", "poprawiono", "−12,30"), (corrected.Kind, corrected.Status, corrected.Amount));
             Assert.Equal("Spożywcze", corrected.Category);                                   // the category chosen in the window
             Assert.True(corrected.CanFix);                                                   // it can be corrected again
-            vm.Filter = vm.Filters.Single(f => f.Key == "problem");
+            vm.OnlyErrors = true;
             Assert.Empty(vm.PreviewRows);                                                    // no problems are left
             Assert.Contains("błędy: 0", vm.Summary);
 
@@ -563,4 +563,171 @@ public sealed class V9UiTests : IDisposable
         var detailsLeft = details.TranslatePoint(new Point(0, 0), view).X;
         Assert.True(detailsLeft > totalsLeft + totals.ActualWidth - 1);
     });
+
+    // ----- the overview chart: everything, only income, only expenses -----
+
+    [Fact]
+    public void Overview_TheChartCanShowEverything_OnlyTheIncome_OrOnlyTheExpenses() => WithApp(app =>
+    {
+        var vm = app.Get<ReportsViewModel>();
+        Assert.True(vm.ShowsAll);
+        Assert.Equal(["Przychody", "Wydatki"], vm.TrendSeries.Select(s => s.Name));
+        Assert.Equal(["Przychody", "Wydatki", "Bilans"], vm.SumSeries.Select(s => s.Name));
+
+        vm.SetTrendShowCommand.Execute("Income");
+        Assert.Equal((false, true, false), (vm.ShowsAll, vm.ShowsIncome, vm.ShowsExpenses));
+        Assert.Equal(["Przychody"], vm.TrendSeries.Select(s => s.Name));
+        Assert.Equal(["Przychody"], vm.SumSeries.Select(s => s.Name));                      // the balance needs both
+
+        vm.SetTrendShowCommand.Execute("Expense");
+        Assert.Equal(["Wydatki"], vm.TrendSeries.Select(s => s.Name));
+        Assert.Equal(["Wydatki"], vm.SumSeries.Select(s => s.Name));
+
+        vm.TrendLines = true;
+        Assert.Equal(["Wydatki"], vm.TrendSeries.Select(s => s.Name));                      // the style and the choice are independent
+
+        vm.SetTrendShowCommand.Execute("All");
+        Assert.Equal(["Przychody", "Wydatki"], vm.TrendSeries.Select(s => s.Name));
+        vm.SetTrendShowCommand.Execute("nonsense");
+        Assert.True(vm.ShowsAll);
+    });
+
+    [Fact]
+    public void Overview_HasThreeButtonsForIt_NextToTheColumnsAndLines() => WithApp(app =>
+    {
+        var reports = app.Get<ReportsViewModel>();
+        var view = new ReportsView { DataContext = reports };
+        UiHost.Layout(view, 1300, 900);
+        var all = Assert.IsType<RadioButton>(view.FindName("TrendShowAll"));
+        var income = Assert.IsType<RadioButton>(view.FindName("TrendShowIncome"));
+        var expenses = Assert.IsType<RadioButton>(view.FindName("TrendShowExpenses"));
+        Assert.Equal(["Wszystko", "Przychody", "Wydatki"], new[] { all, income, expenses }.Select(r => r.Content));
+        Assert.True(all.IsChecked);
+
+        income.Command.Execute(income.CommandParameter);
+        Assert.True(reports.ShowsIncome);
+        UiHost.Layout(view, 1300, 900);
+        UiHost.Render(view, 1300, 900, "overview-income-only");
+        Assert.True(income.IsChecked);
+    });
+
+    // ----- import: categories follow the type; the filter check boxes -----
+
+    [Fact]
+    public void RowWindow_TheListOfCategoriesIsReplaced_WhenTheTypeChanges() => WithApp(app =>
+    {
+        var categories = CategoryHelpers.Flatten(app.Core.Reader.GetCategories(), c => !c.IsArchived, alphabetical: true);
+        var vm = new ImportRowEditViewModel(BadRow("-5", "negative") with { Amount = 5, SourceCategory = "" }, categories, "x");
+        var changed = new List<string?>();
+        vm.PropertyChanged += (_, e) => changed.Add(e.PropertyName);
+        var expenseList = vm.Categories;
+        Assert.Contains(expenseList, c => c.Label == "Spożywcze");
+        Assert.DoesNotContain(expenseList, c => c.Label.StartsWith("Wynagrodzenie"));
+
+        vm.IsIncome = true;
+
+        Assert.Contains(nameof(ImportRowEditViewModel.Categories), changed);                  // a new list: the box copies the list it is given
+        Assert.NotSame(expenseList, vm.Categories);
+        Assert.DoesNotContain(vm.Categories, c => c.Label == "Spożywcze");
+        Assert.Contains(vm.Categories, c => c.Label.StartsWith("Wynagrodzenie"));
+
+        vm.IsIncome = false;
+        Assert.Contains(vm.Categories, c => c.Label == "Spożywcze");
+    });
+
+    [Fact]
+    public void RowWindow_TheBoxShowsTheCategoriesOfTheCurrentType() => WithApp(app =>
+    {
+        var categories = CategoryHelpers.Flatten(app.Core.Reader.GetCategories(), c => !c.IsArchived, alphabetical: true);
+        var vm = new ImportRowEditViewModel(BadRow(), categories, "x");
+        var window = new ImportRowWindow(vm);
+        var content = (FrameworkElement)window.Content;
+        UiHost.Layout(content, 560, 560);
+        var box = UiHost.Descendants<BudzetDomowy.App.Controls.FilterComboBox>(content).Single();
+
+        vm.IsIncome = true;
+        UiHost.Layout(content, 560, 560);
+
+        var shown = box.Items.Cast<CategoryTarget>().Select(c => c.Label).ToList();
+        Assert.DoesNotContain("Spożywcze", shown);
+        Assert.Contains(shown, l => l.StartsWith("Wynagrodzenie"));
+        window.Content = null;
+    });
+
+    [Fact]
+    public void Import_TheTableCanBeNarrowedWithCheckBoxes()
+    {
+        using var app = new TestApp(sampleData: false);
+        var path = MakeWorkbook();
+        var editor = app.Get<FakeImportRowEditor>();
+
+        UiHost.RunAsync(async () =>
+        {
+            var vm = app.Get<ImportViewModel>();
+            vm.FilePath = path;
+            await vm.LoadFileAsync();
+            vm.IncomeCell = "H3";
+            await vm.NextCommand.ExecuteAsync(null);
+            await vm.NextCommand.ExecuteAsync(null);
+            await vm.NextCommand.ExecuteAsync(null);
+
+            Assert.Equal(3, vm.PreviewRows.Count);                                            // the error, the expense and the income
+            Assert.False(vm.HasPreviewFilter);
+            Assert.Equal("", vm.ShownText);
+
+            vm.OnlyErrors = true;
+            Assert.Equal(["Lewiatan"], vm.PreviewRows.Select(r => r.Place));
+            Assert.Equal("Pokazano: 1 z 3", vm.ShownText);
+            Assert.True(vm.HasPreviewFilter);
+
+            vm.OnlyErrors = false;
+            vm.OnlyIncome = true;
+            Assert.Equal([true], vm.PreviewRows.Select(r => r.IsIncome));
+            vm.OnlyExpense = true;                                                            // both types: no restriction by type
+            Assert.Equal(3, vm.PreviewRows.Count);
+            vm.OnlyExpense = false;
+            vm.OnlyIncome = false;
+
+            vm.OnlyToImport = true;                                                           // what will be imported: the expense and the income
+            Assert.Equal(2, vm.PreviewRows.Count);
+            Assert.DoesNotContain(vm.PreviewRows, r => r.Kind == "Error");
+            vm.OnlyErrors = true;                                                             // kinds are added up
+            Assert.Equal(3, vm.PreviewRows.Count);
+            vm.OnlyIncome = true;                                                             // and the type narrows them
+            Assert.Equal([true], vm.PreviewRows.Select(r => r.IsIncome));
+            vm.OnlyIncome = false;
+            vm.OnlyErrors = false;
+            vm.OnlyToImport = false;
+
+            vm.OnlySkipped = true;
+            Assert.Empty(vm.PreviewRows);
+            Assert.Equal("Pokazano: 0 z 3", vm.ShownText);
+
+            vm.ClearPreviewFilterCommand.Execute(null);
+            Assert.Equal(3, vm.PreviewRows.Count);
+            Assert.False(vm.HasPreviewFilter);
+
+            // a row turned into an income by the correction is found by the income check box, and by "corrected"
+            editor.Answers.Enqueue(new ImportRowFix(new DateOnly(2026, 1, 1), 30m, TransactionType.Income, "Lewiatan", "", null, false));
+            vm.SelectedPreviewRow = vm.PreviewRows.Single(r => r.Kind == "Error");
+            vm.FixRowCommand.Execute(null);
+            vm.OnlyIncome = true;
+            Assert.Equal(2, vm.PreviewRows.Count);
+            vm.OnlyEdited = true;
+            Assert.Equal(["Lewiatan"], vm.PreviewRows.Select(r => r.Place));
+        });
+    }
+
+    [Fact]
+    public void Import_TheWindowHasTheFilterCheckBoxes()
+    {
+        using var app = new TestApp(sampleData: false);
+        UiHost.Run(() =>
+        {
+            var window = new ImportWindow(app.Get<ImportViewModel>());
+            foreach (var name in new[] { "OnlyToImportBox", "OnlyWarningsBox", "OnlyDuplicatesBox", "OnlyErrorsBox", "OnlySkippedBox", "OnlyEditedBox", "OnlyIncomeBox", "OnlyExpenseBox" })
+                Assert.IsType<CheckBox>(window.FindName(name));
+            Assert.Equal("Z błędami", ((CheckBox)window.FindName("OnlyErrorsBox")).Content);
+        });
+    }
 }

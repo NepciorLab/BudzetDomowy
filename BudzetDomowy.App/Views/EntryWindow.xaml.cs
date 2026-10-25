@@ -10,9 +10,10 @@ using BudzetDomowy.App.ViewModels;
 namespace BudzetDomowy.App.Views;
 
 /// <summary>
-/// The window for a new expense or income. Enter walks through the fields (date, place, total, currency, event, note), then through
-/// the lines: category, then amount (selected, so Enter accepts it); an amount less than what is left opens the next line, and when
-/// nothing is left Enter goes to the confirm button. Ctrl+Enter confirms from anywhere, Esc closes.
+/// The window for a new expense or income. Enter walks through the date, the place and the total and then goes straight to the first
+/// line (the currency, the event and the note are usually the defaults: Tab or the mouse reach them). In the lines: category, then
+/// amount (selected, so Enter accepts it); an amount less than what is left opens the next line, and when nothing is left Enter goes
+/// to the confirm button. Ctrl+Enter confirms from anywhere, Esc closes.
 /// </summary>
 public partial class EntryWindow : Window
 {
@@ -81,7 +82,15 @@ public partial class EntryWindow : Window
                 Go(_vm.CommitLine(line));
                 return;
             }
-            if (box.Name == "TotalBox") _vm.Recalculate();
+            if (box.Name == "TotalBox")
+            {
+                _vm.Recalculate();
+                if (_vm.Lines.Count > 0)
+                {
+                    FocusCategory(_vm.Lines[0]);               // past the currency, the event and the note
+                    return;
+                }
+            }
         }
         else if (FindAncestor<FilterComboBox>(source) is { } combo)
         {

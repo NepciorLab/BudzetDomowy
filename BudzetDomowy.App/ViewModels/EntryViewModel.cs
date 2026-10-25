@@ -183,7 +183,7 @@ public sealed partial class EntryViewModel : ObservableObject
         _specialEvents = core.Reader.GetSpecialEvents();
         Categories = CategoryHelpers.ForEntry(core.Reader.GetCategories(), type);
         Currencies = CurrencyCatalog.Ordered(core.Reader.GetRecentCurrencies());
-        _dictionary = PlaceCategoryDictionary.Build(core.Reader.GetTransactions(), type);
+        _dictionary = PlaceCategoryDictionary.Build(core.Reader.GetTransactions(), type, core.Reader.GetCategories());
 
         var options = new List<EventOption> { new(Guid.Empty, Res.Get("NoEvent")) };
         options.AddRange(_specialEvents.OrderByDescending(e => e.DateFrom).Select(e => new EventOption(e.Id, e.Name)));

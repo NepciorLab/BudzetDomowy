@@ -718,6 +718,14 @@ Dodaj rachunki przyciskiem „Zaplanuj płatności”.</value></data>
   <data name="PlacesDetailsTitle" xml:space="preserve"><value>Wpisy: {0} ({1})</value></data>
   <data name="PlacesPickOne" xml:space="preserve"><value>Wybierz miejsce z listy, aby zobaczyć wpisy, z których powstała jego suma.</value></data>
   <data name="PlacesNoCategory" xml:space="preserve"><value>(bez kategorii)</value></data>
+  <data name="ImportOnlyShow" xml:space="preserve"><value>Pokaż tylko:</value></data>
+  <data name="ImportOnlyToImport" xml:space="preserve"><value>Do zaimportowania</value></data>
+  <data name="ImportOnlyWarnings" xml:space="preserve"><value>Z ostrzeżeniem</value></data>
+  <data name="ImportOnlyDuplicates" xml:space="preserve"><value>Duplikaty</value></data>
+  <data name="ImportOnlyErrors" xml:space="preserve"><value>Z błędami</value></data>
+  <data name="ImportOnlySkipped" xml:space="preserve"><value>Pominięte</value></data>
+  <data name="ImportOnlyEdited" xml:space="preserve"><value>Poprawione</value></data>
+  <data name="ImportShown" xml:space="preserve"><value>Pokazano: {0} z {1}</value></data>
   <data name="PeriodAll" xml:space="preserve"><value>Wszystko</value></data>
   <data name="PeriodAllTitle" xml:space="preserve"><value>Wszystkie wpisy</value></data>
 </root>

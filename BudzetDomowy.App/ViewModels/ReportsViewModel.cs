@@ -21,6 +21,9 @@ public sealed record EventRow(string Name, string Dates, string Spent, string Pe
 
 public enum ReportTab { Overview, Compare, Places }
 
+/// <summary>What the trend chart of the overview shows: everything, only the income, or only the expenses.</summary>
+public enum TrendShow { All, Income, Expense }
+
 public sealed partial class ReportsViewModel : ObservableObject, IPeriodNavigable
 {
     private readonly BudgetCore _core;
@@ -78,6 +81,12 @@ public sealed partial class ReportsViewModel : ObservableObject, IPeriodNavigabl
     [ObservableProperty] private string _comparisonNote = "";
 
     [ObservableProperty, NotifyPropertyChangedFor(nameof(TrendIsColumns))] private bool _trendLines;
+
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(ShowsAll)), NotifyPropertyChangedFor(nameof(ShowsIncome)), NotifyPropertyChangedFor(nameof(ShowsExpenses))]
+    private TrendShow _trendShow = TrendShow.All;
+    public bool ShowsAll => TrendShow == TrendShow.All;
+    public bool ShowsIncome => TrendShow == TrendShow.Income;
+    public bool ShowsExpenses => TrendShow == TrendShow.Expense;
     public bool TrendIsColumns => !TrendLines;
     [ObservableProperty] private IEnumerable<ISeries> _trendSeries = [];
     [ObservableProperty] private IEnumerable<ICartesianAxis> _trendXAxes = [];
@@ -148,6 +157,14 @@ public sealed partial class ReportsViewModel : ObservableObject, IPeriodNavigabl
         if (Enum.TryParse<ReportPeriod>(key, out var scope)) Scope = scope;
     }
     partial void OnTrendLinesChanged(bool value) => Reload();
+    partial void OnTrendShowChanged(TrendShow value) => Reload();
+
+    /// <summary>Which series the trend and sum charts show: "All", "Income" or "Expense".</summary>
+    [RelayCommand]
+    private void SetTrendShow(string? key)
+    {
+        if (Enum.TryParse<TrendShow>(key, out var show)) TrendShow = show;
+    }
 
     [RelayCommand]
     private void SetTrendStyle(string? key) => TrendLines = key == "Lines";
@@ -265,13 +282,15 @@ public sealed partial class ReportsViewModel : ObservableObject, IPeriodNavigabl
         var lastMonth = IsAll ? BudgetMath.MonthStart(to) : IsYear ? new DateOnly(Anchor.Year, 12, 1) : Anchor;
         if (IsAll && lastMonth.AddMonths(-59) > firstMonth) firstMonth = lastMonth.AddMonths(-59);       // the last five years at most: more would not fit
         var points = PeriodReports.MonthlyTrend(all, firstMonth, lastMonth);
-        TrendSeries = ChartFactory.IncomeExpenseColumns(points, Res.Get("ReportIncome"), Res.Get("ReportExpenses"), TrendLines);
+        var showIncome = TrendShow != TrendShow.Expense;
+        var showExpense = TrendShow != TrendShow.Income;
+        TrendSeries = ChartFactory.IncomeExpenseColumns(points, Res.Get("ReportIncome"), Res.Get("ReportExpenses"), TrendLines, showIncome, showExpense);
         TrendXAxes = ChartFactory.MonthAxes(points, IsYear ? "MMM" : "MMM yy");
         TrendYAxes = ChartFactory.MoneyAxes();
         TrendTitle = IsAll ? Res.Get("ReportTrendAll") : IsYear ? Res.Format("ReportTrendYear", Anchor.Year) : Res.Get("ReportTrend12");
 
         SumSeries = ChartFactory.SumColumns(points.Sum(p => p.Income), points.Sum(p => p.Expense),
-            Res.Get("ReportIncome"), Res.Get("ReportExpenses"), Res.Get("ReportBalance"));
+            Res.Get("ReportIncome"), Res.Get("ReportExpenses"), Res.Get("ReportBalance"), showIncome, showExpense);
         SumXAxes = ChartFactory.LabelAxes([""]);
         SumYAxes = ChartFactory.SignedMoneyAxes();
         SumTitle = Res.Get("ReportSumTitle");

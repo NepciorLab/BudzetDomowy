@@ -146,6 +146,13 @@
                     <Grid>
                         <TextBlock Text="{Binding TrendTitle}" Style="{StaticResource Heading}" />
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,-4,0,0">
+                            <!-- what the charts show: everything, only the income, only the expenses -->
+                            <RadioButton x:Name="TrendShowAll" Content="{infra:Str PeriodAll}" GroupName="trendshow" IsChecked="{Binding ShowsAll, Mode=OneWay}"
+                                         Command="{Binding SetTrendShowCommand}" CommandParameter="All" MinWidth="0" />
+                            <RadioButton x:Name="TrendShowIncome" Content="{infra:Str ReportIncome}" GroupName="trendshow" IsChecked="{Binding ShowsIncome, Mode=OneWay}"
+                                         Command="{Binding SetTrendShowCommand}" CommandParameter="Income" MinWidth="0" Margin="8,0,0,0" />
+                            <RadioButton x:Name="TrendShowExpenses" Content="{infra:Str ReportExpenses}" GroupName="trendshow" IsChecked="{Binding ShowsExpenses, Mode=OneWay}"
+                                         Command="{Binding SetTrendShowCommand}" CommandParameter="Expense" MinWidth="0" Margin="8,0,28,0" />
                             <RadioButton Content="{infra:Str ChartColumns}" GroupName="trendstyle" IsChecked="{Binding TrendIsColumns, Mode=OneWay}"
                                          Command="{Binding SetTrendStyleCommand}" CommandParameter="Columns" MinWidth="0" />
                             <RadioButton Content="{infra:Str ChartLines}" GroupName="trendstyle" IsChecked="{Binding TrendLines, Mode=OneWay}"

@@ -180,7 +180,7 @@ public sealed class PaymentService
         if (payee is null) return null;
         var categories = _reader.GetCategories();
         if (payee.CategoryId is { } own && categories.Any(c => c.Id == own)) return own;
-        var suggestion = PlaceCategoryDictionary.Build(_reader.GetTransactions(), TransactionType.Expense).Suggest(payee.Name).FirstOrDefault();
+        var suggestion = PlaceCategoryDictionary.Build(_reader.GetTransactions(), TransactionType.Expense, categories).Suggest(payee.Name).FirstOrDefault();
         return suggestion == Guid.Empty ? null : suggestion;
     }
 

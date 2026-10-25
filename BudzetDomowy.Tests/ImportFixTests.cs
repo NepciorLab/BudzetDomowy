@@ -229,6 +229,109 @@ public sealed class ImportFixTests : IDisposable
 
         Assert.Empty(ComparisonReports.OfPlace(all, from, to, TransactionType.Expense, "nie ma takiego"));
     }
+
+    // ----- subcategories in the place dictionary -----
+
+    private static readonly Guid Groceries = Guid.NewGuid();
+    private static readonly Guid Vegetables = Guid.NewGuid();
+    private static readonly Guid Meat = Guid.NewGuid();
+    private static readonly Guid Bread = Guid.NewGuid();
+    private static readonly Guid Fuel = Guid.NewGuid();
+    private static readonly Guid Travel = Guid.NewGuid();
+
+    private static Category Cat(Guid id, string name, Guid? parent = null) => new() { Id = id, Name = name, ParentId = parent, Type = CategoryType.Expense };
+
+    private static readonly Category[] Tree =
+    [
+        Cat(Groceries, "Spożywcze"), Cat(Vegetables, "Warzywa", Groceries), Cat(Meat, "Mięso", Groceries), Cat(Bread, "Pieczywo", Groceries),
+        Cat(Travel, "Podróże"), Cat(Fuel, "Paliwo", Travel),
+    ];
+
+    private static Transaction Tx(string date, string place, Guid? category) => new()
+    {
+        Id = Guid.NewGuid(), Date = DateOnly.Parse(date), Type = TransactionType.Expense, Amount = 10, AmountPln = 10, CurrencyCode = "PLN",
+        Place = place, CategoryId = category, CreatedAt = DateTimeOffset.UtcNow,
+    };
+
+    [Fact]
+    public void Dictionary_PrefersASubcategory_WhenTheMainOneWinsOnlyBecauseTheSubcategoriesSplitTheVotes()
+    {
+        var history = new[]
+        {
+            Tx("2026-01-01", "Biedronka", Groceries), Tx("2026-01-02", "Biedronka", Groceries),           // 2 under the main category
+            Tx("2026-01-03", "Biedronka", Vegetables), Tx("2026-01-04", "Biedronka", Vegetables), Tx("2026-01-05", "Biedronka", Vegetables),
+            Tx("2026-01-06", "Biedronka", Meat), Tx("2026-01-07", "Biedronka", Meat),
+        };
+
+        var flat = PlaceCategoryDictionary.Build(history, TransactionType.Expense).Suggest("Biedronka");
+        Assert.Equal([Vegetables, Meat, Groceries], flat);                                          // without the tree: the most used, then the most recent
+
+        var withTree = PlaceCategoryDictionary.Build(history, TransactionType.Expense, Tree).Suggest("biedronka");
+        Assert.Equal(Vegetables, withTree[0]);                                                      // the most used subcategory
+        Assert.Equal([Vegetables, Meat, Groceries], withTree);                                      // the rest keeps its order
+    }
+
+    [Fact]
+    public void Dictionary_AMainCategoryWithMoreBookingsThanItsSubcategories_StillGivesWayToTheSubcategory()
+    {
+        var history = Enumerable.Range(1, 6).Select(i => Tx($"2026-01-{i:00}", "Lidl", Groceries))
+            .Concat([Tx("2026-02-01", "Lidl", Bread), Tx("2026-02-02", "Lidl", Bread)]).ToList();
+
+        Assert.Equal(Bread, PlaceCategoryDictionary.Build(history, TransactionType.Expense, Tree).Suggest("Lidl")[0]);
+        Assert.Equal(Groceries, PlaceCategoryDictionary.Build(history, TransactionType.Expense).Suggest("Lidl")[0]);   // as before without the tree
+    }
+
+    [Fact]
+    public void Dictionary_TheMainCategoryItselfStaysWhenThePlaceNeverUsedASubcategory_AndTheBiggerBranchWins()
+    {
+        var history = new[]
+        {
+            Tx("2026-01-01", "Orlen", Travel), Tx("2026-01-02", "Orlen", Travel),                  // the main category only
+            Tx("2026-01-03", "Orlen", Groceries), Tx("2026-01-04", "Orlen", Vegetables),          // another branch with two bookings
+            Tx("2026-01-05", "Orlen", Fuel), Tx("2026-01-06", "Orlen", Fuel),                      // the travel branch: 4 bookings in all
+        };
+
+        var suggestions = PlaceCategoryDictionary.Build(history, TransactionType.Expense, Tree).Suggest("Orlen");
+        Assert.Equal(Fuel, suggestions[0]);                                                         // Travel (4) beats Groceries (2); its subcategory first
+
+        var only = new[] { Tx("2026-01-01", "Kiosk", Travel), Tx("2026-01-02", "Kiosk", Travel), Tx("2026-01-03", "Kiosk", Groceries) };
+        Assert.Equal(Travel, PlaceCategoryDictionary.Build(only, TransactionType.Expense, Tree).Suggest("Kiosk")[0]);   // no subcategory used: the main one
+    }
+
+    [Fact]
+    public void Dictionary_NextSuggestionsStillSkipWhatTheEntryAlreadyUses_AndPartialPlacesFollowTheSameRule()
+    {
+        var history = new[]
+        {
+            Tx("2026-01-01", "Biedronka Kraków", Groceries), Tx("2026-01-02", "Biedronka Kraków", Groceries),
+            Tx("2026-01-03", "Biedronka Kraków", Meat), Tx("2026-01-04", "Biedronka Kraków", Meat),
+        };
+        var dictionary = PlaceCategoryDictionary.Build(history, TransactionType.Expense, Tree);
+
+        Assert.Equal(Meat, dictionary.SuggestNext("Biedronka Kraków", []));
+        Assert.Equal(Groceries, dictionary.SuggestNext("Biedronka Kraków", [Meat]));
+        Assert.Equal(Meat, dictionary.Suggest("Biedr")[0]);                                         // a prefix (three letters or more) is arranged the same way
+    }
+
+    // ----- an income never gets an expense category -----
+
+    [Fact]
+    public void Execute_LeavesARowUncategorised_WhenItsTypeWasChangedAndTheCategoryDoesNotFit()
+    {
+        var core = NewCore();
+        var plan = core.Import.Plan([Select(BrokenSheet())], Options);
+        var food = core.Reader.GetCategories().First(c => c.Name == "Spożywcze" && c.ParentId is null).Id;
+        var salary = core.Reader.GetCategories().First(c => c.Type == CategoryType.Income && c.ParentId is null).Id;
+
+        // the kiosk row becomes an income: the expense category chosen for it is dropped, an income category is kept
+        plan = core.Import.Fix(plan, 0, new ImportRowFix(new DateOnly(2026, 1, 5), 4.5m, TransactionType.Income, "Kiosk", "gazeta", food, false), Options.Today);
+        plan = core.Import.Fix(plan, 1, new ImportRowFix(new DateOnly(2026, 1, 6), 9m, TransactionType.Income, "Zwrot", "", salary, false), Options.Today);
+        core.Import.Execute(plan, core.Import.SuggestMapping(plan));
+
+        var all = core.Reader.GetTransactions();
+        Assert.Null(all.Single(t => t.Place == "Kiosk").CategoryId);
+        Assert.Equal(salary, all.Single(t => t.Place == "Zwrot").CategoryId);
+    }
 }
 
 internal static class DateExtensions

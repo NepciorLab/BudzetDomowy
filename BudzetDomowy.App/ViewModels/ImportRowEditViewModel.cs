@@ -1,4 +1,3 @@
-using System.Collections.ObjectModel;
 using System.Globalization;
 using BudzetDomowy.App.Infrastructure;
 using BudzetDomowy.Core.Domain;
@@ -30,7 +29,8 @@ public sealed partial class ImportRowEditViewModel : ObservableObject
     public string FileCategory { get; }
     public bool HasFileCategory => FileCategory.Length > 0;
 
-    public ObservableCollection<CategoryTarget> Categories { get; } = [];
+    /// <summary>The categories that fit the chosen type; a new list is made when the type changes (the box copies the list it is given).</summary>
+    [ObservableProperty] private IReadOnlyList<CategoryTarget> _categories = [];
 
     [ObservableProperty] private DateTime? _date;
     [ObservableProperty] private string _amountText = "";
@@ -82,10 +82,10 @@ public sealed partial class ImportRowEditViewModel : ObservableObject
     private void FillCategories()
     {
         var type = IsIncome ? TransactionType.Income : TransactionType.Expense;
-        Categories.Clear();
-        Categories.Add(_byFile);
-        foreach (var o in _allCategories.Where(o => CategoryHelpers.Matches(o.Category.Type, type)))
-            Categories.Add(new CategoryTarget(new CategoryChoice(o.Category.Id, null), o.DisplayName));
+        var list = new List<CategoryTarget> { _byFile };
+        list.AddRange(_allCategories.Where(o => CategoryHelpers.Matches(o.Category.Type, type))
+            .Select(o => new CategoryTarget(new CategoryChoice(o.Category.Id, null), o.DisplayName)));
+        Categories = list;
     }
 
     [RelayCommand]

@@ -195,6 +195,9 @@ public sealed class ImportService
             createdCount++;
         }
 
+        // an income never gets an expense category (a row can have been turned into an income in the preview), nor the other way round
+        var typeOf = _reader.GetCategories().ToDictionary(c => c.Id, c => c.Type);
+
         var added = 0;
         foreach (var row in plan.Rows.Where(r => r.WillBeImported))
         {
@@ -205,6 +208,8 @@ public sealed class ImportService
                 if (choice.ExistingId is { } id) categoryId = id;
                 else if (choice.NewName is { } n && created.TryGetValue(TextNorm.Normalize(n), out var newId)) categoryId = newId;
             }
+
+            if (categoryId is { } chosen && typeOf.TryGetValue(chosen, out var categoryType) && !CategoryHelpers.Matches(categoryType, row.Type)) categoryId = null;
 
             _transactions.Add(row.Date!.Value, row.Type, row.Amount, categoryId, row.Note, null, place: row.Place);
             added++;
