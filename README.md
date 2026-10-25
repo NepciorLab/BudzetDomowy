@@ -77,6 +77,10 @@ Gdy operacja trwa (np. usunięcie albo zmiana kategorii setek wpisów naraz), na
 
 Ustawienia → **Wygląd**: motyw, zegar obok daty u góry (można wyłączyć), skala interfejsu (mały / średni / duży, działa od razu), symbol koloru kategorii (kółko, kwadrat albo pionowa kreska), pokazywanie znaków „+” i „−” przy kwotach, kolorowanie kwot (czerwone wydatki, zielone przychody; po wyłączeniu kwoty mają zwykły kolor tekstu motywu) oraz karta pokazywana po uruchomieniu programu (domyślnie Pulpit, albo *Ostatnio wybrana*). W palecie kolorów kategorii ptaszkiem są oznaczone kolory, które już ma jakaś kategoria.
 
+### Drugie uruchomienie
+
+Gdy program już działa, a uruchamiasz go ponownie (skrót, plik exe, parametr z Total Commandera), druga kopia **nie pokazuje żadnego komunikatu**: kończy się od razu, a działające okno zostaje pokazane, **zmaksymalizowane i wysunięte na pierwszy plan** (także gdy było zminimalizowane). Gdy otwarte jest okno dialogowe (np. nowy wydatek), na wierzch wychodzi ono. Druga niezależna kopia „do prób” nadal działa z parametrem `--profile B`.
+
 ### Aktualizacje
 
 Ustawienia → Ogólne → *Automatycznie sprawdzaj aktualizacje*: kilka sekund po starcie program sprawdza najnowsze wydanie (Release) w repozytorium GitHub `NepciorLab/BudzetDomowy`. Gdy jest nowsze, pyta, czy je pobrać; po zgodzie pobiera `BudzetDomowy.exe` (albo archiwum `.zip` z tym plikiem), podmienia uruchomiony plik (stary zostaje chwilowo jako `BudzetDomowy.exe.old`) i uruchamia się ponownie. Przycisk *Sprawdź teraz* robi to samo na żądanie. Wydanie musi mieć załącznik `BudzetDomowy.exe` lub `BudzetDomowy-<wersja>.zip` i znacznik wersji w rodzaju `v0.3.0`.

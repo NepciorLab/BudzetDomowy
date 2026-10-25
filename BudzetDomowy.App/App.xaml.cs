@@ -16,6 +16,7 @@ public partial class App : Application
 {
     private BudgetCore? _core;
     private Mutex? _instanceLock;
+    private IDisposable? _activation;
     private ServiceProvider? _services;
     private DateTime _lastErrorToast = DateTime.MinValue;
 
@@ -42,14 +43,18 @@ public partial class App : Application
         bool firstInstance;
         try { firstInstance = _instanceLock.WaitOne(restarted ? TimeSpan.FromSeconds(15) : TimeSpan.Zero); }
         catch (AbandonedMutexException) { firstInstance = true; }
+        var eventName = SingleInstance.EventName(AppPaths.Profile);
         if (!firstInstance)
         {
-            MessageBox.Show(Res.Get("AlreadyRunning"), Res.Get("AppTitle"), MessageBoxButton.OK, MessageBoxImage.Information);
+            // no message: the copy that runs is asked to come to the front (only a copy that cannot be asked, e.g. of an older version, is reported)
+            if (!SingleInstance.Request(eventName, TimeSpan.FromSeconds(3)))
+                MessageBox.Show(Res.Get("AlreadyRunning"), Res.Get("AppTitle"), MessageBoxButton.OK, MessageBoxImage.Information);
             _instanceLock.Dispose();
             _instanceLock = null;
             Shutdown();
             return;
         }
+        _activation = SingleInstance.Listen(eventName, () => Dispatcher.BeginInvoke(() => SingleInstance.BringToFront(MainWindow as MainWindow, Windows.OfType<Window>())));
 
         var settings = AppSettings.Load();
         ThemeService.Apply(settings.Theme);
@@ -237,6 +242,7 @@ public partial class App : Application
 
     protected override void OnExit(ExitEventArgs e)
     {
+        _activation?.Dispose();
         _instanceLock?.ReleaseMutex();
         _instanceLock?.Dispose();
         _core?.Dispose();
