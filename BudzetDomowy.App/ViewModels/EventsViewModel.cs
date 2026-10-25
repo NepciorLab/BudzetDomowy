@@ -181,6 +181,7 @@ public sealed partial class EventsViewModel : ObservableObject
             InnerRadius = 70,
             Fill = new SolidColorPaint(SKColor.TryParse(x.Color, out var c) ? c : SKColors.Gray),
             Stroke = null,
+            ToolTipLabelFormatter = ChartFactory.MoneyTip,
         }).ToList();
 
         Transactions = r.Transactions.OrderByDescending(t => t.Date).ThenByDescending(t => t.CreatedAt).Select(t => new EventTxRow(

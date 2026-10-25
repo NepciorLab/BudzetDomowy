@@ -26,6 +26,10 @@ public static class ChartFactory
 
     public static SolidColorPaint GridPaint() => new(TextColor.WithAlpha(45)) { StrokeThickness = 1 };
 
+    /// <summary>The figure in a tooltip: a sum of money with thin spaces between the thousands and the currency ("22 914,32 zł").</summary>
+    public static string MoneyTip(LiveChartsCore.Kernel.ChartPoint point) =>
+        ((decimal)point.Coordinate.PrimaryValue).ToString("C2", System.Globalization.CultureInfo.CurrentCulture);
+
     public static IReadOnlyList<ISeries> Donut(IEnumerable<(string Name, string Color, decimal Amount)> slices, double innerRadius = 70) =>
         slices.Select(s => (ISeries)new PieSeries<double>
         {
@@ -34,6 +38,7 @@ public static class ChartFactory
             InnerRadius = innerRadius,
             Fill = new SolidColorPaint(ParseColor(s.Color)),
             Stroke = null,
+            ToolTipLabelFormatter = MoneyTip,
         }).ToList();
 
     /// <summary>Income (green) and expense (red) columns per month.</summary>
@@ -57,6 +62,7 @@ public static class ChartFactory
         GeometrySize = 9,
         GeometryFill = new SolidColorPaint(color),
         GeometryStroke = new SolidColorPaint(color) { StrokeThickness = 3 },
+        YToolTipLabelFormatter = MoneyTip,
     };
 
     private static ISeries Bars(string name, IEnumerable<decimal> values, SKColor color, double maxWidth) => new ColumnSeries<double>
@@ -65,6 +71,7 @@ public static class ChartFactory
         Values = values.Select(v => (double)v).ToArray(),
         Fill = new SolidColorPaint(color),
         MaxBarWidth = maxWidth,
+        YToolTipLabelFormatter = MoneyTip,
     };
 
     private static ISeries Series(bool lines, string name, IEnumerable<decimal> values, SKColor color, double maxWidth = 22) =>
@@ -90,6 +97,7 @@ public static class ChartFactory
                 GeometrySize = 9,
                 GeometryFill = new SolidColorPaint(color),
                 GeometryStroke = new SolidColorPaint(color) { StrokeThickness = 3 },
+                YToolTipLabelFormatter = MoneyTip,
             };
         }).ToList();
 
@@ -130,6 +138,7 @@ public static class ChartFactory
             Values = [(double)value],
             Fill = new SolidColorPaint(color),
             MaxBarWidth = 60,
+            YToolTipLabelFormatter = MoneyTip,
             DataLabelsPaint = TextPaint(),
             DataLabelsSize = 12,
             DataLabelsPosition = DataLabelsPosition.End,
