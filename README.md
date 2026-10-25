@@ -2,7 +2,7 @@
 
 Program dla Windows 11 do wpisywania przychodów i wydatków oraz pilnowania budżetu domowego. Pracują w nim dwie osoby na dwóch komputerach na wspólnych danych. Interfejs jest po polsku, walutą bazową jest złoty.
 
-Wersja **0.7.0**.
+Wersja **0.6.0**.
 
 ## Uruchomienie
 
