@@ -193,7 +193,7 @@ public sealed class V9UiTests : IDisposable
     // ----- import: correcting rows and the income cell -----
 
     /// <summary>One month sheet: a row without a readable amount, a normal one, and the income in a cell with no label next to it.</summary>
-    private string MakeWorkbook(bool withSkipped = false)
+    private string MakeWorkbook(bool withSkipped = false, bool badAmount = true)
     {
         var path = Path.Combine(_dir, "Wydatki.xlsx");
         using var wb = new XLWorkbook();
@@ -203,7 +203,7 @@ public sealed class V9UiTests : IDisposable
         ws.Cell(3, 8).Value = 750;                                                           // H3: the income, with no "Przychody" label
         string[] heads = ["Data", "", "Gdzie", "Kategoria", "Opis", "Kwota"];
         for (var c = 0; c < heads.Length; c++) ws.Cell(6, c + 1).Value = heads[c];
-        ws.Cell(7, 1).Value = 1; ws.Cell(7, 2).Value = month; ws.Cell(7, 3).Value = "Lewiatan"; ws.Cell(7, 4).Value = "Spożywcze"; ws.Cell(7, 6).Value = "12,3x";
+        ws.Cell(7, 1).Value = 1; ws.Cell(7, 2).Value = month; ws.Cell(7, 3).Value = "Lewiatan"; ws.Cell(7, 4).Value = "Spożywcze"; if (badAmount) ws.Cell(7, 6).Value = "12,3x"; else ws.Cell(7, 6).Value = 12.3;
         ws.Cell(8, 3).Value = "Orlen"; ws.Cell(8, 4).Value = "Auto"; ws.Cell(8, 5).Value = "paliwo"; ws.Cell(8, 6).Value = 200;
         if (withSkipped)
         {
@@ -242,6 +242,7 @@ public sealed class V9UiTests : IDisposable
             await vm.NextCommand.ExecuteAsync(null);
             Assert.True(vm.IsStep4);
 
+            vm.ClearPreviewFilterCommand.Execute(null);
             var income = vm.PreviewRows.Single(r => r.IsIncome);
             Assert.Equal(("Sty", 3), (income.Sheet, income.ExcelRow));
             Assert.Equal("+750,00", income.Amount);
@@ -286,6 +287,7 @@ public sealed class V9UiTests : IDisposable
             await vm.NextCommand.ExecuteAsync(null);
             await vm.NextCommand.ExecuteAsync(null);
 
+            vm.ClearPreviewFilterCommand.Execute(null);
             var bad = vm.PreviewRows.Single(r => r.Kind == "Error");
             Assert.Equal(("Lewiatan", 7, true), (bad.Place, bad.ExcelRow, bad.CanFix));
             Assert.Equal("błąd: nie można odczytać kwoty", bad.Status);
@@ -676,6 +678,11 @@ public sealed class V9UiTests : IDisposable
             await vm.NextCommand.ExecuteAsync(null);
             await vm.NextCommand.ExecuteAsync(null);
 
+            Assert.Equal((true, true, true), (vm.OnlyErrors, vm.OnlyWarnings, vm.OnlySkipped));      // the rows that need a look are checked from the start
+            Assert.Equal(["Lewiatan"], vm.PreviewRows.Select(r => r.Place));
+            Assert.Equal("Pokazano: 1 z 3", vm.ShownText);
+
+            vm.ClearPreviewFilterCommand.Execute(null);
             Assert.Equal(3, vm.PreviewRows.Count);                                            // the error, the expense and the income
             Assert.False(vm.HasPreviewFilter);
             Assert.Equal("", vm.ShownText);
@@ -752,7 +759,9 @@ public sealed class V9UiTests : IDisposable
             await vm.NextCommand.ExecuteAsync(null);
             await vm.NextCommand.ExecuteAsync(null);
 
-            vm.OnlySkipped = true;
+            Assert.Equal(["Lewiatan", "Kiosk", "Razem"], vm.PreviewRows.Select(r => r.Place));          // by default: the error and the skipped rows
+            vm.OnlyErrors = false;
+            vm.OnlyWarnings = false;
             Assert.Equal(["Kiosk", "Razem"], vm.PreviewRows.Select(r => r.Place));
             Assert.All(vm.PreviewRows, r => Assert.True(r.CanFix));                          // a zero and a sum row can be corrected as well
             Assert.Equal(["pominięto: kwota zero", "pominięto: wiersz sumy"], vm.PreviewRows.Select(r => r.Status));
@@ -776,5 +785,37 @@ public sealed class V9UiTests : IDisposable
         var kiosk = app.Core.Reader.GetTransactions().Single(t => t.Place == "Kiosk");
         Assert.Equal((4.5m, new DateOnly(2026, 1, 1)), (kiosk.AmountPln, kiosk.Date));
         Assert.DoesNotContain(app.Core.Reader.GetTransactions(), t => t.Place == "Razem");
+    }
+
+    [Fact]
+    public void Import_TheProblemCheckBoxesAreCheckedFromTheStart_ButOnlyWhenThereAreProblems()
+    {
+        using var app = new TestApp(sampleData: false);
+        var clean = Path.Combine(_dir, "Czysty.xlsx");
+        File.Copy(MakeWorkbook(badAmount: false), clean);
+        var withProblems = MakeWorkbook();                                                   // the same path again: now with the unreadable amount
+
+        UiHost.RunAsync(async () =>
+        {
+            var vm = app.Get<ImportViewModel>();
+            vm.FilePath = clean;
+            await vm.LoadFileAsync();
+            await vm.NextCommand.ExecuteAsync(null);
+            await vm.NextCommand.ExecuteAsync(null);
+            await vm.NextCommand.ExecuteAsync(null);
+            Assert.False(vm.OnlyErrors || vm.OnlyWarnings || vm.OnlySkipped);                 // nothing to look at: the whole table is shown
+            Assert.Equal(2, vm.PreviewRows.Count);
+
+            var next = app.Get<ImportViewModel>();
+            next.FilePath = withProblems;
+            await next.LoadFileAsync();
+            await next.NextCommand.ExecuteAsync(null);
+            await next.NextCommand.ExecuteAsync(null);
+            await next.NextCommand.ExecuteAsync(null);
+            Assert.Equal((true, true, true), (next.OnlyErrors, next.OnlyWarnings, next.OnlySkipped));
+            Assert.False(next.OnlyToImport || next.OnlyDuplicates || next.OnlyEdited || next.OnlyIncome || next.OnlyExpense);
+            Assert.True(next.HasPreviewFilter);
+            Assert.Equal(["Lewiatan"], next.PreviewRows.Select(r => r.Place));
+        });
     }
 }

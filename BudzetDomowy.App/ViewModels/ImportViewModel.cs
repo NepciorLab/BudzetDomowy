@@ -73,6 +73,7 @@ public sealed partial class ImportViewModel : ObservableObject
     private ImportPlan? _plan;
     private bool _manualMapping;
     private bool _applyingMap;
+    private bool _settingFilter;
 
     public ObservableCollection<SheetItem> Sheets { get; } = [];
     public ObservableCollection<CategoryMapRow> CategoryRows { get; } = [];
@@ -142,6 +143,7 @@ public sealed partial class ImportViewModel : ObservableObject
     protected override void OnPropertyChanged(System.ComponentModel.PropertyChangedEventArgs e)
     {
         base.OnPropertyChanged(e);
+        if (_settingFilter) return;
         if (e.PropertyName is nameof(OnlyToImport) or nameof(OnlyWarnings) or nameof(OnlyDuplicates) or nameof(OnlyErrors) or nameof(OnlySkipped)
             or nameof(OnlyEdited) or nameof(OnlyIncome) or nameof(OnlyExpense))
             ShowPreview();
@@ -158,6 +160,20 @@ public sealed partial class ImportViewModel : ObservableObject
             return false;
         if (OnlyIncome != OnlyExpense) return OnlyIncome ? r.Type == TransactionType.Income : r.Type == TransactionType.Expense;
         return true;
+    }
+
+    /// <summary>
+    /// A new plan starts with the rows that need a look: errors, warnings and skipped rows are checked. A plan without any of them
+    /// starts unfiltered (an empty table would only be confusing).
+    /// </summary>
+    private void ApplyDefaultPreviewFilter(ImportPlan plan)
+    {
+        var problems = plan.Errors + plan.Warnings + plan.Skipped > 0;
+        _settingFilter = true;
+        (OnlyToImport, OnlyDuplicates, OnlyEdited, OnlyIncome, OnlyExpense) = (false, false, false, false, false);
+        (OnlyErrors, OnlyWarnings, OnlySkipped) = (problems, problems, problems);
+        _settingFilter = false;
+        OnPropertyChanged(nameof(HasPreviewFilter));
     }
 
     [RelayCommand]
@@ -358,6 +374,7 @@ public sealed partial class ImportViewModel : ObservableObject
             }
             _plan = plan;
             BuildCategoryRows(plan);
+            ApplyDefaultPreviewFilter(plan);
         }
         finally
         {
