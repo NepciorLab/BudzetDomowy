@@ -30,6 +30,7 @@ public partial class App : Application
         SetTaskbarIdentity();
         SetPolishCulture();
         AmountBoxes.Register();
+        DatePickerKeys.Register();
         AppLog.Info($"Starting (profile: {AppPaths.Profile ?? "default"}, data in '{AppPaths.SettingsDir}').");
         if (moved is not null) AppLog.Info("Data moved next to the program: " + moved);
         InstallErrorHandlers();

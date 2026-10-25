@@ -286,7 +286,7 @@ Del – usuń zaznaczone transakcje</value></data>
   <data name="AvgMethodBase" xml:space="preserve"><value>Sposób liczenia: wydatki z zakresu dzielone są przez liczbę dni, tygodni (dni / 7) i miesięcy; dni, które jeszcze nie nastąpiły, nie są liczone.</value></data>
   <data name="AvgMethodProrate" xml:space="preserve"><value>Liczone dni: {0}. Liczba miesięcy: {1} – niepełny miesiąc wchodzi proporcjonalnie do upływu czasu.</value></data>
   <data name="AvgMethodExclude" xml:space="preserve"><value>Użyto tylko pełnych, zakończonych miesięcy (liczba: {0}); niepełny miesiąc pominięto.</value></data>
-  <data name="SettingsRecurring" xml:space="preserve"><value>Wpisy cykliczne</value></data>
+  <data name="SettingsRecurring" xml:space="preserve"><value>Wydatki cykliczne</value></data>
   <data name="RecurNew" xml:space="preserve"><value>Nowy wpis cykliczny</value></data>
   <data name="RecurGenerateNow" xml:space="preserve"><value>Utwórz zaległe teraz</value></data>
   <data name="RecurGenerateTip" xml:space="preserve"><value>Tworzy wpisy, których termin już minął. Program robi to też sam przy starcie.</value></data>
@@ -422,7 +422,7 @@ Del – usuń zaznaczone transakcje</value></data>
   <data name="KeyF4" xml:space="preserve"><value>Przejdź do pola kursu (gdy wybrana jest waluta obca)</value></data>
   <data name="KeyCtrlL" xml:space="preserve"><value>Przejdź do pola Kwota</value></data>
   <data name="KeyCtrlZ" xml:space="preserve"><value>Cofnij ostatnią operację, gdy widać komunikat z przyciskiem „Cofnij”</value></data>
-  <data name="KeyCtrlDigitsOld" xml:space="preserve"><value>Przełącz ekrany: Pulpit, Transakcje, Budżety, Wydarzenia, Wpisy cykliczne, Raporty, Ustawienia</value></data>
+  <data name="KeyCtrlDigitsOld" xml:space="preserve"><value>Przełącz ekrany: Pulpit, Transakcje, Budżety, Wydarzenia, Wydatki cykliczne, Raporty, Ustawienia</value></data>
   <data name="KeyDel" xml:space="preserve"><value>Usuń zaznaczone transakcje (na ekranie Transakcje)</value></data>
   <data name="KeyF1" xml:space="preserve"><value>Pokaż tę listę skrótów</value></data>
   <data name="EventPlannedField" xml:space="preserve"><value>Plan (zł)</value></data>
@@ -446,7 +446,7 @@ Del – usuń zaznaczone transakcje</value></data>
   <data name="SettingsTablesHeading" xml:space="preserve"><value>Tabele</value></data>
   <data name="SettingsAutoFit" xml:space="preserve"><value>Automatycznie dopasuj szerokość kolumn do zawartości</value></data>
   <data name="SettingsTablesHint" xml:space="preserve"><value>Kolumny, które chcesz widzieć, wybierzesz klikając prawym przyciskiem myszy nagłówek tabeli.</value></data>
-  <data name="NavRecurring" xml:space="preserve"><value>Wpisy cykliczne</value></data>
+  <data name="NavRecurring" xml:space="preserve"><value>Wydatki cykliczne</value></data>
   <data name="SummaryAll" xml:space="preserve"><value>Wszystkie pasujące: {0}</value></data>
   <data name="SummarySelectedLabel" xml:space="preserve"><value>Zaznaczone: {0}</value></data>
   <data name="PeriodWeek" xml:space="preserve"><value>Tydzień</value></data>

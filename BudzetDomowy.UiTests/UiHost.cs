@@ -37,6 +37,7 @@ public static class UiHost
                 Source = new Uri("pack://application:,,,/BudzetDomowy.App;component/Themes/AppResources.xaml", UriKind.Absolute),
             };
 
+            BudzetDomowy.App.Infrastructure.DatePickerKeys.Register();
             dispatcher = Dispatcher.CurrentDispatcher;
             // an error raised by queued UI work (timers, bindings) must fail the test that caused it, not kill the whole test host
             dispatcher.UnhandledException += (_, e) =>
