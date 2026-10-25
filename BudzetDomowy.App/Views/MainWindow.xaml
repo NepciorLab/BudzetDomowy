@@ -66,7 +66,16 @@
                 </Grid>
             </Border>
 
-            <views:QuickAddBar x:Name="QuickBar" Grid.Row="1" DataContext="{Binding QuickAdd}" />
+            <!-- instead of entry fields: what to press to enter something new -->
+            <Border Grid.Row="1" Padding="16,8" BorderThickness="0,0,0,1" Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}"
+                    BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
+                <StackPanel Orientation="Horizontal">
+                    <Button x:Name="NewExpenseButton" Content="{Binding ExpenseHint}" Command="{Binding NewExpenseCommand}" Padding="16,6" Margin="0,0,10,0"
+                            Foreground="{StaticResource ExpenseBrush}" FontWeight="SemiBold" />
+                    <Button x:Name="NewIncomeButton" Content="{Binding IncomeHint}" Command="{Binding NewIncomeCommand}" Padding="16,6"
+                            Foreground="{StaticResource IncomeBrush}" FontWeight="SemiBold" />
+                </StackPanel>
+            </Border>
 
             <Grid Grid.Row="2">
                 <Grid.ColumnDefinitions>

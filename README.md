@@ -2,7 +2,7 @@
 
 Program dla Windows 11 do wpisywania przychodów i wydatków oraz pilnowania budżetu domowego. Pracują w nim dwie osoby na dwóch komputerach na wspólnych danych. Interfejs jest po polsku, walutą bazową jest złoty.
 
-Wersja **0.4.1**.
+Wersja **0.5.0**.
 
 ## Uruchomienie
 
@@ -32,12 +32,15 @@ Drugą kopię programu możesz uruchomić jako „drugi komputer”: `BudzetDomo
 
 ## Codzienne używanie
 
-Pasek **szybkiego dodawania** u góry jest widoczny na każdym ekranie: Data, Kwota, Waluta, Kategoria, Miejsce, Notatka, Wydarzenie, rodzaj (Wydatek/Przychód).
+U góry każdego ekranu są dwa przyciski z podpowiedzią klawiszy: **W – nowy wydatek** i **Q – nowy przychód** (klawisze działają, gdy nie piszesz w żadnym polu; można je zmienić w Ustawieniach → Skróty klawiszowe). Otwierają okno wpisu:
 
-* **Enter** przechodzi do następnego pola, a Enter na przycisku **Dodaj** zapisuje wpis i wraca na Kwotę. **Ctrl+Enter** zapisuje z dowolnego pola.
-* Kategoria **filtruje się podczas pisania**; Tab lub Enter przyjmuje pierwszą pasującą.
-* Wpisz **Miejsce** (np. „Lewiatan”): program zapamiętuje, do jakiej kategorii je przypisałeś, i następnym razem podpowie ją sam.
-* Kwotę w obcej walucie wpisz z kodem, np. `12,50 EUR`. Kurs średni NBP (tabela A) z ostatniego dnia roboczego przed datą wpisu pobierze się sam; możesz go zmienić ręcznie (F4). Bez internetu program użyje ostatniego znanego kursu albo poprosi o kurs.
+* Na górze dane całego paragonu: **data, miejsce, kwota łączna, waluta, wydarzenie** (i notatka). Poniżej **pozycje**: kategoria i kwota. Pierwsza pozycja dostaje całą kwotę łączną i kategorię, którą najczęściej przypisywałeś temu miejscu.
+* **Enter** przechodzi do następnego pola. Po zatwierdzeniu kategorii Enter przechodzi do jej kwoty i zaznacza ją całą: Enter ją przyjmuje, albo wpisujesz inną kwotę. Gdy kwota jest mniejsza niż to, co zostało do rozdysponowania, pojawia się następna pozycja z resztą i kolejną w kolejności częstości kategorią tego miejsca (taką, której żadna pozycja jeszcze nie używa); tak do wyzerowania. Wtedy Enter przechodzi do przycisku **Zatwierdź**. Przycisk **+** dodaje pozycję ręcznie, **✕** ją usuwa; **Ctrl+Enter** zatwierdza z dowolnego pola, **Esc** zamyka okno.
+* W polach kwoty można wpisać **działanie**, np. `2+2*2` albo `(10,50+4)/2` (dozwolone + − * / i nawiasy). Po Enterze pole pokazuje wynik, a po powrocie do pola znów widać działanie. Zapisuje się tylko wynik. Litera **`r`** w kwocie pozycji oznacza „reszta”: ta pozycja dostaje kwotę łączną minus pozostałe pozycje.
+* Po zatwierdzeniu każda pozycja zapisuje się jako osobna transakcja (wspólna data, miejsce, waluta, wydarzenie i notatka); jedno **Cofnij** wycofuje cały paragon.
+* **Słownik miejsc** powstaje z tego, co już zapisałeś (także z zaimportowanego Excela): np. po wpisaniu `MPK` i wybraniu Transport › Komunikacja miejska program podpowie tę kategorię następnym razem; gdy do miejsca użyto kilku kategorii, podpowiada najczęstszą, a w kolejnych pozycjach następne według częstości. Rozpoznaje też miejsce, które zawiera znane miejsce lub zaczyna się tak jak ono (od trzech liter).
+* Kategoria **filtruje się podczas pisania**; Enter przyjmuje pierwszą pasującą.
+* Kwotę w obcej walucie wpisz z kodem, np. `12,50 EUR` (także po działaniu: `2*6 EUR`) albo wybierz walutę z listy. Kurs średni NBP (tabela A) z ostatniego dnia roboczego przed datą wpisu pobierze się sam i można go zmienić ręcznie. Bez internetu program użyje ostatniego znanego kursu albo poprosi o kurs.
 * Po zapisie pojawia się komunikat z przyciskiem **Cofnij** (też Ctrl+Z).
 * **Alt+←** i **Alt+→** przesuwają ekran Transakcje, Pulpit, Budżety i Raporty do poprzedniego i następnego tygodnia, miesiąca lub roku.
 * W tabeli Transakcje: **Esc** odznacza zaznaczone wpisy (a gdy nic nie jest zaznaczone – czyści filtry), **Del** usuwa zaznaczone, **Ctrl+K** zmienia ich kategorię (to samo jest pod prawym przyciskiem myszy).
@@ -80,7 +83,7 @@ Transakcje do **Excela** (ikona w prawym górnym rogu ekranu Transakcje: wpisy p
 
 ### Szybkie dodawanie spoza programu (opcjonalne)
 
-Ustawienia → Ogólne → *Włącz globalny skrót szybkiego dodawania i ikonę w zasobniku* (domyślnie Ctrl+Alt+B, można zmienić w Ustawieniach → Skróty klawiszowe). Skrót i kliknięcie ikony otwierają małe okno szybkiego dodania. Domyślnie wyłączone.
+Ustawienia → Ogólne → *Włącz globalny skrót szybkiego dodawania i ikonę w zasobniku* (domyślnie Ctrl+Alt+B, można zmienić w Ustawieniach → Skróty klawiszowe). Skrót i kliknięcie ikony otwierają okno nowego wydatku. Domyślnie wyłączone.
 
 ### Gdzie program trzyma swoje dane
 

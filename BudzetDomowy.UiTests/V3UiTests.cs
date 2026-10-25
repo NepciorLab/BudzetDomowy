@@ -81,21 +81,6 @@ public class V3UiTests
     });
 
     [Fact]
-    public void QuickAddBar_PutsTheTypeRightAfterTheCurrency() => WithApp(app =>
-    {
-        var vm = app.Get<QuickAddViewModel>();
-        var bar = new QuickAddBar { DataContext = vm };
-        UiHost.Layout(bar, 1300, 200);
-        var currency = (FrameworkElement)bar.FindName("CurrencyBox")!;
-        var type = (FrameworkElement)bar.FindName("TypeButton")!;
-        var category = (FrameworkElement)bar.FindName("CategoryBox")!;
-        var currencyX = currency.TranslatePoint(new Point(0, 0), bar).X;
-        var typeX = type.TranslatePoint(new Point(0, 0), bar).X;
-        var categoryX = category.TranslatePoint(new Point(0, 0), bar).X;
-        Assert.True(currencyX < typeX && typeX < categoryX);
-    });
-
-    [Fact]
     public void AmountBoxes_RecogniseAnAmountToSelectWhole()
     {
         foreach (var yes in new[] { "12,50", "1 234,56", "1234.5", "-5,00", "12,50 EUR", "  99 " }) Assert.True(AmountBoxes.LooksLikeAmount(yes), yes);
@@ -197,13 +182,13 @@ public class V3UiTests
     {
         var store = app.Get<SettingsStore>();
         store.Update(s => s with { StartPage = "last", LastPage = "events" });
-        var main = new MainViewModel(app.Core, app.Get<QuickAddViewModel>(), app.Get<TransactionsViewModel>(), app.Get<SettingsViewModel>(),
+        var main = new MainViewModel(app.Core, app.Get<IEntryLauncher>(), app.Get<TransactionsViewModel>(), app.Get<SettingsViewModel>(),
             app.Get<EventsViewModel>(), app.Get<DashboardViewModel>(), app.Get<BudgetsViewModel>(), app.Get<ReportsViewModel>(),
             app.Get<RecurringViewModel>(), app.Get<ToastService>(), app.Get<RecurringRunner>(), store);
         Assert.Equal("events", main.SelectedNav!.Key);
 
         store.Update(s => s with { StartPage = "settings" });
-        var other = new MainViewModel(app.Core, app.Get<QuickAddViewModel>(), app.Get<TransactionsViewModel>(), app.Get<SettingsViewModel>(),
+        var other = new MainViewModel(app.Core, app.Get<IEntryLauncher>(), app.Get<TransactionsViewModel>(), app.Get<SettingsViewModel>(),
             app.Get<EventsViewModel>(), app.Get<DashboardViewModel>(), app.Get<BudgetsViewModel>(), app.Get<ReportsViewModel>(),
             app.Get<RecurringViewModel>(), app.Get<ToastService>(), app.Get<RecurringRunner>(), store);
         Assert.Equal("settings", other.SelectedNav!.Key);
@@ -335,7 +320,7 @@ public class V3UiTests
         // the old keys are free again
         Assert.Null(map.Set(ShortcutMap.Undo, Key.K, ModifierKeys.Control));
 
-        var taken = map.Set(ShortcutMap.Help, Key.F2, ModifierKeys.None);             // F2 belongs to the type toggle
+        var taken = map.Set(ShortcutMap.Help, Key.W, ModifierKeys.None);             // W belongs to "new expense"
         Assert.NotNull(taken);
         Assert.Equal("F1", map.KeysOf(ShortcutMap.Help));
 
@@ -353,8 +338,8 @@ public class V3UiTests
     public void Settings_ShortcutRowsEditAndResetKeys() => WithApp(app => WithShortcuts(app, _ =>
     {
         var vm = app.Get<SettingsViewModel>();
-        var row = vm.Shortcuts.First(r => r.Id == ShortcutMap.QuickAmount);
-        Assert.Equal("Ctrl + L", row.Keys);
+        var row = vm.Shortcuts.First(r => r.Id == ShortcutMap.Undo);
+        Assert.Equal("Ctrl + Z", row.Keys);
         Assert.False(row.CanReset);
         Assert.Contains(vm.Shortcuts, r => r.IsFixed);                                 // Enter, Tab, … cannot be changed
 
@@ -364,7 +349,7 @@ public class V3UiTests
         vm.ApplyShortcut(row, Key.LeftCtrl, ModifierKeys.Control);                      // a modifier alone: still waiting
         Assert.True(row.IsEditing);
 
-        vm.ApplyShortcut(row, Key.F2, ModifierKeys.None);                               // already used: stays in edit mode with a reason
+        vm.ApplyShortcut(row, Key.F1, ModifierKeys.None);                               // already used: stays in edit mode with a reason
         Assert.True(row.IsEditing);
         Assert.NotEqual("", row.Message);
 
@@ -374,7 +359,7 @@ public class V3UiTests
         Assert.True(row.CanReset);
 
         vm.ResetShortcutCommand.Execute(row);
-        Assert.Equal("Ctrl + L", row.Keys);
+        Assert.Equal("Ctrl + Z", row.Keys);
         Assert.False(row.CanReset);
 
         vm.EditShortcutCommand.Execute(vm.Shortcuts.First(r => r.IsFixed));            // fixed rows ignore the edit command
@@ -389,12 +374,12 @@ public class V3UiTests
 
         Assert.True(Has(Key.F1, ModifierKeys.None));
         Assert.True(Has(Key.D2, ModifierKeys.Control));
-        Assert.Equal(15, window.InputBindings.Count);
+        Assert.Equal(11, window.InputBindings.Count);
 
         map.Set(ShortcutMap.GoPrefix + "reports", Key.R, ModifierKeys.Control | ModifierKeys.Alt);
         Assert.True(Has(Key.R, ModifierKeys.Control | ModifierKeys.Alt));
         Assert.False(Has(Key.D6, ModifierKeys.Control));
-        Assert.Equal(15, window.InputBindings.Count);
+        Assert.Equal(11, window.InputBindings.Count);
 
         var nav = app.Get<MainViewModel>().NavItems.First(n => n.Key == "reports");
         Assert.Equal("Ctrl + Alt + R", nav.Shortcut);                                   // the navigation hint follows too

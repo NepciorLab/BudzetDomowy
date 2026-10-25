@@ -15,10 +15,8 @@ public sealed class ShortcutMap
 {
     public static ShortcutMap Instance { get; } = new();
 
-    public const string QuickToggleType = "Quick.ToggleType";
-    public const string QuickCurrency = "Quick.Currency";
-    public const string QuickRate = "Quick.Rate";
-    public const string QuickAmount = "Quick.Amount";
+    public const string NewExpense = "Entry.Expense";
+    public const string NewIncome = "Entry.Income";
     public const string Undo = "Undo";
     public const string Help = "Help";
     public const string PreviousPeriod = "Period.Previous";
@@ -33,10 +31,8 @@ public sealed class ShortcutMap
 
     public static IReadOnlyList<ShortcutDef> Definitions { get; } =
     [
-        new(QuickToggleType, "F2", "KeyF2"),
-        new(QuickCurrency, "F3", "KeyF3"),
-        new(QuickRate, "F4", "KeyF4"),
-        new(QuickAmount, "Ctrl+L", "KeyCtrlL"),
+        new(NewExpense, "W", "KeyNewExpense"),
+        new(NewIncome, "Q", "KeyNewIncome"),
         new(Undo, "Ctrl+Z", "KeyCtrlZ"),
         .. Pages.Select((p, i) => new ShortcutDef(GoPrefix + p, "Ctrl+" + (i + 1), "KeyGoTo", p)),
         new(PreviousPeriod, "Alt+Left", "KeyPrevPeriod"),
@@ -115,7 +111,8 @@ public sealed class ShortcutMap
     public string? Validate(string id, Key key, ModifierKeys modifiers)
     {
         var text = Format(key, modifiers);
-        var allowedAlone = key is >= Key.F1 and <= Key.F24 || key is Key.Delete or Key.Insert;
+        // the keys that open a new entry only work while no text is being typed, so a plain letter is fine for them
+        var allowedAlone = key is >= Key.F1 and <= Key.F24 || key is Key.Delete or Key.Insert || (id.StartsWith("Entry.", StringComparison.Ordinal) && key is >= Key.A and <= Key.Z);
         if ((modifiers & (ModifierKeys.Control | ModifierKeys.Alt)) == 0 && !allowedAlone)
             return Res.Get("ShortcutNeedsModifier");
         if (Reserved.Any(r => string.Equals(r, text, StringComparison.OrdinalIgnoreCase)))

@@ -418,10 +418,10 @@ Del – usuń zaznaczone transakcje</value></data>
   <data name="QuickWindowTitle" xml:space="preserve"><value>Szybkie dodanie</value></data>
   <data name="FooterVersionTip" xml:space="preserve"><value>Wersja programu</value></data>
   <data name="ShortcutsIntro" xml:space="preserve"><value>Cały program da się obsłużyć z klawiatury. Skróty działają w całym oknie, o ile nie zaznaczono inaczej. Klawisze oznaczone przyciskiem „Zmień…” możesz ustawić po swojemu.</value></data>
-  <data name="KeyEnter" xml:space="preserve"><value>Przejdź do następnego pola paska dodawania; na przycisku „Dodaj” zapisuje wpis</value></data>
-  <data name="KeyCtrlEnter" xml:space="preserve"><value>Zapisz wpis z dowolnego pola paska dodawania</value></data>
+  <data name="KeyEnter" xml:space="preserve"><value>Okno wpisu: przejdź do następnego pola; w kwocie pozycji – przyjmij ją i przejdź dalej</value></data>
+  <data name="KeyCtrlEnter" xml:space="preserve"><value>Okno wpisu: zatwierdź z dowolnego pola</value></data>
   <data name="KeyTab" xml:space="preserve"><value>Następne / poprzednie pole</value></data>
-  <data name="KeyEsc" xml:space="preserve"><value>Wyczyść pola paska dodawania (w małym oknie – zamknij je); zamyka też otwartą listę</value></data>
+  <data name="KeyEsc" xml:space="preserve"><value>Zamknij okno wpisu (otwarta lista zamyka się pierwsza); na ekranie bez nic do anulowania – wróć na Pulpit</value></data>
   <data name="KeyF2" xml:space="preserve"><value>Przełącz Wydatek / Przychód</value></data>
   <data name="KeyF3" xml:space="preserve"><value>Przejdź do wyboru waluty</value></data>
   <data name="KeyF4" xml:space="preserve"><value>Przejdź do pola kursu (gdy wybrana jest waluta obca)</value></data>
@@ -594,6 +594,25 @@ Na drugim komputerze po przywróceniu użyj Ustawienia → Diagnostyka → Odbud
 Pobrać i zainstalować ją teraz? Program uruchomi się ponownie.</value></data>
   <data name="StartupNewerData" xml:space="preserve"><value>Dane zostały zapisane nowszą wersją programu, a aktualizacji nie udało się zainstalować. Pobierz najnowszą wersję z https://github.com/NepciorLab/BudzetDomowy/releases i uruchom ją.</value></data>
   <data name="SettingsShowClock" xml:space="preserve"><value>Pokazuj zegar obok daty</value></data>
+  <data name="EntryTitleExpense" xml:space="preserve"><value>Nowy wydatek</value></data>
+  <data name="EntryTitleIncome" xml:space="preserve"><value>Nowy przychód</value></data>
+  <data name="EntryHintExpense" xml:space="preserve"><value>{0} – nowy wydatek</value></data>
+  <data name="EntryHintIncome" xml:space="preserve"><value>{0} – nowy przychód</value></data>
+  <data name="EntryTotal" xml:space="preserve"><value>Kwota łączna</value></data>
+  <data name="EntryLines" xml:space="preserve"><value>Pozycje (kategorie i kwoty)</value></data>
+  <data name="EntryAmountTip" xml:space="preserve"><value>Możesz wpisać działanie, np. 2+2*2 (po Enterze pokaże się wynik), albo literę „r” – reszta do rozdysponowania.</value></data>
+  <data name="EntryAddLine" xml:space="preserve"><value>Dodaj kolejną pozycję</value></data>
+  <data name="EntryRemoveLine" xml:space="preserve"><value>Usuń pozycję</value></data>
+  <data name="EntryConfirm" xml:space="preserve"><value>Zatwierdź</value></data>
+  <data name="EntrySummary" xml:space="preserve"><value>Rozdysponowano {0} z {1}, zostało {2}</value></data>
+  <data name="EntryTotalMissing" xml:space="preserve"><value>Najpierw wpisz kwotę łączną.</value></data>
+  <data name="EntryBadLine" xml:space="preserve"><value>Pozycja {0}: wpisz kwotę większą od zera (liczbę, działanie albo „r”).</value></data>
+  <data name="EntryOver" xml:space="preserve"><value>Suma pozycji ({0}) przekracza kwotę łączną ({1}).</value></data>
+  <data name="EntryMismatch" xml:space="preserve"><value>Suma pozycji ({0}) jest mniejsza od kwoty łącznej ({1}). Dodaj pozycję albo wpisz „r” w ostatniej.</value></data>
+  <data name="EntryTwoRemainders" xml:space="preserve"><value>Tylko jedna pozycja może mieć „r” (resztę).</value></data>
+  <data name="EntryItems" xml:space="preserve"><value>pozycji: {0}</value></data>
+  <data name="KeyNewExpense" xml:space="preserve"><value>Nowy wydatek (okno do wpisania wydatku; nie działa podczas pisania w polu)</value></data>
+  <data name="KeyNewIncome" xml:space="preserve"><value>Nowy przychód (okno do wpisania przychodu; nie działa podczas pisania w polu)</value></data>
   <data name="PeriodAll" xml:space="preserve"><value>Wszystko</value></data>
   <data name="PeriodAllTitle" xml:space="preserve"><value>Wszystkie wpisy</value></data>
 </root>

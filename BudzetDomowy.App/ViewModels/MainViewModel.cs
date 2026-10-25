@@ -30,7 +30,6 @@ public sealed partial class MainViewModel : ObservableObject
     private readonly Dictionary<string, object> _pages;
 
     public BudgetCore Core { get; }
-    public QuickAddViewModel QuickAdd { get; }
     public SettingsViewModel Settings { get; }
     public string VersionLabel { get; }
     public ToastService Toast { get; }
@@ -45,20 +44,22 @@ public sealed partial class MainViewModel : ObservableObject
     [ObservableProperty] private string _syncGlyph = "●";
     [ObservableProperty] private string _todayText = "";
     [ObservableProperty] private string _clockText = "";
+    [ObservableProperty] private string _expenseHint = "";
+    [ObservableProperty] private string _incomeHint = "";
 
     private readonly System.Windows.Threading.DispatcherTimer _clock = new() { Interval = TimeSpan.FromSeconds(1) };
 
     /// <summary>The window shows the details dialog.</summary>
     public event Action? SyncDetailsRequested;
 
-    public MainViewModel(BudgetCore core, QuickAddViewModel quickAdd, TransactionsViewModel transactions,
+    public MainViewModel(BudgetCore core, IEntryLauncher launcher, TransactionsViewModel transactions,
         SettingsViewModel settings, EventsViewModel events, DashboardViewModel dashboard, BudgetsViewModel budgets,
         ReportsViewModel reports, RecurringViewModel recurring, ToastService toast, RecurringRunner runner, SettingsStore store)
     {
         Core = core;
         _runner = runner;
         _store = store;
-        QuickAdd = quickAdd;
+        _launcher = launcher;
         Settings = settings;
         VersionLabel = "v" + (typeof(MainViewModel).Assembly.GetCustomAttributes(typeof(System.Reflection.AssemblyInformationalVersionAttribute), false)
             .OfType<System.Reflection.AssemblyInformationalVersionAttribute>().FirstOrDefault()?.InformationalVersion?.Split('+')[0] ?? "?");
@@ -94,9 +95,11 @@ public sealed partial class MainViewModel : ObservableObject
         _clock.Tick += (_, _) => UpdateToday();
         _clock.Start();
 
+        UpdateEntryHints();
         ShortcutMap.Instance.Changed += _ =>
         {
             foreach (var item in NavItems) item.Shortcut = ShortcutMap.Instance.DisplayOf(ShortcutMap.GoPrefix + item.Key);
+            UpdateEntryHints();
         };
         SelectedNav = NavItems.FirstOrDefault(n => n.Key == StartPageKey(store.Current)) ?? NavItems[0];
         core.Sync.StatusChanged += (_, s) => Application.Current.Dispatcher.BeginInvoke(() => ShowStatus(s));
@@ -113,6 +116,7 @@ public sealed partial class MainViewModel : ObservableObject
     private readonly System.Windows.Threading.DispatcherTimer _recurringTimer;
     private readonly RecurringRunner _runner;
     private readonly SettingsStore _store;
+    private readonly IEntryLauncher _launcher;
 
     private async Task GenerateRecurringAsync()
     {
@@ -132,6 +136,19 @@ public sealed partial class MainViewModel : ObservableObject
         TodayText = now.ToString("dddd, d MMMM yyyy", CultureInfo.CurrentCulture).ToUpper(CultureInfo.CurrentCulture);
         ClockText = now.ToString("HH:mm", CultureInfo.CurrentCulture);
     }
+
+    private void UpdateEntryHints()
+    {
+        ExpenseHint = Res.Format("EntryHintExpense", ShortcutMap.Instance.DisplayOf(ShortcutMap.NewExpense));
+        IncomeHint = Res.Format("EntryHintIncome", ShortcutMap.Instance.DisplayOf(ShortcutMap.NewIncome));
+    }
+
+    /// <summary>"W": the window for a new expense (also from the button at the top).</summary>
+    [RelayCommand]
+    private void NewExpense() => _launcher.Open(income: false);
+
+    [RelayCommand]
+    private void NewIncome() => _launcher.Open(income: true);
 
     /// <summary>The page to open at startup: the chosen one, or the one used last.</summary>
     public static string StartPageKey(AppSettings s) => s.StartPage == "last" ? s.LastPage : s.StartPage;

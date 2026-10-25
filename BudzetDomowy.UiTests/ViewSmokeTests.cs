@@ -15,35 +15,6 @@ public class ViewSmokeTests
     }
 
     [Fact]
-    public void QuickAddBar_Builds_AndShowsItsFields() => WithApp(app =>
-    {
-        var vm = app.Get<QuickAddViewModel>();
-        var bar = new QuickAddBar { DataContext = vm };
-        UiHost.Layout(bar, 1280, 140);
-        UiHost.Render(bar, 1280, 140, "quickadd");
-
-        var texts = UiHost.Texts(bar);
-        foreach (var label in new[] { "Data", "Kwota", "Waluta", "Kategoria", "Miejsce", "Notatka", "Wydarzenie", "Dodaj" })
-            Assert.Contains(label, texts);
-    });
-
-    [Fact]
-    public void QuickAddBar_ShowsTheRateRow_OnlyForAForeignCurrency() => WithApp(app =>
-    {
-        var vm = app.Get<QuickAddViewModel>();
-        var bar = new QuickAddBar { DataContext = vm };
-        UiHost.Layout(bar, 1280, 160);
-        var before = UiHost.Texts(bar);
-        Assert.DoesNotContain("Kurs na PLN:", before);
-
-        vm.AmountText = "10 EUR";
-        UiHost.Layout(bar, 1280, 160);
-        Assert.Equal("EUR", vm.CurrencyCode);
-        Assert.Contains("Kurs na PLN:", UiHost.Texts(bar));
-        UiHost.Render(bar, 1280, 160, "quickadd-eur");
-    });
-
-    [Fact]
     public void TransactionsView_ListsTheSampleRows() => WithApp(app =>
     {
         var vm = app.Get<TransactionsViewModel>();

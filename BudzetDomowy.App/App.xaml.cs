@@ -18,7 +18,6 @@ public partial class App : Application
     private Mutex? _instanceLock;
     private ServiceProvider? _services;
     private IBackgroundHost? _host;
-    private QuickAddWindow? _quickWindow;
     private DateTime _lastErrorToast = DateTime.MinValue;
 
     protected override void OnStartup(StartupEventArgs e)
@@ -107,7 +106,7 @@ public partial class App : Application
             .AddSingleton(store)
             .AddSingleton<DataHub>()
             .AddSingleton<ToastService>()
-            .AddSingleton<QuickAddViewModel>()
+            .AddSingleton<IEntryLauncher, WpfEntryLauncher>()
             .AddSingleton<TransactionsViewModel>()
             .AddSingleton<CategoriesViewModel>()
             .AddSingleton<EventsViewModel>()
@@ -217,17 +216,8 @@ public partial class App : Application
         if (settings.BackgroundMode && !_host.Start(out var error)) AppLog.Warn("Background mode could not start: " + error);
     }
 
-    private void ShowQuickAdd()
-    {
-        if (_quickWindow is { IsLoaded: true })
-        {
-            _quickWindow.Activate();
-            return;
-        }
-        _quickWindow = new QuickAddWindow(_services!.GetRequiredService<QuickAddViewModel>());
-        _quickWindow.Closed += (_, _) => _quickWindow = null;
-        _quickWindow.Show();
-    }
+    /// <summary>The global key and the tray icon: the window for a new expense, above whatever is on the screen.</summary>
+    private void ShowQuickAdd() => _services!.GetRequiredService<IEntryLauncher>().Open(income: false);
 
     // ----- no unhandled error ever reaches the user as a stack trace: it goes to the log, the user sees a short calm note -----
 

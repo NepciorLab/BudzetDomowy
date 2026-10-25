@@ -106,6 +106,13 @@ public sealed class FakeMessageDialogs : IMessageDialogs
     }
 }
 
+/// <summary>Remembers which entry windows were asked for instead of opening them.</summary>
+public sealed class FakeEntryLauncher : IEntryLauncher
+{
+    public List<bool> Opened { get; } = [];
+    public void Open(bool income) => Opened.Add(income);
+}
+
 /// <summary>Counts restarts instead of starting a new process.</summary>
 public sealed class FakeRestarter : IAppRestarter
 {
@@ -134,7 +141,8 @@ public sealed class TestApp : IDisposable
             .AddSingleton(new SettingsStore(new AppSettings()))
             .AddSingleton<DataHub>()
             .AddSingleton<ToastService>()
-            .AddSingleton<QuickAddViewModel>()
+            .AddSingleton<FakeEntryLauncher>()
+            .AddSingleton<IEntryLauncher>(sp => sp.GetRequiredService<FakeEntryLauncher>())
             .AddSingleton<TransactionsViewModel>()
             .AddSingleton<CategoriesViewModel>()
             .AddSingleton<EventsViewModel>()
