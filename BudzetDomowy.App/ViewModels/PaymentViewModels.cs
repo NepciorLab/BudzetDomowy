@@ -15,8 +15,8 @@ public enum PayResult { None, Paid, Scheduled }
 /// <summary>The windows of the payments (opened through this so that tests need no window).</summary>
 public interface IPaymentDialogs
 {
-    /// <summary>The window to type the bills of one payee.</summary>
-    void OpenEntry();
+    /// <summary>The window to type the bills of one payee; with a payment given, it edits the whole series that payment belongs to.</summary>
+    void OpenEntry(PlannedPayment? existing = null);
 
     /// <summary>The list of payees.</summary>
     void ManagePayees();
@@ -122,6 +122,15 @@ public sealed partial class PaymentsViewModel : ObservableObject
     private void AddPayments()
     {
         _dialogs.OpenEntry();
+        Reload();
+    }
+
+    /// <summary>Double click on a payment: the window with its whole series, to change it.</summary>
+    [RelayCommand]
+    private void Edit(PaymentItemViewModel? item)
+    {
+        if (item is null) return;
+        _dialogs.OpenEntry(item.Payment);
         Reload();
     }
 
@@ -342,6 +351,22 @@ public sealed partial class PaymentRowViewModel : ObservableObject
         _dueDate = due;
     }
 
+    /// <summary>The payment this row edits; null for a row typed now.</summary>
+    public Guid? PaymentId { get; init; }
+
+    /// <summary>
+    /// A row proposed after Enter (the next month, the same title and amount): shown dimmed and not saved until the user accepts it
+    /// (Enter in its amount) or changes something in it.
+    /// </summary>
+    [ObservableProperty] private bool _isProposal;
+
+    partial void OnDueDateChanged(DateTime? oldValue, DateTime? newValue)
+    {
+        if (oldValue?.Date != newValue?.Date) IsProposal = false;
+    }
+
+    partial void OnTitleChanged(string value) => IsProposal = false;
+
     [ObservableProperty] private DateTime? _dueDate;
     [ObservableProperty] private string _title = "";
     [ObservableProperty] private decimal? _value;
@@ -359,6 +384,7 @@ public sealed partial class PaymentRowViewModel : ObservableObject
             _amountExpression = value;
             OnPropertyChanged();
             Recalculate();
+            IsProposal = false;
         }
     }
 
@@ -393,16 +419,23 @@ public sealed record PaymentEntryFocus(PaymentFocus Target, PaymentRowViewModel?
 
 /// <summary>
 /// Planning the bills of one payee: the payee is chosen (or added), then each row has a date, a title and an amount. Enter in the
-/// amount accepts it and opens the next row; the empty last row is ignored when saving.
+/// amount accepts it and opens the next row, proposed as the previous one one month later (same title and amount); a proposal that
+/// was not accepted or changed, and an empty row, are ignored when saving. With a payment given, the window edits its whole series.
 /// </summary>
 public sealed partial class PaymentEntryViewModel : ObservableObject
 {
     private readonly BudgetCore _core;
     private readonly IPaymentDialogs _dialogs;
     private readonly ToastService _toast;
+    private readonly Guid? _editedPaymentId;
 
     public ObservableCollection<Payee> Payees { get; } = [];
     public ObservableCollection<PaymentRowViewModel> Rows { get; } = [];
+
+    /// <summary>True when the window changes a series already on the list.</summary>
+    public bool IsEditing => _editedPaymentId is not null;
+
+    public string Title => Res.Get(IsEditing ? "PayEditTitle" : "PayEntryTitle");
 
     [ObservableProperty, NotifyPropertyChangedFor(nameof(PayeeAccount))] private Payee? _selectedPayee;
     [ObservableProperty] private string _errorMessage = "";
@@ -411,14 +444,33 @@ public sealed partial class PaymentEntryViewModel : ObservableObject
 
     public event Action? Saved;
 
-    public PaymentEntryViewModel(BudgetCore core, IPaymentDialogs dialogs, ToastService toast)
+    public PaymentEntryViewModel(BudgetCore core, IPaymentDialogs dialogs, ToastService toast, PlannedPayment? existing = null)
     {
         _core = core;
         _dialogs = dialogs;
         _toast = toast;
         ReloadPayees();
-        SelectedPayee = Payees.Count == 1 ? Payees[0] : null;
-        Rows.Add(new PaymentRowViewModel(this, DateTime.Today));
+
+        var series = existing is null ? [] : core.Payments.SeriesOf(existing.Id);
+        if (series.Count == 0)
+        {
+            SelectedPayee = Payees.Count == 1 ? Payees[0] : null;
+            Rows.Add(new PaymentRowViewModel(this, DateTime.Today));
+            return;
+        }
+
+        _editedPaymentId = existing!.Id;
+        SelectedPayee = Payees.FirstOrDefault(p => p.Id == series[0].PayeeId);
+        foreach (var payment in series.OrderBy(p => p.DueDate).ThenBy(p => p.Title))
+        {
+            Rows.Add(new PaymentRowViewModel(this, payment.DueDate.ToDateTime(TimeOnly.MinValue))
+            {
+                PaymentId = payment.Id,
+                Title = payment.Title,
+                AmountExpression = payment.Amount.ToString("0.##", CultureInfo.CurrentCulture),
+            });
+        }
+        foreach (var r in Rows) r.Renumber();
     }
 
     private void ReloadPayees()
@@ -438,7 +490,7 @@ public sealed partial class PaymentEntryViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void AddRow() => NewRow();
+    private void AddRow() => NewRow(proposal: false);
 
     [RelayCommand]
     private void RemoveRow(PaymentRowViewModel? row)
@@ -448,13 +500,33 @@ public sealed partial class PaymentEntryViewModel : ObservableObject
         foreach (var r in Rows) r.Renumber();
     }
 
-    private PaymentRowViewModel NewRow()
+    /// <summary>A new row starts as the previous one a month later (a series of bills is usually monthly), with its title and amount.</summary>
+    private PaymentRowViewModel NewRow(bool proposal)
     {
-        // the next bill of the same payee usually has the same date, or a later one: it starts as the previous
-        var row = new PaymentRowViewModel(this, Rows.LastOrDefault()?.DueDate ?? DateTime.Today);
+        var previous = Rows.LastOrDefault();
+        var row = new PaymentRowViewModel(this, NextDate(previous?.DueDate))
+        {
+            Title = previous?.Title ?? "",
+            AmountExpression = previous?.AmountExpression ?? "",
+        };
         Rows.Add(row);
+        row.IsProposal = proposal && !row.IsEmpty;
         foreach (var r in Rows) r.Renumber();
         return row;
+    }
+
+    /// <summary>One month after the previous date; the day of the month the series started on comes back after a short month (28 Feb → 31 Mar).</summary>
+    private DateTime NextDate(DateTime? previous)
+    {
+        if (previous is not { } date) return DateTime.Today;
+        var next = date.Date.AddMonths(1);
+        var day = next.Day;
+        if (date.Day == DateTime.DaysInMonth(date.Year, date.Month))
+        {
+            var longer = Rows.Where(r => r.DueDate is not null && r.DueDate.Value.Day > date.Day).Select(r => r.DueDate!.Value.Day);
+            day = Math.Max(day, longer.DefaultIfEmpty(0).Max());
+        }
+        return new DateTime(next.Year, next.Month, Math.Min(day, DateTime.DaysInMonth(next.Year, next.Month)));
     }
 
     /// <summary>
@@ -477,8 +549,9 @@ public sealed partial class PaymentEntryViewModel : ObservableObject
             return new PaymentEntryFocus(PaymentFocus.Amount, row);
         }
 
+        row.IsProposal = false;                                // Enter accepts a proposed row
         var index = Rows.IndexOf(row);
-        var next = index == Rows.Count - 1 ? NewRow() : Rows[index + 1];
+        var next = index == Rows.Count - 1 ? NewRow(proposal: true) : Rows[index + 1];
         return new PaymentEntryFocus(PaymentFocus.Date, next);
     }
 
@@ -493,7 +566,7 @@ public sealed partial class PaymentEntryViewModel : ObservableObject
             return false;
         }
 
-        var used = Rows.Where(r => !r.IsEmpty).ToList();
+        var used = Rows.Where(r => !r.IsEmpty && !r.IsProposal).ToList();
         if (used.Count == 0)
         {
             ErrorMessage = Res.Get("PayNothingTyped");
@@ -515,7 +588,10 @@ public sealed partial class PaymentEntryViewModel : ObservableObject
 
         try
         {
-            _core.Payments.AddPayments(SelectedPayee.Id, used.Select(r => new NewPayment(DateOnly.FromDateTime(r.DueDate!.Value), r.Title, r.Value!.Value)));
+            if (_editedPaymentId is { } id)
+                _core.Payments.SaveSeries(id, SelectedPayee.Id, used.Select(r => new SeriesRow(r.PaymentId, DateOnly.FromDateTime(r.DueDate!.Value), r.Title, r.Value!.Value)));
+            else
+                _core.Payments.AddPayments(SelectedPayee.Id, used.Select(r => new NewPayment(DateOnly.FromDateTime(r.DueDate!.Value), r.Title, r.Value!.Value)));
         }
         catch (UpdateRequiredException)
         {
@@ -523,7 +599,7 @@ public sealed partial class PaymentEntryViewModel : ObservableObject
             return false;
         }
 
-        _toast.Show(Res.Format("PayAdded", used.Count, SelectedPayee.Name));
+        _toast.Show(Res.Format(IsEditing ? "PaySeriesSaved" : "PayAdded", used.Count, SelectedPayee.Name));
         Saved?.Invoke();
         return true;
     }

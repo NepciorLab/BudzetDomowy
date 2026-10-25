@@ -6,7 +6,7 @@
         xmlns:controls="clr-namespace:BudzetDomowy.App.Controls"
         ui:WindowHelper.UseModernWindowStyle="True"
         Icon="pack://application:,,,/BudzetDomowy.App;component/Assets/BudzetDomowy.ico"
-        Title="{infra:Str PayEntryTitle}" Width="760" Height="600" MinWidth="620" MinHeight="460"
+        Title="{Binding Title}" Width="760" Height="600" MinWidth="620" MinHeight="460"
         WindowStartupLocation="CenterOwner" ShowInTaskbar="False"
         PreviewKeyDown="OnPreviewKeyDown">
     <Grid Margin="24,18,24,18">
@@ -19,7 +19,7 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <TextBlock Text="{infra:Str PayEntryTitle}" FontSize="24" FontWeight="SemiBold" Margin="0,0,0,12" />
+        <TextBlock Text="{Binding Title}" FontSize="24" FontWeight="SemiBold" Margin="0,0,0,12" />
 
         <!-- the payee: chosen from the list or added -->
         <Grid Grid.Row="1">
@@ -52,6 +52,15 @@
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
                             <Grid Margin="0,0,0,8">
+                                <Grid.Style>
+                                    <Style TargetType="Grid">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsProposal}" Value="True">
+                                                <Setter Property="Opacity" Value="0.55" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Grid.Style>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="30" />
                                     <ColumnDefinition Width="170" />

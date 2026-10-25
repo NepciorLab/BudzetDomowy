@@ -101,7 +101,12 @@ public sealed class FakePaymentDialogs : IPaymentDialogs
     public Queue<PayResult> PayAnswers { get; } = new();
     public List<PlannedPayment> Shown { get; } = [];
 
-    public void OpenEntry() => EntriesOpened++;
+    public List<PlannedPayment?> Entries { get; } = [];
+    public void OpenEntry(PlannedPayment? existing = null)
+    {
+        EntriesOpened++;
+        Entries.Add(existing);
+    }
     public void ManagePayees() => PayeeListsOpened++;
     public Payee? EditPayee(Payee? existing) => PayeeAnswers.Count > 0 ? PayeeAnswers.Dequeue() : null;
 

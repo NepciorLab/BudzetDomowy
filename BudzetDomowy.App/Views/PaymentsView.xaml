@@ -23,6 +23,7 @@
         <DataGrid Grid.Row="2" x:Name="PaymentGrid" ItemsSource="{Binding Items}" SelectedItem="{Binding Selected, Mode=TwoWay}" AutoGenerateColumns="False"
                   IsReadOnly="True" CanUserAddRows="False" CanUserDeleteRows="False" SelectionMode="Single" SelectionUnit="FullRow" HeadersVisibility="Column"
                   GridLinesVisibility="All" RowHeight="46" AlternationCount="2" AlternatingRowBackground="{DynamicResource SystemControlBackgroundListLowBrush}"
+                  MouseDoubleClick="Grid_MouseDoubleClick"
                   infra:GridBehaviors.ColumnChooserKey="payments"
                   infra:GridBehaviors.AutoFit="{Binding AutoFitColumns, Source={x:Static infra:UiPreferences.Instance}}">
             <DataGrid.Columns>

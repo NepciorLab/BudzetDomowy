@@ -169,6 +169,10 @@ public sealed class LocalDatabase
         );
         CREATE INDEX ix_planned_payments_due ON planned_payments(due_date);
         """,
+        // v7: payments typed together form a series that is edited as a whole
+        """
+        ALTER TABLE planned_payments ADD COLUMN series_id TEXT;
+        """,
     ];
 
     public static int CurrentVersion => Migrations.Length;

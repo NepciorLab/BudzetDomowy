@@ -31,7 +31,7 @@ public sealed class WpfPaymentDialogs : IPaymentDialogs
         window.ShowDialog();
     }
 
-    public void OpenEntry() => Show(new PaymentEntryWindow(new PaymentEntryViewModel(_core, this, _toast)));
+    public void OpenEntry(PlannedPayment? existing = null) => Show(new PaymentEntryWindow(new PaymentEntryViewModel(_core, this, _toast, existing)));
 
     public void ManagePayees() => Show(new PayeesWindow(new PayeesViewModel(_core, this, _messages)));
 

@@ -689,6 +689,8 @@ Dodaj rachunki przyciskiem „Zaplanuj płatności”.</value></data>
   <data name="CalcError" xml:space="preserve"><value>Błąd</value></data>
   <data name="CalcDivideByZero" xml:space="preserve"><value>Dzielenie przez zero</value></data>
   <data name="CalcOverflow" xml:space="preserve"><value>Liczba jest za duża</value></data>
+  <data name="PayEditTitle" xml:space="preserve"><value>Edycja serii płatności</value></data>
+  <data name="PaySeriesSaved" xml:space="preserve"><value>Zapisano serię płatności: {0} (odbiorca: {1}).</value></data>
   <data name="PeriodAll" xml:space="preserve"><value>Wszystko</value></data>
   <data name="PeriodAllTitle" xml:space="preserve"><value>Wszystkie wpisy</value></data>
 </root>

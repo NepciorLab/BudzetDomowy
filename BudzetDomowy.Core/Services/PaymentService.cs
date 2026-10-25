@@ -7,6 +7,9 @@ namespace BudzetDomowy.Core.Services;
 /// <summary>One row typed when planning payments.</summary>
 public sealed record NewPayment(DateOnly DueDate, string Title, decimal Amount);
 
+/// <summary>One row of a series being edited: an existing payment (<see cref="Id"/>) or a new one (null).</summary>
+public sealed record SeriesRow(Guid? Id, DateOnly DueDate, string Title, decimal Amount);
+
 /// <summary>
 /// Bills to pay. A bill stays on the list until it is paid: paid now (booked with today's date), or set up in the bank for later
 /// ("scheduled": no more reminders, and once its date has passed it counts as paid on that date). Paying books an expense
@@ -62,17 +65,18 @@ public sealed class PaymentService
 
     // ----- payments -----
 
-    /// <summary>Adds the typed rows (a row without a title and amount is skipped).</summary>
+    /// <summary>Adds the typed rows as one series (they are edited together later).</summary>
     public IReadOnlyList<PlannedPayment> AddPayments(Guid payeeId, IEnumerable<NewPayment> rows)
     {
         if (_reader.GetPayees().All(p => p.Id != payeeId)) throw new ArgumentException("Unknown payee.", nameof(payeeId));
+        var seriesId = Guid.NewGuid();
         var added = new List<PlannedPayment>();
         foreach (var row in rows)
         {
             if (row.Amount <= 0) throw new ArgumentOutOfRangeException(nameof(rows), "The amount of a payment must be positive.");
             var payment = new PlannedPayment
             {
-                Id = Guid.NewGuid(), PayeeId = payeeId, DueDate = row.DueDate, Title = row.Title.Trim(), Amount = row.Amount, Status = PaymentStatus.Pending,
+                Id = Guid.NewGuid(), PayeeId = payeeId, DueDate = row.DueDate, Title = row.Title.Trim(), Amount = row.Amount, Status = PaymentStatus.Pending, SeriesId = seriesId,
             };
             _recorder.Save(payment);
             added.Add(payment);
@@ -81,6 +85,60 @@ public sealed class PaymentService
     }
 
     public void DeletePayment(Guid id) => _recorder.Delete(EntityTypes.PlannedPayment, id);
+
+    /// <summary>The payments typed together with this one (it alone when it has no series), oldest date first; empty when it is no longer on the list.</summary>
+    public IReadOnlyList<PlannedPayment> SeriesOf(Guid paymentId)
+    {
+        var all = _reader.GetPlannedPayments();
+        if (all.FirstOrDefault(p => p.Id == paymentId) is not { } payment) return [];
+        return payment.SeriesId is { } series ? all.Where(p => p.SeriesId == series).ToList() : [payment];
+    }
+
+    /// <summary>
+    /// Saves a series after editing: rows with an id update those payments, rows without one are added, and payments of the series
+    /// that are not in <paramref name="rows"/> are removed. A payment whose payee, date, title or amount changed goes back to "to pay"
+    /// (what was set up in the bank no longer matches); an unchanged one keeps its state. A row whose payment was paid or removed
+    /// in the meantime (e.g. on the other computer) is not brought back.
+    /// </summary>
+    public IReadOnlyList<PlannedPayment> SaveSeries(Guid anyPaymentId, Guid payeeId, IEnumerable<SeriesRow> rows)
+    {
+        if (_reader.GetPayees().All(p => p.Id != payeeId)) throw new ArgumentException("Unknown payee.", nameof(payeeId));
+        var existing = SeriesOf(anyPaymentId).ToDictionary(p => p.Id);
+        var seriesId = existing.Values.Select(p => p.SeriesId).FirstOrDefault(s => s is not null) ?? Guid.NewGuid();
+        var kept = new HashSet<Guid>();
+        var result = new List<PlannedPayment>();
+        foreach (var row in rows)
+        {
+            if (row.Amount <= 0) throw new ArgumentOutOfRangeException(nameof(rows), "The amount of a payment must be positive.");
+            var title = row.Title.Trim();
+            if (row.Id is { } id)
+            {
+                if (!existing.TryGetValue(id, out var old)) continue;
+                kept.Add(id);
+                var changed = old.PayeeId != payeeId || old.DueDate != row.DueDate || old.Title != title || old.Amount != row.Amount;
+                var updated = old with
+                {
+                    PayeeId = payeeId, DueDate = row.DueDate, Title = title, Amount = row.Amount, SeriesId = seriesId,
+                    Status = changed ? PaymentStatus.Pending : old.Status,
+                };
+                if (updated != old) _recorder.Save(updated);
+                result.Add(updated);
+            }
+            else
+            {
+                var added = new PlannedPayment
+                {
+                    Id = Guid.NewGuid(), PayeeId = payeeId, DueDate = row.DueDate, Title = title, Amount = row.Amount,
+                    Status = PaymentStatus.Pending, SeriesId = seriesId,
+                };
+                _recorder.Save(added);
+                result.Add(added);
+            }
+        }
+
+        foreach (var old in existing.Values.Where(p => !kept.Contains(p.Id))) _recorder.Delete(EntityTypes.PlannedPayment, old.Id);
+        return result;
+    }
 
     /// <summary>The transfer is set up in the bank for a later day: no reminders from now on.</summary>
     public void MarkScheduled(Guid id)

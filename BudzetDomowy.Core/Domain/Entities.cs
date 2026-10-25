@@ -153,6 +153,9 @@ public sealed record PlannedPayment
     public string Title { get; init; } = "";
     public decimal Amount { get; init; }
     public PaymentStatus Status { get; init; } = PaymentStatus.Pending;
+
+    /// <summary>The payments typed together (one bill with several dates) are edited together; null for a payment typed alone in an older version.</summary>
+    public Guid? SeriesId { get; init; }
 }
 
 /// <summary>Learned mapping from a note pattern to a category (and optionally an event).</summary>

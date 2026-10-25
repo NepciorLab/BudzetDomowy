@@ -121,7 +121,7 @@ public sealed class LocalReader
         });
 
     public IReadOnlyList<PlannedPayment> GetPlannedPayments() => Query(
-        "SELECT id, payee_id, due_date, title, amount_cents, status FROM planned_payments ORDER BY due_date, title, id",
+        "SELECT id, payee_id, due_date, title, amount_cents, status, series_id FROM planned_payments ORDER BY due_date, title, id",
         r => new PlannedPayment
         {
             Id = Guid.Parse(r.GetString(0)),
@@ -130,6 +130,7 @@ public sealed class LocalReader
             Title = r.GetString(3),
             Amount = Money.FromCents(r.GetInt64(4)),
             Status = Enum.Parse<PaymentStatus>(r.GetString(5)),
+            SeriesId = Guid_(r, 6),
         });
 
     public IReadOnlyList<RecurringTransaction> GetRecurringTransactions() => Query(

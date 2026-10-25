@@ -256,11 +256,11 @@ public sealed class Materializer
                 break;
             case PlannedPayment p:
                 Exec(conn, tx, """
-                    INSERT OR REPLACE INTO planned_payments (id, payee_id, due_date, title, amount_cents, status)
-                    VALUES ($id, $payee, $due, $title, $amt, $status)
+                    INSERT OR REPLACE INTO planned_payments (id, payee_id, due_date, title, amount_cents, status, series_id)
+                    VALUES ($id, $payee, $due, $title, $amt, $status, $series)
                     """,
                     ("$id", Id(p.Id)), ("$payee", Id(p.PayeeId)), ("$due", Day(p.DueDate)), ("$title", p.Title),
-                    ("$amt", Money.ToCents(p.Amount)), ("$status", p.Status.ToString()));
+                    ("$amt", Money.ToCents(p.Amount)), ("$status", p.Status.ToString()), ("$series", Id(p.SeriesId)));
                 break;
             default:
                 throw new InvalidOperationException($"No projection for {type}.");

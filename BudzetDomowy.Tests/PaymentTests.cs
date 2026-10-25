@@ -316,4 +316,100 @@ public sealed class PaymentTests : IDisposable
         Assert.Contains(old.Events, e => e.EntityType == "Transaction");
         Assert.DoesNotContain(old.Events, e => e.EntityType is "Payee" or "PlannedPayment");
     }
+
+    // ----- series: payments typed together are edited together -----
+
+    [Fact]
+    public void PaymentsTypedTogether_FormASeries()
+    {
+        var core = NewCore();
+        var payee = core.Payments.AddPayee("Tauron", ValidAccount);
+        var first = core.Payments.AddPayments(payee.Id, [new NewPayment(D("2026-11-10"), "Rata 1", 100m), new NewPayment(D("2026-12-10"), "Rata 2", 100m)]);
+        var other = core.Payments.AddPayments(payee.Id, [new NewPayment(D("2026-11-20"), "Gaz", 50m)]);
+
+        Assert.NotNull(first[0].SeriesId);
+        Assert.Equal(first[0].SeriesId, first[1].SeriesId);
+        Assert.NotEqual(first[0].SeriesId, other[0].SeriesId);
+        Assert.Equal(["Rata 1", "Rata 2"], core.Payments.SeriesOf(first[1].Id).Select(p => p.Title));
+        Assert.Equal(["Gaz"], core.Payments.SeriesOf(other[0].Id).Select(p => p.Title));
+        Assert.Empty(core.Payments.SeriesOf(Guid.NewGuid()));
+    }
+
+    [Fact]
+    public void SaveSeries_ChangesAddsAndRemoves_AndAChangedPaymentGoesBackToPending()
+    {
+        var core = NewCore();
+        var payee = core.Payments.AddPayee("Tauron", ValidAccount);
+        var added = core.Payments.AddPayments(payee.Id, [
+            new NewPayment(D("2026-11-10"), "Rata 1", 100m), new NewPayment(D("2026-12-10"), "Rata 2", 100m), new NewPayment(D("2027-01-10"), "Rata 3", 100m)]);
+        core.Payments.MarkScheduled(added[0].Id);
+        core.Payments.MarkScheduled(added[1].Id);
+
+        core.Payments.SaveSeries(added[0].Id, payee.Id, [
+            new SeriesRow(added[0].Id, D("2026-11-10"), "Rata 1", 100m),             // unchanged: stays scheduled
+            new SeriesRow(added[1].Id, D("2026-12-12"), "Rata 2", 120m),             // changed: back to "to pay"
+            new SeriesRow(null, D("2027-02-10"), " Rata 4 ", 90m),                   // new
+        ]);                                                                          // Rata 3 is not there: removed
+
+        var list = core.Reader.GetPlannedPayments();
+        Assert.Equal(["Rata 1", "Rata 2", "Rata 4"], list.Select(p => p.Title));
+        Assert.Equal(PaymentStatus.Scheduled, list[0].Status);
+        Assert.Equal((PaymentStatus.Pending, D("2026-12-12"), 120m), (list[1].Status, list[1].DueDate, list[1].Amount));
+        Assert.Single(list.Select(p => p.SeriesId).Distinct());
+        Assert.Equal(added[0].SeriesId, list[2].SeriesId);
+        Assert.Equal(list[1].Id, added[1].Id);                                       // the same payments, edited in place
+    }
+
+    [Fact]
+    public void SaveSeries_CanChangeThePayee_AndSeriesWithoutAnIdGetsOne()
+    {
+        var core = NewCore();
+        var one = core.Payments.AddPayee("Jeden", ValidAccount);
+        var two = core.Payments.AddPayee("Dwa", ValidAccount);
+        var added = core.Payments.AddPayments(one.Id, [new NewPayment(D("2026-11-10"), "Rachunek", 10m)]);
+        core.Payments.MarkScheduled(added[0].Id);
+
+        core.Payments.SaveSeries(added[0].Id, two.Id, [new SeriesRow(added[0].Id, D("2026-11-10"), "Rachunek", 10m)]);
+        var now = Assert.Single(core.Reader.GetPlannedPayments());
+        Assert.Equal((two.Id, PaymentStatus.Pending), (now.PayeeId, now.Status));
+
+        // a payment typed alone by an older version has no series id: saving it assigns one
+        var legacy = new PlannedPayment { Id = Guid.NewGuid(), PayeeId = one.Id, DueDate = D("2026-11-30"), Title = "Stary", Amount = 5m };
+        core.Recorder.Save(legacy);
+        Assert.Equal(["Stary"], core.Payments.SeriesOf(legacy.Id).Select(p => p.Title));
+        core.Payments.SaveSeries(legacy.Id, one.Id, [new SeriesRow(legacy.Id, D("2026-11-30"), "Stary", 5m), new SeriesRow(null, D("2026-12-30"), "Stary", 5m)]);
+        var series = core.Payments.SeriesOf(legacy.Id);
+        Assert.Equal(2, series.Count);
+        Assert.NotNull(series[0].SeriesId);
+        Assert.Equal(series[0].SeriesId, series[1].SeriesId);
+        Assert.Equal(3, core.Reader.GetPlannedPayments().Count);                        // plus the earlier payment, untouched
+    }
+
+    [Fact]
+    public void SaveSeries_DoesNotBringBackAPaymentPaidInTheMeantime()
+    {
+        var core = NewCore();
+        var payee = core.Payments.AddPayee("Tauron", ValidAccount);
+        var added = core.Payments.AddPayments(payee.Id, [new NewPayment(D("2026-11-10"), "Rata 1", 100m), new NewPayment(D("2026-12-10"), "Rata 2", 100m)]);
+        core.Payments.MarkPaid(added[0].Id, D("2026-11-09"));
+
+        core.Payments.SaveSeries(added[1].Id, payee.Id, [new SeriesRow(added[0].Id, D("2026-11-10"), "Rata 1", 100m), new SeriesRow(added[1].Id, D("2026-12-10"), "Rata 2", 100m)]);
+
+        Assert.Equal(["Rata 2"], core.Reader.GetPlannedPayments().Select(p => p.Title));
+        Assert.Single(core.Reader.GetTransactions());
+    }
+
+    [Fact]
+    public void TheSeriesSurvivesARebuildFromTheJournals()
+    {
+        var core = NewCore();
+        var payee = core.Payments.AddPayee("Tauron", ValidAccount);
+        var added = core.Payments.AddPayments(payee.Id, [new NewPayment(D("2026-11-10"), "Rata 1", 100m), new NewPayment(D("2026-12-10"), "Rata 2", 100m)]);
+
+        core.Sync.Rebuild();
+
+        var list = core.Reader.GetPlannedPayments();
+        Assert.Equal(added[0].SeriesId, list[0].SeriesId);
+        Assert.Equal(list[0].SeriesId, list[1].SeriesId);
+    }
 }

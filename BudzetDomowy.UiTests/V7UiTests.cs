@@ -139,42 +139,183 @@ public class V7UiTests
     // ----- typing the bills -----
 
     [Fact]
-    public void PaymentEntry_EnterInTheAmountOpensTheNextRow_UntilAnEmptyOneIsLeft() => WithApp(app =>
+    public void PaymentEntry_EnterInTheAmountOpensTheNextRow_ProposedAsTheSameBillOneMonthLater() => WithApp(app =>
     {
         var payee = AddPayee(app);
         var vm = new PaymentEntryViewModel(app.Core, app.Get<FakePaymentDialogs>(), app.Get<ToastService>());
         Assert.Equal(payee, vm.SelectedPayee);                                            // the only payee is chosen at once
         Assert.Single(vm.Rows);
+        Assert.False(vm.IsEditing);
+        Assert.Equal("Planowanie płatności", vm.Title);
 
         var first = vm.Rows[0];
-        first.DueDate = Today.AddDays(12).ToDateTime(TimeOnly.MinValue);
+        var start = new DateTime(2026, 11, 10);
+        first.DueDate = start;
         first.Title = "Rata 1";
         first.AmountExpression = "100,50";
         var focus = vm.CommitRow(first);
 
         Assert.Equal(2, vm.Rows.Count);                                                   // a new row appeared
         Assert.Equal(PaymentFocus.Date, focus.Target);
-        Assert.Same(vm.Rows[1], focus.Row);
-        Assert.Equal(first.DueDate, vm.Rows[1].DueDate);                                  // it starts with the same date
-        Assert.Equal("", vm.Rows[1].Title);
-
         var second = vm.Rows[1];
-        second.DueDate = Today.AddDays(40).ToDateTime(TimeOnly.MinValue);
-        second.Title = "Rata 2";
+        Assert.Same(second, focus.Row);
+        Assert.Equal(new DateTime(2026, 12, 10), second.DueDate);                          // a month later
+        Assert.Equal(("Rata 1", "100,50"), (second.Title, second.AmountExpression));      // title and amount copied
+        Assert.Equal(100.50m, second.Value);
+        Assert.True(second.IsProposal);
+        Assert.False(first.IsProposal);
+
+        second.Title = "Rata 2";                                                           // changing anything accepts the proposal
+        Assert.False(second.IsProposal);
         second.AmountExpression = "2*50+0,25";                                             // a calculation works as in the entry window
         Assert.Equal(PaymentFocus.Date, vm.CommitRow(second).Target);
         Assert.Equal(100.25m, second.Value);
         Assert.Equal("100,25", second.Display);
-        Assert.Equal(3, vm.Rows.Count);
+        var third = vm.Rows[2];
+        Assert.Equal(new DateTime(2027, 1, 10), third.DueDate);
+        Assert.Equal(("Rata 2", "2*50+0,25"), (third.Title, third.AmountExpression));      // the next proposal comes from the previous row
 
-        Assert.Equal(PaymentFocus.Confirm, vm.CommitRow(vm.Rows[2]).Target);              // an empty row: on to "confirm", no fourth row
-        Assert.Equal(3, vm.Rows.Count);
-
-        Assert.True(vm.Confirm());                                                        // the empty last row is not saved
+        Assert.True(vm.Confirm());                                                        // the proposal nobody accepted is not saved
         var list = app.Core.Reader.GetPlannedPayments();
         Assert.Equal(["Rata 1", "Rata 2"], list.Select(p => p.Title));
         Assert.Equal([100.50m, 100.25m], list.Select(p => p.Amount));
+        Assert.Equal([new DateOnly(2026, 11, 10), new DateOnly(2026, 12, 10)], list.Select(p => p.DueDate));
         Assert.All(list, p => Assert.Equal((payee.Id, PaymentStatus.Pending), (p.PayeeId, p.Status)));
+        Assert.Single(list.Select(p => p.SeriesId).Distinct());
+    });
+
+    [Fact]
+    public void PaymentEntry_AcceptingProposalsWithEnter_KeepsAMonthlySeries() => WithApp(app =>
+    {
+        AddPayee(app);
+        var vm = new PaymentEntryViewModel(app.Core, app.Get<FakePaymentDialogs>(), app.Get<ToastService>());
+        vm.Rows[0].DueDate = new DateTime(2026, 1, 31);
+        vm.Rows[0].Title = "Abonament";
+        vm.Rows[0].AmountExpression = "49,99";
+
+        var row = vm.Rows[0];
+        for (var i = 0; i < 3; i++) row = vm.CommitRow(row).Row!;                         // Enter, Enter, Enter: accept every proposal
+        Assert.Equal(4, vm.Rows.Count);                                                   // three accepted, the fourth is still a proposal
+        Assert.True(vm.Rows[3].IsProposal);
+
+        Assert.Equal([new DateTime(2026, 1, 31), new DateTime(2026, 2, 28), new DateTime(2026, 3, 31), new DateTime(2026, 4, 30)],
+            vm.Rows.Select(r => r.DueDate!.Value));                                       // the 31st comes back after a short month
+
+        Assert.True(vm.Confirm());
+        Assert.Equal(3, app.Core.Reader.GetPlannedPayments().Count);                      // the last one stayed a proposal
+        Assert.All(app.Core.Reader.GetPlannedPayments(), p => Assert.Equal(49.99m, p.Amount));
+    });
+
+    [Fact]
+    public void PaymentEntry_APlusRowIsMeantAndSaved_AnEmptyOneIsNot() => WithApp(app =>
+    {
+        AddPayee(app);
+        var vm = new PaymentEntryViewModel(app.Core, app.Get<FakePaymentDialogs>(), app.Get<ToastService>());
+        vm.Rows[0].DueDate = new DateTime(2026, 11, 10);
+        vm.Rows[0].Title = "Czynsz";
+        vm.Rows[0].AmountExpression = "800";
+
+        vm.AddRowCommand.Execute(null);                                                   // the button: the same proposal, but it counts
+        Assert.Equal(("Czynsz", new DateTime(2026, 12, 10)), (vm.Rows[1].Title, vm.Rows[1].DueDate!.Value));
+        Assert.False(vm.Rows[1].IsProposal);
+        Assert.True(vm.Confirm());
+        Assert.Equal(2, app.Core.Reader.GetPlannedPayments().Count);
+    });
+
+    [Fact]
+    public void PaymentEntry_OpenedOnAPayment_ShowsTheWholeSeriesAndSavesChanges() => WithApp(app =>
+    {
+        var payee = AddPayee(app);
+        var other = AddPayee(app, "Gazownia");
+        var added = app.Core.Payments.AddPayments(payee.Id, [
+            new NewPayment(Today.AddDays(40), "Rata 2", 100m), new NewPayment(Today.AddDays(10), "Rata 1", 100.5m), new NewPayment(Today.AddDays(70), "Rata 3", 100m)]);
+        var elsewhere = AddBill(app, payee, 15, "Inny rachunek", 7m);
+        app.Core.Payments.MarkScheduled(added[1].Id);
+
+        var vm = new PaymentEntryViewModel(app.Core, app.Get<FakePaymentDialogs>(), app.Get<ToastService>(), added[0]);
+
+        Assert.True(vm.IsEditing);
+        Assert.Equal("Edycja serii płatności", vm.Title);
+        Assert.Equal(payee.Id, vm.SelectedPayee!.Id);
+        Assert.Equal(["Rata 1", "Rata 2", "Rata 3"], vm.Rows.Select(r => r.Title));       // the series, by date; not the other bill
+        Assert.Equal(["100,5", "100", "100"], vm.Rows.Select(r => r.AmountExpression));
+        Assert.Equal(Today.AddDays(10).ToDateTime(TimeOnly.MinValue), vm.Rows[0].DueDate);
+        Assert.All(vm.Rows, r => Assert.False(r.IsProposal));
+        Assert.Equal([1, 2, 3], vm.Rows.Select(r => r.Number));
+
+        vm.Rows[1].Title = "Rata 2 (korekta)";                                            // changed
+        vm.RemoveRowCommand.Execute(vm.Rows[2]);                                           // removed
+        vm.AddRowCommand.Execute(null);                                                    // added (copy of the last, a month later)
+        Assert.Equal("Rata 2 (korekta)", vm.Rows[2].Title);
+        vm.Rows[2].Title = "Rata 4";
+        vm.SelectedPayee = vm.Payees.First(p => p.Id == other.Id);
+
+        Assert.True(vm.Confirm());
+
+        var list = app.Core.Reader.GetPlannedPayments();
+        Assert.Equal(4, list.Count);                                                       // 3 of the series + the other bill
+        var series = list.Where(p => p.Title != "Inny rachunek").ToList();
+        Assert.Equal(["Rata 1", "Rata 2 (korekta)", "Rata 4"], series.Select(p => p.Title));
+        Assert.All(series, p => Assert.Equal((other.Id, PaymentStatus.Pending), (p.PayeeId, p.Status)));   // payee changed for all: all "to pay"
+        Assert.Equal([added[1].Id, added[0].Id], series.Take(2).Select(p => p.Id));      // the same payments, edited in place
+        Assert.Equal(payee.Id, list.Single(p => p.Title == "Inny rachunek").PayeeId);     // the other bill is untouched
+        Assert.Equal(elsewhere.Id, list.Single(p => p.Title == "Inny rachunek").Id);
+    });
+
+    [Fact]
+    public void PaymentEntry_OpenedOnAPayment_ChangesNothingWhenSavedAsIs_AndKeepsTheScheduledState() => WithApp(app =>
+    {
+        var payee = AddPayee(app);
+        var added = app.Core.Payments.AddPayments(payee.Id, [new NewPayment(Today.AddDays(10), "Rata 1", 100.5m), new NewPayment(Today.AddDays(40), "Rata 2", 100m)]);
+        app.Core.Payments.MarkScheduled(added[0].Id);
+        var before = app.Core.Reader.GetPlannedPayments();
+
+        var vm = new PaymentEntryViewModel(app.Core, app.Get<FakePaymentDialogs>(), app.Get<ToastService>(), added[1]);
+        Assert.True(vm.Confirm());
+
+        Assert.Equal(before, app.Core.Reader.GetPlannedPayments());
+        Assert.Equal(PaymentStatus.Scheduled, app.Core.Reader.GetPlannedPayments()[0].Status);
+    });
+
+    [Fact]
+    public void PaymentEntry_WhenEditing_AllRowsRemovedOrBadAreRefused() => WithApp(app =>
+    {
+        var payee = AddPayee(app);
+        var bill = AddBill(app, payee, 5);
+        var vm = new PaymentEntryViewModel(app.Core, app.Get<FakePaymentDialogs>(), app.Get<ToastService>(), bill);
+        vm.Rows[0].Title = "";
+        vm.Rows[0].AmountExpression = "";
+        Assert.False(vm.Confirm());
+        Assert.Contains("przynajmniej jedną", vm.ErrorMessage);
+        Assert.Single(app.Core.Reader.GetPlannedPayments());                               // nothing was deleted
+
+        vm.Rows[0].AmountExpression = "0";
+        vm.Rows[0].Title = "x";
+        Assert.False(vm.Confirm());
+        Assert.Contains("Wiersz 1", vm.ErrorMessage);
+    });
+
+    [Fact]
+    public void Payments_DoubleClickOpensTheSeriesWindow_AndTheListIsRefreshedAfterwards() => WithApp(app =>
+    {
+        var dialogs = app.Get<FakePaymentDialogs>();
+        var payee = AddPayee(app);
+        var bill = AddBill(app, payee, 5, "Faktura", 10m);
+        var vm = new PaymentsViewModel(app.Core, app.Get<DataHub>(), dialogs, app.Get<FakeMessageDialogs>(), app.Get<ToastService>());
+
+        vm.EditCommand.Execute(vm.Items[0]);
+        Assert.Equal(bill.Id, Assert.Single(dialogs.Entries)!.Id);                         // the payment is passed: the window shows its series
+
+        vm.EditCommand.Execute(null);                                                      // nothing clicked: nothing opens
+        Assert.Single(dialogs.Entries);
+
+        vm.AddPaymentsCommand.Execute(null);
+        Assert.Null(dialogs.Entries[1]);                                                   // the button opens an empty window
+
+        var view = new PaymentsView { DataContext = vm };
+        UiHost.Layout(view, 1150, 400);
+        var grid = UiHost.Descendants<DataGrid>(view).Single();
+        Assert.NotNull(grid);
     });
 
     [Fact]
