@@ -14,7 +14,11 @@ public sealed record MonthSeries(DateOnly Month, decimal[] Values, decimal Total
 /// <param name="CategoryIds">Category behind each label (null for entries without a category and for the "others" bucket).</param>
 public sealed record MonthCategoryComparison(IReadOnlyList<string> Labels, IReadOnlyList<Guid?> CategoryIds, IReadOnlyList<MonthSeries> Series);
 
-public sealed record PlaceTotal(string Name, int Count, decimal Amount, decimal Share);
+public sealed record PlaceTotal(string Name, int Count, decimal Amount, decimal Share)
+{
+    /// <summary>What the places were grouped by (the name without case and extra spaces; empty for entries without a place).</summary>
+    public string Key { get; init; } = "";
+}
 
 public sealed record AverageOf(
     TransactionType Type, int Days, decimal Months, decimal Total,
@@ -122,13 +126,18 @@ public static class ComparisonReports
                 // show the spelling used most often
                 var shown = g.Where(t => t.Place.Trim().Length > 0).GroupBy(t => t.Place.Trim()).OrderByDescending(x => x.Count()).Select(x => x.Key).FirstOrDefault()
                             ?? noPlaceLabel;
-                return (Name: shown, Count: g.Count(), Amount: g.Sum(t => t.AmountPln));
+                return (Name: shown, Key: g.Key, Count: g.Count(), Amount: g.Sum(t => t.AmountPln));
             })
             .OrderByDescending(x => x.Amount).ThenBy(x => x.Name, StringComparer.CurrentCultureIgnoreCase).ToList();
 
         var total = groups.Sum(x => x.Amount);
-        return groups.Select(x => new PlaceTotal(x.Name, x.Count, x.Amount, total == 0 ? 0 : x.Amount / total)).ToList();
+        return groups.Select(x => new PlaceTotal(x.Name, x.Count, x.Amount, total == 0 ? 0 : x.Amount / total) { Key = x.Key }).ToList();
     }
+
+    /// <summary>The entries counted in the total of one place (<see cref="PlaceTotal.Key"/>), newest first.</summary>
+    public static IReadOnlyList<Transaction> OfPlace(IEnumerable<Transaction> all, DateOnly from, DateOnly to, TransactionType type, string placeKey) =>
+        all.Where(t => t.Type == type && t.Date >= from && t.Date <= to && Normalize(t.Place) == placeKey)
+            .OrderByDescending(t => t.Date).ThenByDescending(t => t.CreatedAt).ToList();
 
     private static string Normalize(string place) => string.Join(' ', place.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries)).ToLowerInvariant();
 

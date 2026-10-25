@@ -8,6 +8,7 @@
              xmlns:lvc="clr-namespace:LiveChartsCore.SkiaSharpView.WPF;assembly=LiveChartsCore.SkiaSharpView.WPF">
     <UserControl.Resources>
         <infra:BoolToVisibilityConverter x:Key="BoolToVis" />
+        <infra:BoolToVisibilityConverter x:Key="NotVis" Invert="True" />
         <infra:HexToBrushConverter x:Key="HexToBrush" />
         <Style x:Key="Card" TargetType="Border">
             <Setter Property="CornerRadius" Value="10" />
@@ -417,43 +418,77 @@
                                      ui:ControlHelper.PlaceholderText="{infra:Str PlacesSearch}" />
                         </WrapPanel>
                         <TextBlock Text="{Binding Summary}" FontWeight="SemiBold" Margin="0,0,0,8" />
-                        <DataGrid ItemsSource="{Binding Rows}" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False"
-                                  CanUserDeleteRows="False" SelectionMode="Extended" SelectionUnit="FullRow" HeadersVisibility="Column"
-                                  GridLinesVisibility="All" MaxHeight="440" MaxWidth="760" HorizontalAlignment="Left"
-                                  AlternationCount="2" AlternatingRowBackground="{DynamicResource SystemControlBackgroundListLowBrush}"
-                                  infra:GridBehaviors.ColumnChooserKey="places"
-                                  infra:GridBehaviors.AutoFit="{Binding AutoFitColumns, Source={x:Static infra:UiPreferences.Instance}}"
-                                  Visibility="{Binding HasRows, Converter={StaticResource BoolToVis}}">
-                            <DataGrid.Columns>
-                                <DataGridTextColumn Header="{infra:Str PlacesColName}" Binding="{Binding Name}" Width="260" />
-                                <DataGridTextColumn Header="{infra:Str PlacesColCount}" Binding="{Binding Count}" Width="90">
-                                    <DataGridTextColumn.ElementStyle>
-                                        <Style TargetType="TextBlock">
-                                            <Setter Property="TextAlignment" Value="Center" />
-                                            <Setter Property="VerticalAlignment" Value="Center" />
-                                        </Style>
-                                    </DataGridTextColumn.ElementStyle>
-                                </DataGridTextColumn>
-                                <DataGridTextColumn Header="{infra:Str PlacesColAmount}" Binding="{Binding Amount, StringFormat=C2}" Width="150">
-                                    <DataGridTextColumn.ElementStyle>
-                                        <Style TargetType="TextBlock">
-                                            <Setter Property="TextAlignment" Value="Right" />
-                                            <Setter Property="VerticalAlignment" Value="Center" />
-                                            <Setter Property="FontWeight" Value="SemiBold" />
-                                        </Style>
-                                    </DataGridTextColumn.ElementStyle>
-                                </DataGridTextColumn>
-                                <DataGridTextColumn Header="{infra:Str PlacesColShare}" Binding="{Binding Share, StringFormat=P1}" Width="90">
-                                    <DataGridTextColumn.ElementStyle>
-                                        <Style TargetType="TextBlock">
-                                            <Setter Property="TextAlignment" Value="Right" />
-                                            <Setter Property="VerticalAlignment" Value="Center" />
-                                            <Setter Property="Opacity" Value="0.7" />
-                                        </Style>
-                                    </DataGridTextColumn.ElementStyle>
-                                </DataGridTextColumn>
-                            </DataGrid.Columns>
-                        </DataGrid>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="20" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <DataGrid ItemsSource="{Binding Rows}" SelectedItem="{Binding SelectedRow, Mode=TwoWay}" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False"
+                                      CanUserDeleteRows="False" SelectionMode="Single" SelectionUnit="FullRow" HeadersVisibility="Column"
+                                      GridLinesVisibility="All" MaxHeight="520" Width="620" HorizontalAlignment="Left"
+                                      AlternationCount="2" AlternatingRowBackground="{DynamicResource SystemControlBackgroundListLowBrush}"
+                                      infra:GridBehaviors.ColumnChooserKey="places"
+                                      infra:GridBehaviors.AutoFit="{Binding AutoFitColumns, Source={x:Static infra:UiPreferences.Instance}}"
+                                      Visibility="{Binding HasRows, Converter={StaticResource BoolToVis}}">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="{infra:Str PlacesColName}" Binding="{Binding Name}" Width="*" />
+                                    <DataGridTextColumn Header="{infra:Str PlacesColCount}" Binding="{Binding Count}" Width="90">
+                                        <DataGridTextColumn.ElementStyle>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="TextAlignment" Value="Center" />
+                                                <Setter Property="VerticalAlignment" Value="Center" />
+                                            </Style>
+                                        </DataGridTextColumn.ElementStyle>
+                                    </DataGridTextColumn>
+                                    <DataGridTextColumn Header="{infra:Str PlacesColAmount}" Binding="{Binding Amount, StringFormat=C2}" Width="150">
+                                        <DataGridTextColumn.ElementStyle>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="TextAlignment" Value="Right" />
+                                                <Setter Property="VerticalAlignment" Value="Center" />
+                                                <Setter Property="FontWeight" Value="SemiBold" />
+                                            </Style>
+                                        </DataGridTextColumn.ElementStyle>
+                                    </DataGridTextColumn>
+                                    <DataGridTextColumn Header="{infra:Str PlacesColShare}" Binding="{Binding Share, StringFormat=P1}" Width="90">
+                                        <DataGridTextColumn.ElementStyle>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="TextAlignment" Value="Right" />
+                                                <Setter Property="VerticalAlignment" Value="Center" />
+                                                <Setter Property="Opacity" Value="0.7" />
+                                            </Style>
+                                        </DataGridTextColumn.ElementStyle>
+                                    </DataGridTextColumn>
+                                </DataGrid.Columns>
+                            </DataGrid>
+
+                            <!-- the entries counted in the selected place's total: to look at only -->
+                            <StackPanel Grid.Column="2" x:Name="PlaceDetails">
+                                <TextBlock Text="{Binding DetailsTitle}" FontWeight="SemiBold" Margin="0,0,0,8" TextTrimming="CharacterEllipsis" />
+                                <TextBlock Text="{infra:Str PlacesPickOne}" Opacity="0.6" TextWrapping="Wrap"
+                                           Visibility="{Binding HasDetails, Converter={StaticResource NotVis}}" />
+                                <DataGrid x:Name="PlaceDetailsGrid" ItemsSource="{Binding Details}" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False"
+                                          CanUserDeleteRows="False" SelectionMode="Single" SelectionUnit="FullRow" HeadersVisibility="Column" GridLinesVisibility="All"
+                                          MaxHeight="520" AlternationCount="2" AlternatingRowBackground="{DynamicResource SystemControlBackgroundListLowBrush}"
+                                          infra:GridBehaviors.ColumnChooserKey="place-details"
+                                          Visibility="{Binding HasDetails, Converter={StaticResource BoolToVis}}">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="{infra:Str ColDate}" Binding="{Binding Date, StringFormat=d}" Width="100" />
+                                        <DataGridTextColumn Header="{infra:Str ColAmount}" Binding="{Binding Amount, StringFormat=C2}" Width="110">
+                                            <DataGridTextColumn.ElementStyle>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="TextAlignment" Value="Right" />
+                                                    <Setter Property="VerticalAlignment" Value="Center" />
+                                                    <Setter Property="FontWeight" Value="SemiBold" />
+                                                </Style>
+                                            </DataGridTextColumn.ElementStyle>
+                                        </DataGridTextColumn>
+                                        <DataGridTextColumn Header="{infra:Str ColCategory}" Binding="{Binding Category}" Width="*" />
+                                        <DataGridTextColumn Header="{infra:Str ColNote}" Binding="{Binding Note}" Width="*" />
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                            </StackPanel>
+                        </Grid>
                     </StackPanel>
                 </Border>
             </StackPanel>

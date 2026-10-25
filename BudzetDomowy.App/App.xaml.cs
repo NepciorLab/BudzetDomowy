@@ -130,6 +130,7 @@ public partial class App : Application
             .AddSingleton<RecurringRunner>()
             .AddSingleton<ImportMappingStore>()
             .AddSingleton<ExportActions>()
+            .AddSingleton<IImportRowEditor, WpfImportRowEditor>()
             .AddTransient<ImportViewModel>()
             .AddSingleton<Func<ImportViewModel>>(sp => () => sp.GetRequiredService<ImportViewModel>())
             .AddSingleton<SettingsViewModel>()
@@ -152,6 +153,7 @@ public partial class App : Application
         ShutdownMode = ShutdownMode.OnMainWindowClose;
         main.Show();
         watcher.Observe(_core.Sync.Status);
+        BusyStatus.Instance.Attach(services.GetRequiredService<DataHub>());
         services.GetRequiredService<PaymentReminderRunner>().Start(TimeSpan.FromSeconds(4), TimeSpan.FromHours(1));
         services.GetRequiredService<BackupViewModel>().StartDaily(TimeSpan.FromSeconds(25), TimeSpan.FromHours(3));
         StartUpdateCheck(services);

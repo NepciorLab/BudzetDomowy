@@ -5,6 +5,7 @@ using BudzetDomowy.App.ViewModels;
 using BudzetDomowy.Core;
 using BudzetDomowy.Core.Currency;
 using BudzetDomowy.Core.Domain;
+using BudzetDomowy.Core.Excel;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace BudzetDomowy.UiTests;
@@ -80,6 +81,19 @@ public sealed class FakeMessageDialogs : IMessageDialogs
     {
         Asked.Add(text);
         return Answer;
+    }
+}
+
+/// <summary>Answers the correction window of an import row from a queue instead of opening it.</summary>
+public sealed class FakeImportRowEditor : IImportRowEditor
+{
+    public Queue<ImportRowFix?> Answers { get; } = new();
+    public List<(ImportRow Row, string Problem, int Categories)> Asked { get; } = [];
+
+    public ImportRowFix? Edit(ImportRow row, IReadOnlyList<CategoryOption> categories, string problem)
+    {
+        Asked.Add((row, problem, categories.Count));
+        return Answers.Count > 0 ? Answers.Dequeue() : null;
     }
 }
 
@@ -191,6 +205,8 @@ public sealed class TestApp : IDisposable
             .AddSingleton<RecurringRunner>()
             .AddSingleton(new ImportMappingStore(Path.Combine(_root, "import-mapping.json")))
             .AddSingleton<ExportActions>()
+            .AddSingleton<FakeImportRowEditor>()
+            .AddSingleton<IImportRowEditor>(sp => sp.GetRequiredService<FakeImportRowEditor>())
             .AddTransient<ImportViewModel>()
             .AddSingleton<Func<ImportViewModel>>(sp => () => sp.GetRequiredService<ImportViewModel>())
             .AddSingleton<SettingsViewModel>()

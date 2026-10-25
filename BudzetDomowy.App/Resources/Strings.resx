@@ -691,6 +691,33 @@ Dodaj rachunki przyciskiem „Zaplanuj płatności”.</value></data>
   <data name="CalcOverflow" xml:space="preserve"><value>Liczba jest za duża</value></data>
   <data name="PayEditTitle" xml:space="preserve"><value>Edycja serii płatności</value></data>
   <data name="PaySeriesSaved" xml:space="preserve"><value>Zapisano serię płatności: {0} (odbiorca: {1}).</value></data>
+  <data name="BusyDeleting" xml:space="preserve"><value>Usuwanie wpisów: {0}…</value></data>
+  <data name="BusyCategory" xml:space="preserve"><value>Zmiana kategorii wpisów: {0}…</value></data>
+  <data name="BusyRestoring" xml:space="preserve"><value>Przywracanie wpisów: {0}…</value></data>
+  <data name="ImportIncomeCellLabel" xml:space="preserve"><value>Przychód z komórki (adres, np. E3):</value></data>
+  <data name="ImportIncomeCellTip" xml:space="preserve"><value>Gdy w arkuszu nie ma napisu z przychodem (albo jest gdzie indziej), przychód miesiąca zostanie odczytany z tej komórki każdego wybranego arkusza.</value></data>
+  <data name="ImportIncomeCellNone" xml:space="preserve"><value>Nie znaleziono napisu „{0}” w arkuszach. Jeśli są w nich przychody, wpisz adres komórki, w której leżą.</value></data>
+  <data name="ImportIncomeCellBadAddress" xml:space="preserve"><value>To nie jest adres komórki (przykład: E3).</value></data>
+  <data name="ImportIncomeCellValue" xml:space="preserve"><value>Arkusz „{0}”, komórka {1}: {2}</value></data>
+  <data name="ImportIncomeCellEmpty" xml:space="preserve"><value>Arkusz „{0}”, komórka {1}: pusta.</value></data>
+  <data name="ImportFixRow" xml:space="preserve"><value>Popraw wiersz…</value></data>
+  <data name="ImportFixRowTip" xml:space="preserve"><value>Zaznacz wiersz z błędem (albo kliknij go dwukrotnie), aby poprawić jego dane albo go pominąć.</value></data>
+  <data name="ImportStatusEdited" xml:space="preserve"><value>poprawiono</value></data>
+  <data name="ImportMsg_skipped-by-user" xml:space="preserve"><value>pominięto na Twoje polecenie</value></data>
+  <data name="ImportMsg_income-cell" xml:space="preserve"><value>błąd: w komórce z przychodem nie ma kwoty</value></data>
+  <data name="ImportRowTitle" xml:space="preserve"><value>Popraw wiersz importu</value></data>
+  <data name="ImportRowHeading" xml:space="preserve"><value>Arkusz „{0}”, wiersz {1}</value></data>
+  <data name="ImportRowOriginal" xml:space="preserve"><value>W pliku w polu kwoty było: „{0}”</value></data>
+  <data name="ImportRowFileCategory" xml:space="preserve"><value>Kategoria w pliku: „{0}”</value></data>
+  <data name="ImportRowCategoryAsInFile" xml:space="preserve"><value>(jak w pliku albo bez kategorii)</value></data>
+  <data name="ImportRowNoDate" xml:space="preserve"><value>Podaj datę.</value></data>
+  <data name="ImportRowBadAmount" xml:space="preserve"><value>Podaj kwotę większą od zera (liczbę albo działanie).</value></data>
+  <data name="ImportRowSave" xml:space="preserve"><value>Zapisz poprawkę</value></data>
+  <data name="ImportRowSkip" xml:space="preserve"><value>Pomiń ten wiersz</value></data>
+  <data name="ImportRowSkipTip" xml:space="preserve"><value>Wiersz nie zostanie zaimportowany.</value></data>
+  <data name="PlacesDetailsTitle" xml:space="preserve"><value>Wpisy: {0} ({1})</value></data>
+  <data name="PlacesPickOne" xml:space="preserve"><value>Wybierz miejsce z listy, aby zobaczyć wpisy, z których powstała jego suma.</value></data>
+  <data name="PlacesNoCategory" xml:space="preserve"><value>(bez kategorii)</value></data>
   <data name="PeriodAll" xml:space="preserve"><value>Wszystko</value></data>
   <data name="PeriodAllTitle" xml:space="preserve"><value>Wszystkie wpisy</value></data>
 </root>

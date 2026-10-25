@@ -34,6 +34,28 @@ public sealed class SheetData
         _ => value.ToString() ?? "",
     };
 
+    /// <summary>Reads an address such as "E3" or "$E$3" into zero-based row and column; false when it is not one.</summary>
+    public static bool TryParseAddress(string? address, out int row, out int column)
+    {
+        row = column = -1;
+        var text = (address ?? "").Replace("$", "").Trim().ToUpperInvariant();
+        var i = 0;
+        var col = 0;
+        while (i < text.Length && text[i] is >= 'A' and <= 'Z')
+        {
+            col = col * 26 + (text[i] - 'A' + 1);
+            i++;
+            if (col > 16384) return false;
+        }
+        if (i == 0 || i == text.Length || !int.TryParse(text[i..], NumberStyles.None, CultureInfo.InvariantCulture, out var r) || r < 1 || r > 1048576) return false;
+        row = r - 1;
+        column = col - 1;
+        return true;
+    }
+
+    /// <summary>"E3" for a zero-based row and column.</summary>
+    public static string Address(int row, int column) => ColumnLetter(column) + (row + 1).ToString(CultureInfo.InvariantCulture);
+
     /// <summary>"A", "B", ... "AA" for a zero-based column index.</summary>
     public static string ColumnLetter(int index)
     {

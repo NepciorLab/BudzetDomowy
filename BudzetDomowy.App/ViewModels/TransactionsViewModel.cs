@@ -318,11 +318,19 @@ public sealed partial class TransactionsViewModel : ObservableObject, IPeriodNav
 
     // ----- commands -----
 
+    /// <summary>The long operation in progress (a big delete or category change runs in the background); completed when there is none.</summary>
+    public Task Running { get; private set; } = Task.CompletedTask;
+
     [RelayCommand]
     public void DeleteSelected()
     {
         var items = _selected.Select(r => r.Model).ToList();
         if (items.Count == 0) return;
+        if (BusyStatus.IsBulk(items.Count))
+        {
+            Running = DeleteBulkAsync(items);
+            return;
+        }
         try
         {
             _core.Transactions.Delete(items);
@@ -332,7 +340,32 @@ public sealed partial class TransactionsViewModel : ObservableObject, IPeriodNav
             _toast.Show(Res.Get("UpdateRequiredShort"));
             return;
         }
-        _toast.Show(Res.Format("DeletedCount", items.Count), () => _core.Transactions.Restore(items));
+        _toast.Show(Res.Format("DeletedCount", items.Count), () => Restore(items));
+    }
+
+    private async Task DeleteBulkAsync(List<Transaction> items)
+    {
+        try
+        {
+            await BusyStatus.Instance.RunAsync(Res.Format("BusyDeleting", items.Count), () => _core.Transactions.Delete(items));
+        }
+        catch (UpdateRequiredException)
+        {
+            _toast.Show(Res.Get("UpdateRequiredShort"));
+            return;
+        }
+        _toast.Show(Res.Format("DeletedCount", items.Count), () => Restore(items));
+    }
+
+    /// <summary>Undo: writes the earlier versions again; many of them in the background, with a note on the bar.</summary>
+    private void Restore(IReadOnlyList<Transaction> versions)
+    {
+        if (!BusyStatus.IsBulk(versions.Count))
+        {
+            _core.Transactions.Restore(versions);
+            return;
+        }
+        Running = BusyStatus.Instance.RunAsync(Res.Format("BusyRestoring", versions.Count), () => _core.Transactions.Restore(versions));
     }
 
     public void ChangeCategoryOfSelected(Guid? categoryId)
@@ -340,6 +373,11 @@ public sealed partial class TransactionsViewModel : ObservableObject, IPeriodNav
         var ids = _selected.Select(r => r.Id).ToList();
         if (ids.Count == 0) return;
         var notes = _selected.Select(r => r.Model.Place).Where(n => !string.IsNullOrWhiteSpace(n)).Distinct().ToList();
+        if (BusyStatus.IsBulk(ids.Count))
+        {
+            Running = ChangeCategoryBulkAsync(ids, categoryId, notes);
+            return;
+        }
         IReadOnlyList<Transaction> before;
         try
         {
@@ -351,7 +389,23 @@ public sealed partial class TransactionsViewModel : ObservableObject, IPeriodNav
             _toast.Show(Res.Get("UpdateRequiredShort"));
             return;
         }
-        _toast.Show(Res.Format("CategoryChangedCount", ids.Count), () => _core.Transactions.Restore(before));
+        _toast.Show(Res.Format("CategoryChangedCount", ids.Count), () => Restore(before));
+    }
+
+    private async Task ChangeCategoryBulkAsync(List<Guid> ids, Guid? categoryId, List<string> notes)
+    {
+        IReadOnlyList<Transaction> before = [];
+        try
+        {
+            await BusyStatus.Instance.RunAsync(Res.Format("BusyCategory", ids.Count), () => before = _core.Transactions.ChangeCategory(ids, categoryId));
+            if (categoryId is { } c) foreach (var note in notes) LearnRule(note, c);
+        }
+        catch (UpdateRequiredException)
+        {
+            _toast.Show(Res.Get("UpdateRequiredShort"));
+            return;
+        }
+        _toast.Show(Res.Format("CategoryChangedCount", ids.Count), () => Restore(before));
     }
 
     /// <summary>Exports what the table shows right now (the period and the filters apply).</summary>

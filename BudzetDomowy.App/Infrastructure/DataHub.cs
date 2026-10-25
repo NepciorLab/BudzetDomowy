@@ -11,6 +11,9 @@ namespace BudzetDomowy.App.Infrastructure;
 public sealed class DataHub : IDisposable
 {
     private bool _stopped;
+    private readonly object _gate = new();
+    private int _holds;
+    private bool _pending;
     private readonly Dispatcher _dispatcher;
     private readonly DispatcherTimer _timer;
 
@@ -32,9 +35,45 @@ public sealed class DataHub : IDisposable
         };
     }
 
+    /// <summary>
+    /// Keeps the screens from refreshing until the returned object is disposed (a long operation writes thousands of changes);
+    /// one refresh follows if anything changed meanwhile.
+    /// </summary>
+    public IDisposable Hold()
+    {
+        lock (_gate) _holds++;
+        return new Release(this);
+    }
+
+    private sealed class Release(DataHub hub) : IDisposable
+    {
+        private int _done;
+
+        public void Dispose()
+        {
+            if (Interlocked.Exchange(ref _done, 1) != 0) return;
+            bool refresh;
+            lock (hub._gate)
+            {
+                hub._holds--;
+                refresh = hub._holds == 0 && hub._pending;
+                if (refresh) hub._pending = false;
+            }
+            if (refresh) hub.Request();
+        }
+    }
+
     public void Request()
     {
         if (_stopped) return;
+        lock (_gate)
+        {
+            if (_holds > 0)
+            {
+                _pending = true;
+                return;
+            }
+        }
         if (_dispatcher.CheckAccess()) _timer.Start();
         else _dispatcher.BeginInvoke(() => _timer.Start());
     }

@@ -59,8 +59,9 @@ public sealed partial class CategoryMapRow : ObservableObject
     }
 }
 
+/// <summary>A row of the preview; <see cref="Index"/> is its place in the plan, <see cref="CanFix"/> says whether it can be corrected.</summary>
 public sealed record PlanRowView(string Sheet, int ExcelRow, string Date, string Amount, bool IsIncome, string Place, string Note, string Category,
-    string Status, string Kind);
+    string Status, string Kind, int Index = -1, bool CanFix = false);
 
 public sealed record StatusFilter(string Key, string Label)
 {
@@ -72,6 +73,7 @@ public sealed partial class ImportViewModel : ObservableObject
     private readonly BudgetCore _core;
     private readonly IFileDialogs _dialogs;
     private readonly ImportMappingStore _store;
+    private readonly IImportRowEditor? _editor;
     private IReadOnlyList<SheetData> _sheets = [];
     private ImportPlan? _plan;
     private bool _manualMapping;
@@ -97,6 +99,8 @@ public sealed partial class ImportViewModel : ObservableObject
     [ObservableProperty] private bool _useIncomeLabel;
     [ObservableProperty] private string _incomeLabel = "Przychody";
     [ObservableProperty] private bool _incomeLabelFound;
+    [ObservableProperty] private string _incomeCell = "";
+    [ObservableProperty] private string _incomeCellHint = "";
 
     // columns
     [ObservableProperty] private IReadOnlyList<ColumnChoice> _columnChoices = [];
@@ -112,6 +116,7 @@ public sealed partial class ImportViewModel : ObservableObject
     // preview
     [ObservableProperty] private IReadOnlyList<PlanRowView> _previewRows = [];
     [ObservableProperty] private StatusFilter? _filter;
+    [ObservableProperty, NotifyCanExecuteChangedFor(nameof(FixRowCommand))] private PlanRowView? _selectedPreviewRow;
     [ObservableProperty] private string _summary = "";
     [ObservableProperty] private string _result = "";
     [ObservableProperty] private int _progress;
@@ -127,15 +132,47 @@ public sealed partial class ImportViewModel : ObservableObject
 
     public event Action? CloseRequested;
 
-    public ImportViewModel(BudgetCore core, IFileDialogs dialogs, ImportMappingStore store)
+    public ImportViewModel(BudgetCore core, IFileDialogs dialogs, ImportMappingStore store, IImportRowEditor? editor = null)
     {
         _core = core;
         _dialogs = dialogs;
         _store = store;
+        _editor = editor;
         _filter = Filters[0];
     }
 
     partial void OnFilterChanged(StatusFilter? value) => ShowPreview();
+
+    partial void OnIncomeCellChanged(string value) => UpdateIncomeCellHint();
+    partial void OnIncomeLabelFoundChanged(bool value) => UpdateIncomeCellHint();
+
+    /// <summary>Tells what the address points at in the first chosen sheet, so that a wrong cell is noticed before the import.</summary>
+    private void UpdateIncomeCellHint()
+    {
+        var text = IncomeCell.Trim();
+        if (text.Length == 0)
+        {
+            IncomeCellHint = Sheets.Count > 0 && !IncomeLabelFound ? Res.Format("ImportIncomeCellNone", IncomeLabel) : "";
+            return;
+        }
+        if (!SheetData.TryParseAddress(text, out var row, out var column))
+        {
+            IncomeCellHint = Res.Get("ImportIncomeCellBadAddress");
+            return;
+        }
+
+        var sheet = (Selected.FirstOrDefault() ?? Sheets.FirstOrDefault())?.Data;
+        if (sheet is null)
+        {
+            IncomeCellHint = "";
+            return;
+        }
+        var address = SheetData.Address(row, column);
+        var value = sheet.Text(row, column);
+        IncomeCellHint = value.Length == 0
+            ? Res.Format("ImportIncomeCellEmpty", sheet.Name, address)
+            : Res.Format("ImportIncomeCellValue", sheet.Name, address, value);
+    }
 
     partial void OnDateColumnChanged(ColumnChoice? value) => MappingEdited();
     partial void OnPlaceColumnChanged(ColumnChoice? value) => MappingEdited();
@@ -170,10 +207,15 @@ public sealed partial class ImportViewModel : ObservableObject
             _sheets = await Task.Run(() => WorkbookLoader.Load(FilePath));
             Sheets.Clear();
             foreach (var s in _sheets) Sheets.Add(new SheetItem(s, ImportAnalyzer.Analyze(s)));
-            foreach (var item in Sheets) item.PropertyChanged += (_, _) => OnPropertyChanged(nameof(CanGoNext));
+            foreach (var item in Sheets) item.PropertyChanged += (_, _) =>
+            {
+                OnPropertyChanged(nameof(CanGoNext));
+                UpdateIncomeCellHint();
+            };
 
             IncomeLabelFound = _sheets.Any(s => ImportParser.ReadLabelledIncome(s, IncomeLabel, ImportAnalyzer.FindSheetMonth(s)) is not null);
             UseIncomeLabel = IncomeLabelFound;
+            UpdateIncomeCellHint();
             _manualMapping = false;
             if (!Sheets.Any(s => s.CanImport)) Message = Res.Get("ImportNothingFound");
         }
@@ -285,6 +327,7 @@ public sealed partial class ImportViewModel : ObservableObject
             {
                 Sign = NegativeIsExpense ? SignMode.NegativeIsExpense : SignMode.AllExpenses,
                 IncomeLabel = UseIncomeLabel && IncomeLabel.Trim().Length > 0 ? IncomeLabel.Trim() : null,
+                IncomeCell = IncomeCell.Trim().Length > 0 ? IncomeCell.Trim() : null,
             };
             var plan = await Task.Run(() => _core.Import.Plan(selections, options));
             if (plan.Rows.Count == 0)
@@ -334,28 +377,59 @@ public sealed partial class ImportViewModel : ObservableObject
         var plan = _plan;
         Summary = Res.Format("ImportSummary", plan.ToImport, plan.Duplicates, plan.Warnings, plan.Errors, plan.Skipped);
 
-        IEnumerable<ImportRow> rows = Filter?.Key switch
+        IEnumerable<(ImportRow Row, int Index)> rows = plan.Rows.Select((r, i) => (r, i));
+        rows = Filter?.Key switch
         {
-            "import" => plan.Rows.Where(r => r.WillBeImported),
-            "duplicate" => plan.Rows.Where(r => r.Status == ImportRowStatus.Duplicate),
-            "problem" => plan.Rows.Where(r => r.Status is ImportRowStatus.Error or ImportRowStatus.Warning),
-            "skipped" => plan.Rows.Where(r => r.Status == ImportRowStatus.Skipped),
-            _ => plan.Rows,
+            "import" => rows.Where(x => x.Row.WillBeImported),
+            "duplicate" => rows.Where(x => x.Row.Status == ImportRowStatus.Duplicate),
+            "problem" => rows.Where(x => x.Row.Status is ImportRowStatus.Error or ImportRowStatus.Warning),
+            "skipped" => rows.Where(x => x.Row.Status == ImportRowStatus.Skipped),
+            _ => rows,
         };
 
-        PreviewRows = rows.Take(3000).Select(r => new PlanRowView(
-            r.Sheet, r.ExcelRow, r.Date?.ToString("d", CultureInfo.CurrentCulture) ?? "—",
-            r.Amount == 0 ? "" : (r.Type == TransactionType.Income ? "+" : "−") + r.Amount.ToString("N2", CultureInfo.CurrentCulture),
-            r.Type == TransactionType.Income, r.Place, r.Note,
-            r.SourceCategory == ImportParser.SheetIncomeCategory ? Res.Get("ImportSheetIncome") : r.SourceCategory,
-            StatusText(r), r.Status.ToString())).ToList();
+        var categories = _core.Reader.GetCategories().ToDictionary(c => c.Id);
+        PreviewRows = rows.Take(3000).Select(x =>
+        {
+            var r = x.Row;
+            var category = r.CategoryId is { } id && categories.ContainsKey(id) ? CategoryHelpers.PathOf(id, categories)
+                : r.SourceCategory == ImportParser.SheetIncomeCategory ? Res.Get("ImportSheetIncome") : r.SourceCategory;
+            return new PlanRowView(
+                r.Sheet, r.ExcelRow, r.Date?.ToString("d", CultureInfo.CurrentCulture) ?? "—",
+                r.Amount == 0 ? "" : (r.Type == TransactionType.Income ? "+" : "−") + r.Amount.ToString("N2", CultureInfo.CurrentCulture),
+                r.Type == TransactionType.Income, r.Place, r.Note, category, StatusText(r), r.Status.ToString(), x.Index, IsFixable(r));
+        }).ToList();
+        SelectedPreviewRow = null;
     }
+
+    /// <summary>Rows the user can correct: the ones that could not be read, the ones without a category, and the ones already corrected.</summary>
+    private static bool IsFixable(ImportRow r) => r.Status is ImportRowStatus.Error or ImportRowStatus.Warning || r.IsEdited;
 
     private static string StatusText(ImportRow r) => r.Status switch
     {
+        ImportRowStatus.New when r.IsEdited => Res.Get("ImportStatusEdited"),
         ImportRowStatus.New => Res.Get("ImportStatusNew"),
-        _ => Res.Get("ImportMsg_" + r.Message) is var m && !m.StartsWith('!') ? m : r.Message,
+        _ => Res.Get("ImportMsg_" + r.Message) is var m && !m.StartsWith('!')
+            ? (r.IsEdited && r.Status != ImportRowStatus.Skipped ? Res.Get("ImportStatusEdited") + "; " + m : m)
+            : r.Message,
     };
+
+    // ----- correcting a row of the preview -----
+
+    private bool CanFixRow() => SelectedPreviewRow is { CanFix: true } && _editor is not null;
+
+    /// <summary>Opens the window to correct the selected row (also on a double click); the plan is checked again afterwards.</summary>
+    [RelayCommand(CanExecute = nameof(CanFixRow))]
+    private void FixRow()
+    {
+        if (_plan is not { } plan || SelectedPreviewRow is not { CanFix: true } view || _editor is null) return;
+        var row = plan.Rows[view.Index];
+        var categories = CategoryHelpers.Flatten(_core.Reader.GetCategories(), c => !c.IsArchived, alphabetical: true);
+        var problem = StatusText(row);
+        if (_editor.Edit(row, categories, problem) is not { } fix) return;
+
+        _plan = _core.Import.Fix(plan, view.Index, fix);
+        ShowPreview();
+    }
 
     [RelayCommand]
     private async Task ImportAsync()

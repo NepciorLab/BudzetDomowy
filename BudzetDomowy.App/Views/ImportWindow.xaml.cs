@@ -1,6 +1,10 @@
 using BudzetDomowy.App.Infrastructure;
 using System.ComponentModel;
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
+using System.Windows.Input;
+using System.Windows.Media;
 using BudzetDomowy.App.ViewModels;
 
 namespace BudzetDomowy.App.Views;
@@ -18,6 +22,22 @@ public partial class ImportWindow : Window
         vm.CloseRequested += Close;
         vm.PropertyChanged += OnVmChanged;
         UpdateButtons();
+    }
+
+    /// <summary>A double click on a row that can be corrected opens the window for it.</summary>
+    private void PreviewGrid_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+    {
+        for (var d = e.OriginalSource as DependencyObject; d is not null; d = VisualTreeHelper.GetParent(d))
+        {
+            if (d is DataGridColumnHeader) return;
+            if (d is DataGridRow { Item: PlanRowView view })
+            {
+                _vm.SelectedPreviewRow = view;
+                if (_vm.FixRowCommand.CanExecute(null)) _vm.FixRowCommand.Execute(null);
+                e.Handled = true;
+                return;
+            }
+        }
     }
 
     // the three action buttons share one place; only the one that fits the current step is shown

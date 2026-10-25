@@ -81,6 +81,13 @@
                             AutomationProperties.Name="{infra:Str CalcTitle}">
                         <TextBlock Text="&#xE8EF;" FontFamily="Segoe MDL2 Assets" FontSize="20" Foreground="{DynamicResource SystemControlForegroundAccentBrush}" />
                     </Button>
+
+                    <!-- what a long operation is doing (deleting thousands of entries...) -->
+                    <StackPanel x:Name="BusyBar" Orientation="Horizontal" VerticalAlignment="Center" Margin="18,0,0,0"
+                                Visibility="{Binding IsBusy, Source={x:Static infra:BusyStatus.Instance}, Converter={x:Static infra:BoolToVisibilityConverter.Visible}}">
+                        <ui:ProgressRing IsActive="True" Width="20" Height="20" />
+                        <TextBlock x:Name="BusyText" Text="{Binding Text, Source={x:Static infra:BusyStatus.Instance}}" FontWeight="SemiBold" Margin="10,0,0,0" VerticalAlignment="Center" />
+                    </StackPanel>
                 </StackPanel>
             </Border>
 

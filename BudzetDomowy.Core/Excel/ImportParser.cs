@@ -23,6 +23,11 @@ public sealed record ImportOptions
     /// </summary>
     public string? IncomeLabel { get; init; }
 
+    /// <summary>
+    /// An address such as "E3": on a sheet where the label is not found, the income of the month is taken from this cell.
+    /// </summary>
+    public string? IncomeCell { get; init; }
+
     public DateOnly Today { get; init; } = DateOnly.FromDateTime(DateTime.Today);
 }
 
@@ -44,6 +49,15 @@ public sealed record ImportRow(
     string Sheet, int ExcelRow, DateOnly? Date, decimal Amount, TransactionType Type,
     string Place, string Note, string SourceCategory, ImportRowStatus Status, string Message)
 {
+    /// <summary>What the amount cell held (the text as it was), to help correct a row that could not be read.</summary>
+    public string RawAmount { get; init; } = "";
+
+    /// <summary>A category chosen while correcting the row; it is used instead of the mapping of the file's category names.</summary>
+    public Guid? CategoryId { get; init; }
+
+    /// <summary>Corrected by the user in the preview.</summary>
+    public bool IsEdited { get; init; }
+
     public bool WillBeImported => Status is ImportRowStatus.New or ImportRowStatus.Warning;
     public bool IsFromSheetIncome => SourceCategory == ImportParser.SheetIncomeCategory;
 }
@@ -105,6 +119,8 @@ public static class ImportParser
     {
         var rows = new List<ImportRow>();
         DateOnly? lastDate = null;
+        var raw = "";
+        void Add(ImportRow row) => rows.Add(row with { RawAmount = raw });
 
         for (var r = map.FirstDataRow; r < sheet.RowCount; r++)
         {
@@ -117,60 +133,63 @@ public static class ImportParser
             if (map.Date is { } dc && TryReadDate(sheet.At(r, dc), out var d)) lastDate = d;
 
             var rawAmount = map.Amount is { } a ? sheet.At(r, a) : null;
+            raw = SheetData.TextOf(rawAmount);
             var hasText = place.Length > 0 || note.Length > 0 || category.Length > 0;
 
             if (IsSubtotal(place, note, category))
             {
                 if (rawAmount is not null)
-                    rows.Add(Row(sheet, excelRow, lastDate, 0, TransactionType.Expense, place, note, category, ImportRowStatus.Skipped, "subtotal"));
+                    Add(Row(sheet, excelRow, lastDate, 0, TransactionType.Expense, place, note, category, ImportRowStatus.Skipped, "subtotal"));
                 continue;
             }
 
             if (!TryReadAmount(rawAmount, out var amount, out var currency, out var negative))
             {
                 if (rawAmount is not null && SheetData.TextOf(rawAmount).Length > 0 && !IsHeadingRepeat(rawAmount))
-                    rows.Add(Row(sheet, excelRow, lastDate, 0, TransactionType.Expense, place, note, category, ImportRowStatus.Error, "bad-amount"));
+                    Add(Row(sheet, excelRow, lastDate, 0, TransactionType.Expense, place, note, category, ImportRowStatus.Error, "bad-amount"));
                 else if (rawAmount is null && hasText && (map.Amount is not null))
-                    rows.Add(Row(sheet, excelRow, lastDate, 0, TransactionType.Expense, place, note, category, ImportRowStatus.Skipped, "no-amount"));
+                    Add(Row(sheet, excelRow, lastDate, 0, TransactionType.Expense, place, note, category, ImportRowStatus.Skipped, "no-amount"));
                 continue; // empty rows are not worth listing
             }
 
             if (amount == 0)
             {
-                rows.Add(Row(sheet, excelRow, lastDate, 0, TransactionType.Expense, place, note, category, ImportRowStatus.Skipped, "zero"));
+                Add(Row(sheet, excelRow, lastDate, 0, TransactionType.Expense, place, note, category, ImportRowStatus.Skipped, "zero"));
                 continue;
             }
 
             if (currency is not null && currency != CurrencyCatalog.Pln)
             {
-                rows.Add(Row(sheet, excelRow, lastDate, amount, TransactionType.Expense, place, note, category, ImportRowStatus.Error, "foreign-currency"));
+                Add(Row(sheet, excelRow, lastDate, amount, TransactionType.Expense, place, note, category, ImportRowStatus.Error, "foreign-currency"));
                 continue;
             }
 
             var type = ResolveType(sheet, r, map, negative, options.Sign, out var typeProblem);
             if (typeProblem is not null)
             {
-                rows.Add(Row(sheet, excelRow, lastDate, amount, TransactionType.Expense, place, note, category, ImportRowStatus.Error, typeProblem));
+                Add(Row(sheet, excelRow, lastDate, amount, TransactionType.Expense, place, note, category, ImportRowStatus.Error, typeProblem));
                 continue;
             }
 
             if (lastDate is not { } date)
             {
-                rows.Add(Row(sheet, excelRow, null, amount, type, place, note, category, ImportRowStatus.Error, "no-date"));
+                Add(Row(sheet, excelRow, null, amount, type, place, note, category, ImportRowStatus.Error, "no-date"));
                 continue;
             }
             if (date > options.Today.AddYears(5))
             {
-                rows.Add(Row(sheet, excelRow, date, amount, type, place, note, category, ImportRowStatus.Error, "date-far-future"));
+                Add(Row(sheet, excelRow, date, amount, type, place, note, category, ImportRowStatus.Error, "date-far-future"));
                 continue;
             }
 
             var status = category.Length == 0 ? ImportRowStatus.Warning : ImportRowStatus.New;
-            rows.Add(Row(sheet, excelRow, date, amount, type, place, note, category, status, category.Length == 0 ? "no-category" : ""));
+            Add(Row(sheet, excelRow, date, amount, type, place, note, category, status, category.Length == 0 ? "no-category" : ""));
         }
 
-        if (options.IncomeLabel is { Length: > 0 } label && ReadLabelledIncome(sheet, label, sheetMonth) is { } income)
-            rows.Add(income);
+        ImportRow? income = null;
+        if (options.IncomeLabel is { Length: > 0 } label) income = ReadLabelledIncome(sheet, label, sheetMonth);
+        if (income is null && options.IncomeCell is { Length: > 0 } cell) income = ReadIncomeCell(sheet, cell, sheetMonth);
+        if (income is not null) rows.Add(income);
 
         return rows;
     }
@@ -207,6 +226,26 @@ public static class ImportParser
         if (sign == SignMode.NegativeIsExpense) return negative ? TransactionType.Expense : TransactionType.Income;
         if (negative) problem = "negative";
         return TransactionType.Expense;
+    }
+
+    /// <summary>
+    /// The income of the month from a cell the user pointed at. An empty cell means "no income on this sheet"; a cell that holds
+    /// something else than a positive amount is reported.
+    /// </summary>
+    public static ImportRow? ReadIncomeCell(SheetData sheet, string address, DateOnly? sheetMonth)
+    {
+        if (!SheetData.TryParseAddress(address, out var row, out var column)) return null;
+        var cell = sheet.At(row, column);
+        var raw = SheetData.TextOf(cell);
+        if (raw.Length == 0) return null;
+
+        ImportRow Problem(string message, decimal amount = 0) =>
+            new(sheet.Name, row + 1, sheetMonth, amount, TransactionType.Income, "", sheet.Name, SheetIncomeCategory, ImportRowStatus.Error, message) { RawAmount = raw };
+
+        if (!TryReadAmount(cell, out var value, out var currency, out var negative) || negative || value <= 0) return Problem("income-cell");
+        if (currency is not null && currency != CurrencyCatalog.Pln) return Problem("foreign-currency", value);
+        if (sheetMonth is not { } month) return Problem("no-date", value);
+        return new ImportRow(sheet.Name, row + 1, month, value, TransactionType.Income, "", sheet.Name, SheetIncomeCategory, ImportRowStatus.New, "") { RawAmount = raw };
     }
 
     public static ImportRow? ReadLabelledIncome(SheetData sheet, string label, DateOnly? sheetMonth)

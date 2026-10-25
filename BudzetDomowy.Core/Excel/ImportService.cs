@@ -31,6 +31,9 @@ public sealed record ImportPlan(IReadOnlyList<ImportRow> Rows)
         .OrderByDescending(x => x.Count).ThenBy(x => x.Name, StringComparer.CurrentCultureIgnoreCase).ToList();
 }
 
+/// <summary>What the user typed when correcting a row of the preview.</summary>
+public sealed record ImportRowFix(DateOnly? Date, decimal Amount, TransactionType Type, string Place, string Note, Guid? CategoryId, bool Skip);
+
 public sealed record ImportReport(int Added, int DuplicatesSkipped, int Errors, int Skipped, int CategoriesCreated);
 
 public static class CategoryMatcher
@@ -81,6 +84,20 @@ public sealed class ImportService
         var rows = new List<ImportRow>();
         foreach (var s in sheets) rows.AddRange(ImportParser.Parse(s.Sheet, s.Map, s.SheetMonth, options));
 
+        MarkDuplicates(rows);
+        return new ImportPlan(rows);
+    }
+
+    /// <summary>
+    /// Marks the rows that are already in the program. Rows marked before are looked at again (a corrected row may have become
+    /// a duplicate, or stopped being one), so this can be run after every correction.
+    /// </summary>
+    private void MarkDuplicates(List<ImportRow> rows)
+    {
+        for (var i = 0; i < rows.Count; i++)
+            if (rows[i].Status == ImportRowStatus.Duplicate)
+                rows[i] = rows[i] with { Status = HasCategory(rows[i]) ? ImportRowStatus.New : ImportRowStatus.Warning, Message = HasCategory(rows[i]) ? "" : "no-category" };
+
         var existing = new Dictionary<string, int>();
         foreach (var t in _reader.GetTransactions())
         {
@@ -99,6 +116,36 @@ public sealed class ImportService
                 rows[i] = row with { Status = ImportRowStatus.Duplicate, Message = "duplicate" };
             }
         }
+    }
+
+    private static bool HasCategory(ImportRow row) => row.SourceCategory.Length > 0 || row.CategoryId is not null;
+
+    /// <summary>
+    /// Applies a correction typed in the preview to one row and checks it again: a row that is now complete will be imported
+    /// (or is a duplicate), one that is still incomplete stays an error, and one the user gave up is skipped.
+    /// </summary>
+    public ImportPlan Fix(ImportPlan plan, int index, ImportRowFix fix, DateOnly? today = null)
+    {
+        if (index < 0 || index >= plan.Rows.Count) throw new ArgumentOutOfRangeException(nameof(index));
+        var rows = plan.Rows.ToList();
+        var old = rows[index];
+        var limit = (today ?? DateOnly.FromDateTime(DateTime.Today)).AddYears(5);
+
+        var edited = old with
+        {
+            Date = fix.Date, Amount = fix.Amount, Type = fix.Type, Place = fix.Place.Trim(), Note = fix.Note.Trim(), CategoryId = fix.CategoryId, IsEdited = true,
+        };
+        (ImportRowStatus status, string message) = (fix.Skip, fix.Date, fix.Amount) switch
+        {
+            (true, _, _) => (ImportRowStatus.Skipped, "skipped-by-user"),
+            (_, null, _) => (ImportRowStatus.Error, "no-date"),
+            (_, { } d, _) when d > limit => (ImportRowStatus.Error, "date-far-future"),
+            (_, _, <= 0) => (ImportRowStatus.Error, "bad-amount"),
+            _ => HasCategory(edited) ? (ImportRowStatus.New, "") : (ImportRowStatus.Warning, "no-category"),
+        };
+        rows[index] = edited with { Status = status, Message = message };
+
+        MarkDuplicates(rows);
         return new ImportPlan(rows);
     }
 
@@ -152,8 +199,8 @@ public sealed class ImportService
         foreach (var row in plan.Rows.Where(r => r.WillBeImported))
         {
             ct.ThrowIfCancellationRequested();
-            Guid? categoryId = null;
-            if (row.SourceCategory.Length > 0 && mapping.TryGetValue(TextNorm.Normalize(row.SourceCategory), out var choice))
+            Guid? categoryId = row.CategoryId;
+            if (categoryId is null && row.SourceCategory.Length > 0 && mapping.TryGetValue(TextNorm.Normalize(row.SourceCategory), out var choice))
             {
                 if (choice.ExistingId is { } id) categoryId = id;
                 else if (choice.NewName is { } n && created.TryGetValue(TextNorm.Normalize(n), out var newId)) categoryId = newId;

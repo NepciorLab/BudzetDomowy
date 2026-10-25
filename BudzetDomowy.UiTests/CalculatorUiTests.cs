@@ -55,7 +55,7 @@ public class CalculatorUiTests
 
         // it sits in the same row, after the two entry buttons
         var row = (Panel)((FrameworkElement)window.FindName("NewExpenseButton")!).Parent;
-        Assert.Equal(["NewExpenseButton", "NewIncomeButton", "CalculatorButton"], row.Children.OfType<FrameworkElement>().Select(c => c.Name));
+        Assert.Equal(["NewExpenseButton", "NewIncomeButton", "CalculatorButton", "BusyBar"], row.Children.OfType<FrameworkElement>().Select(c => c.Name));
 
         button.Command.Execute(null);
         Assert.Equal(1, launcher.CalculatorsOpened);
