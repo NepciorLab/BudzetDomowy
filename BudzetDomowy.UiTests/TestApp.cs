@@ -87,7 +87,9 @@ public sealed class FakeMessageDialogs : IMessageDialogs
 public sealed class FakeEntryLauncher : IEntryLauncher
 {
     public List<bool> Opened { get; } = [];
+    public int CalculatorsOpened { get; private set; }
     public void Open(bool income) => Opened.Add(income);
+    public void OpenCalculator() => CalculatorsOpened++;
 }
 
 /// <summary>Scripted payment windows: what was asked for is recorded, the answers are set by the test.</summary>

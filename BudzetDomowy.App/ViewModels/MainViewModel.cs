@@ -152,6 +152,10 @@ public sealed partial class MainViewModel : ObservableObject
     [RelayCommand]
     private void NewIncome() => _launcher.Open(income: true);
 
+    /// <summary>The calculator button next to the entry buttons.</summary>
+    [RelayCommand]
+    private void OpenCalculator() => _launcher.OpenCalculator();
+
     /// <summary>The page to open at startup: the chosen one, or the one used last.</summary>
     public static string StartPageKey(AppSettings s) => s.StartPage == "last" ? s.LastPage : s.StartPage;
 

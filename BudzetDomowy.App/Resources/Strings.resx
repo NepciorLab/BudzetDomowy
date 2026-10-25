@@ -682,6 +682,13 @@ Dodaj rachunki przyciskiem „Zaplanuj płatności”.</value></data>
   <data name="PayReminderLater" xml:space="preserve"><value>Przypomnij później</value></data>
   <data name="PayReminderPayNow" xml:space="preserve"><value>Zapłać teraz</value></data>
   <data name="PayReminderPaid" xml:space="preserve"><value>Zapłacono</value></data>
+  <data name="CalcTitle" xml:space="preserve"><value>Kalkulator</value></data>
+  <data name="CalcTip" xml:space="preserve"><value>Kalkulator (otwiera się w osobnym oknie)</value></data>
+  <data name="CalcCopy" xml:space="preserve"><value>Kopiuj wynik</value></data>
+  <data name="CalcCopied" xml:space="preserve"><value>Skopiowano: {0}</value></data>
+  <data name="CalcError" xml:space="preserve"><value>Błąd</value></data>
+  <data name="CalcDivideByZero" xml:space="preserve"><value>Dzielenie przez zero</value></data>
+  <data name="CalcOverflow" xml:space="preserve"><value>Liczba jest za duża</value></data>
   <data name="PeriodAll" xml:space="preserve"><value>Wszystko</value></data>
   <data name="PeriodAllTitle" xml:space="preserve"><value>Wszystkie wpisy</value></data>
 </root>

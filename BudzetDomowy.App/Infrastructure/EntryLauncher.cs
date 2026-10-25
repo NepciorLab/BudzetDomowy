@@ -5,10 +5,12 @@ using BudzetDomowy.Core;
 
 namespace BudzetDomowy.App.Infrastructure;
 
-/// <summary>Opens the window for a new expense or income.</summary>
+/// <summary>Opens the window for a new expense or income, and the calculator.</summary>
 public interface IEntryLauncher
 {
     void Open(bool income);
+
+    void OpenCalculator();
 }
 
 public sealed class WpfEntryLauncher : IEntryLauncher
@@ -16,6 +18,7 @@ public sealed class WpfEntryLauncher : IEntryLauncher
     private readonly BudgetCore _core;
     private readonly ToastService _toast;
     private Window? _open;
+    private Window? _calculator;
 
     public WpfEntryLauncher(BudgetCore core, ToastService toast)
     {
@@ -38,5 +41,23 @@ public sealed class WpfEntryLauncher : IEntryLauncher
         _open = window;
         window.Closed += (_, _) => _open = null;
         window.ShowDialog();
+    }
+
+    /// <summary>The calculator is not modal: it stays open beside the main window; asking again brings it to the front.</summary>
+    public void OpenCalculator()
+    {
+        if (_calculator is { IsLoaded: true })
+        {
+            if (_calculator.WindowState == WindowState.Minimized) _calculator.WindowState = WindowState.Normal;
+            _calculator.Activate();
+            return;
+        }
+
+        var window = new CalculatorWindow(new CalculatorViewModel());
+        if (Application.Current?.MainWindow is { IsVisible: true } main) window.Owner = main;
+        else window.WindowStartupLocation = WindowStartupLocation.CenterScreen;
+        _calculator = window;
+        window.Closed += (_, _) => _calculator = null;
+        window.Show();
     }
 }

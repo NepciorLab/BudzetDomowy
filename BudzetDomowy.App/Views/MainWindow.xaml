@@ -76,7 +76,11 @@
                     <Button x:Name="NewExpenseButton" Content="{Binding ExpenseHint}" Command="{Binding NewExpenseCommand}" Padding="16,6" Margin="0,0,10,0"
                             Foreground="{StaticResource ExpenseBrush}" FontWeight="SemiBold" />
                     <Button x:Name="NewIncomeButton" Content="{Binding IncomeHint}" Command="{Binding NewIncomeCommand}" Padding="16,6"
-                            Foreground="{StaticResource IncomeBrush}" FontWeight="SemiBold" />
+                            Foreground="{StaticResource IncomeBrush}" FontWeight="SemiBold" Margin="0,0,10,0" />
+                    <Button x:Name="CalculatorButton" Command="{Binding OpenCalculatorCommand}" Padding="12,6" ToolTip="{infra:Str CalcTip}"
+                            AutomationProperties.Name="{infra:Str CalcTitle}">
+                        <TextBlock Text="&#xE8EF;" FontFamily="Segoe MDL2 Assets" FontSize="20" Foreground="{DynamicResource SystemControlForegroundAccentBrush}" />
+                    </Button>
                 </StackPanel>
             </Border>
 
