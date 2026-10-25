@@ -417,8 +417,8 @@ public sealed partial class ImportViewModel : ObservableObject
         SelectedPreviewRow = null;
     }
 
-    /// <summary>Rows the user can correct: the ones that could not be read, the ones without a category, and the ones already corrected.</summary>
-    private static bool IsFixable(ImportRow r) => r.Status is ImportRowStatus.Error or ImportRowStatus.Warning || r.IsEdited;
+    /// <summary>Rows the user can correct: the ones that could not be read, the ones without a category, the skipped ones (a sum row, a zero, a missing amount, or left out by the user) and the ones already corrected.</summary>
+    private static bool IsFixable(ImportRow r) => r.Status is ImportRowStatus.Error or ImportRowStatus.Warning or ImportRowStatus.Skipped || r.IsEdited;
 
     private static string StatusText(ImportRow r) => r.Status switch
     {

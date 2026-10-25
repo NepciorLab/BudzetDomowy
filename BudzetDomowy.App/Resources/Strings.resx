@@ -701,7 +701,7 @@ Dodaj rachunki przyciskiem „Zaplanuj płatności”.</value></data>
   <data name="ImportIncomeCellValue" xml:space="preserve"><value>Arkusz „{0}”, komórka {1}: {2}</value></data>
   <data name="ImportIncomeCellEmpty" xml:space="preserve"><value>Arkusz „{0}”, komórka {1}: pusta.</value></data>
   <data name="ImportFixRow" xml:space="preserve"><value>Popraw wiersz…</value></data>
-  <data name="ImportFixRowTip" xml:space="preserve"><value>Zaznacz wiersz z błędem (albo kliknij go dwukrotnie), aby poprawić jego dane albo go pominąć.</value></data>
+  <data name="ImportFixRowTip" xml:space="preserve"><value>Zaznacz wiersz z błędem albo pominięty (albo kliknij go dwukrotnie), aby poprawić jego dane albo go pominąć.</value></data>
   <data name="ImportStatusEdited" xml:space="preserve"><value>poprawiono</value></data>
   <data name="ImportMsg_skipped-by-user" xml:space="preserve"><value>pominięto na Twoje polecenie</value></data>
   <data name="ImportMsg_income-cell" xml:space="preserve"><value>błąd: w komórce z przychodem nie ma kwoty</value></data>

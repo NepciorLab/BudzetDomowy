@@ -193,7 +193,7 @@ public sealed class V9UiTests : IDisposable
     // ----- import: correcting rows and the income cell -----
 
     /// <summary>One month sheet: a row without a readable amount, a normal one, and the income in a cell with no label next to it.</summary>
-    private string MakeWorkbook()
+    private string MakeWorkbook(bool withSkipped = false)
     {
         var path = Path.Combine(_dir, "Wydatki.xlsx");
         using var wb = new XLWorkbook();
@@ -205,6 +205,11 @@ public sealed class V9UiTests : IDisposable
         for (var c = 0; c < heads.Length; c++) ws.Cell(6, c + 1).Value = heads[c];
         ws.Cell(7, 1).Value = 1; ws.Cell(7, 2).Value = month; ws.Cell(7, 3).Value = "Lewiatan"; ws.Cell(7, 4).Value = "Spożywcze"; ws.Cell(7, 6).Value = "12,3x";
         ws.Cell(8, 3).Value = "Orlen"; ws.Cell(8, 4).Value = "Auto"; ws.Cell(8, 5).Value = "paliwo"; ws.Cell(8, 6).Value = 200;
+        if (withSkipped)
+        {
+            ws.Cell(9, 3).Value = "Kiosk"; ws.Cell(9, 4).Value = "Prasa"; ws.Cell(9, 5).Value = "gazeta"; ws.Cell(9, 6).Value = 0;                // skipped: a zero
+            ws.Cell(10, 3).Value = "Razem"; ws.Cell(10, 6).Value = 200;                                                                          // skipped: a sum row
+        }
         wb.SaveAs(path);
         return path;
     }
@@ -729,5 +734,47 @@ public sealed class V9UiTests : IDisposable
                 Assert.IsType<CheckBox>(window.FindName(name));
             Assert.Equal("Z błędami", ((CheckBox)window.FindName("OnlyErrorsBox")).Content);
         });
+    }
+
+    [Fact]
+    public void Import_SkippedRowsCanBeCorrectedToo_AndThenAreImported()
+    {
+        using var app = new TestApp(sampleData: false);
+        var path = MakeWorkbook(withSkipped: true);
+        var editor = app.Get<FakeImportRowEditor>();
+
+        UiHost.RunAsync(async () =>
+        {
+            var vm = app.Get<ImportViewModel>();
+            vm.FilePath = path;
+            await vm.LoadFileAsync();
+            await vm.NextCommand.ExecuteAsync(null);
+            await vm.NextCommand.ExecuteAsync(null);
+            await vm.NextCommand.ExecuteAsync(null);
+
+            vm.OnlySkipped = true;
+            Assert.Equal(["Kiosk", "Razem"], vm.PreviewRows.Select(r => r.Place));
+            Assert.All(vm.PreviewRows, r => Assert.True(r.CanFix));                          // a zero and a sum row can be corrected as well
+            Assert.Equal(["pominięto: kwota zero", "pominięto: wiersz sumy"], vm.PreviewRows.Select(r => r.Status));
+
+            vm.SelectedPreviewRow = vm.PreviewRows[0];
+            Assert.True(vm.FixRowCommand.CanExecute(null));
+            editor.Answers.Enqueue(new ImportRowFix(new DateOnly(2026, 1, 1), 4.5m, TransactionType.Expense, "Kiosk", "gazeta", null, false));
+            vm.FixRowCommand.Execute(null);
+
+            var asked = Assert.Single(editor.Asked);
+            Assert.Equal(("Kiosk", "pominięto: kwota zero"), (asked.Row.Place, asked.Problem));
+            Assert.Equal(["Razem"], vm.PreviewRows.Select(r => r.Place));                    // the corrected one has left the skipped ones
+            vm.OnlySkipped = false;
+            vm.OnlyEdited = true;
+            var corrected = Assert.Single(vm.PreviewRows);
+            Assert.Equal(("New", "poprawiono", "−4,50"), (corrected.Kind, corrected.Status, corrected.Amount));
+
+            await vm.ImportCommand.ExecuteAsync(null);
+        });
+
+        var kiosk = app.Core.Reader.GetTransactions().Single(t => t.Place == "Kiosk");
+        Assert.Equal((4.5m, new DateOnly(2026, 1, 1)), (kiosk.AmountPln, kiosk.Date));
+        Assert.DoesNotContain(app.Core.Reader.GetTransactions(), t => t.Place == "Razem");
     }
 }
