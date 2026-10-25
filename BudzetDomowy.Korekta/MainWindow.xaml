@@ -1,0 +1,360 @@
+<Window x:Class="BudzetDomowy.Korekta.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ui="http://schemas.modernwpf.com/2019"
+        ui:WindowHelper.UseModernWindowStyle="True"
+        Icon="pack://application:,,,/BudzetDomowy.Korekta;component/Assets/BudzetDomowy.ico"
+        Title="Budżet domowy – korekty danych" Width="1340" Height="880" MinWidth="1060" MinHeight="660">
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
+        <Style x:Key="RightText" TargetType="TextBlock">
+            <Setter Property="TextAlignment" Value="Right" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Margin" Value="6,0" />
+        </Style>
+        <Style x:Key="CellText" TargetType="TextBlock">
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Margin" Value="6,0" />
+            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+        </Style>
+        <!-- a day that did not change as promised, and a part that cannot be taken, are written in red -->
+        <Style x:Key="DayLeft" TargetType="TextBlock" BasedOn="{StaticResource CellText}">
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding Ok}" Value="False">
+                    <Setter Property="Foreground" Value="{StaticResource ExpenseBrush}" />
+                    <Setter Property="FontWeight" Value="SemiBold" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+        <Style x:Key="DayRight" TargetType="TextBlock" BasedOn="{StaticResource RightText}">
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding Ok}" Value="False">
+                    <Setter Property="Foreground" Value="{StaticResource ExpenseBrush}" />
+                    <Setter Property="FontWeight" Value="SemiBold" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+        <Style x:Key="PartLeft" TargetType="TextBlock" BasedOn="{StaticResource CellText}">
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsInvalid}" Value="True">
+                    <Setter Property="Foreground" Value="{StaticResource ExpenseBrush}" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+        <Style x:Key="PartRight" TargetType="TextBlock" BasedOn="{StaticResource RightText}">
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsInvalid}" Value="True">
+                    <Setter Property="Foreground" Value="{StaticResource ExpenseBrush}" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+        <Style x:Key="Heading" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="15" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Margin" Value="0,0,0,6" />
+        </Style>
+    </Window.Resources>
+
+    <Grid Margin="16,12,16,10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- the data folder -->
+        <Grid Margin="0,0,0,10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <TextBox x:Name="FolderBox" Text="{Binding DataFolder, Mode=OneWay}" IsReadOnly="True" ui:ControlHelper.Header="Folder z danymi programu (z plikami journal_*.jsonl)" />
+            <Button Grid.Column="1" Content="Wybierz…" Command="{Binding BrowseCommand}" VerticalAlignment="Bottom" Margin="8,0,0,0" IsEnabled="{Binding CanWork}" />
+            <Button Grid.Column="2" Content="Wczytaj ponownie" Command="{Binding ReloadCommand}" VerticalAlignment="Bottom" Margin="8,0,0,0" IsEnabled="{Binding CanWork}" />
+        </Grid>
+
+        <TabControl Grid.Row="1" x:Name="Tabs" SelectedIndex="{Binding SelectedTab, Mode=TwoWay}">
+
+            <!-- ================= 1. the correction ================= -->
+            <TabItem Header="1. Korekta">
+                <Grid Margin="0,10,0,0" IsEnabled="{Binding IsLoaded}">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*" MinHeight="260" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="230" />
+                    </Grid.RowDefinitions>
+
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="16" />
+                            <ColumnDefinition Width="470" />
+                        </Grid.ColumnDefinitions>
+
+                        <!-- the entries and their filters -->
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <WrapPanel>
+                                <DatePicker SelectedDate="{Binding From, Mode=TwoWay}" Width="140" Margin="0,0,8,6" ui:ControlHelper.Header="Od" />
+                                <DatePicker SelectedDate="{Binding To, Mode=TwoWay}" Width="140" Margin="0,0,8,6" ui:ControlHelper.Header="Do" />
+                                <ComboBox ItemsSource="{Binding TypeFilters}" SelectedItem="{Binding TypeFilter, Mode=TwoWay}" Width="120" Margin="0,0,8,6" ui:ControlHelper.Header="Rodzaj" />
+                                <ComboBox x:Name="CategoryFilterBox" ItemsSource="{Binding FilterCategories}" SelectedItem="{Binding CategoryFilter, Mode=TwoWay}" Width="220" Margin="0,0,8,6"
+                                          ui:ControlHelper.Header="Kategoria (z podkategoriami)" />
+                                <TextBox Text="{Binding PlaceText, UpdateSourceTrigger=PropertyChanged}" Width="150" Margin="0,0,8,6" ui:ControlHelper.Header="Miejsce zawiera" />
+                                <TextBox Text="{Binding NoteText, UpdateSourceTrigger=PropertyChanged}" Width="150" Margin="0,0,8,6" ui:ControlHelper.Header="Notatka zawiera" />
+                                <TextBox Text="{Binding AmountFromText, UpdateSourceTrigger=PropertyChanged}" Width="90" TextAlignment="Right" Margin="0,0,8,6" ui:ControlHelper.Header="Kwota od" />
+                                <TextBox Text="{Binding AmountToText, UpdateSourceTrigger=PropertyChanged}" Width="90" TextAlignment="Right" Margin="0,0,8,6" ui:ControlHelper.Header="Kwota do" />
+                                <Button Content="Wyczyść filtry" Command="{Binding ClearFiltersCommand}" VerticalAlignment="Bottom" Margin="0,0,0,6" />
+                            </WrapPanel>
+                            <DataGrid x:Name="EntriesGrid" Grid.Row="1" ItemsSource="{Binding Rows}" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False"
+                                      SelectionMode="Extended" SelectionUnit="FullRow" HeadersVisibility="Column" GridLinesVisibility="All" RowHeight="30"
+                                      EnableRowVirtualization="True" SelectionChanged="EntriesGrid_SelectionChanged"
+                                      AlternationCount="2" AlternatingRowBackground="{DynamicResource SystemControlBackgroundListLowBrush}">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Data" Binding="{Binding Date, StringFormat=yyyy-MM-dd}" Width="100" ElementStyle="{StaticResource CellText}" />
+                                    <DataGridTextColumn Header="Rodzaj" Binding="{Binding TypeText}" Width="80" ElementStyle="{StaticResource CellText}" />
+                                    <DataGridTextColumn Header="Kwota (zł)" Binding="{Binding AmountPln, StringFormat=N2}" Width="105" ElementStyle="{StaticResource RightText}" />
+                                    <DataGridTextColumn Header="W walucie" Binding="{Binding OwnAmountText}" Width="95" ElementStyle="{StaticResource RightText}" />
+                                    <DataGridTextColumn Header="Kategoria" Binding="{Binding CategoryPath}" Width="1.2*" ElementStyle="{StaticResource CellText}" />
+                                    <DataGridTextColumn Header="Miejsce" Binding="{Binding Place}" Width="*" ElementStyle="{StaticResource CellText}" />
+                                    <DataGridTextColumn Header="Notatka" Binding="{Binding Note}" Width="*" ElementStyle="{StaticResource CellText}" />
+                                </DataGrid.Columns>
+                            </DataGrid>
+                            <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,6,0,0">
+                                <Button x:Name="SelectAllButton" Content="Zaznacz wszystkie widoczne" Click="SelectAll_Click" Margin="0,0,12,0" />
+                                <TextBlock Text="{Binding SelectionText}" VerticalAlignment="Center" FontWeight="SemiBold" />
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- what to do with the selected entries -->
+                        <TabControl Grid.Column="2" x:Name="Operations">
+                            <TabItem Header="Zmiana kwot">
+                                <StackPanel Margin="10,12,10,0">
+                                    <TextBlock Text="Każdy zaznaczony wpis dostaje tyle samo mniej albo więcej." TextWrapping="Wrap" Opacity="0.8" />
+                                    <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                                        <RadioButton Content="Zmniejsz o" IsChecked="{Binding ShiftDecrease, Mode=TwoWay}" GroupName="shift" MinWidth="0" />
+                                        <RadioButton x:Name="ShiftIncrease" Content="Zwiększ o" IsChecked="{Binding ShiftIncrease, Mode=TwoWay}" GroupName="shift" MinWidth="0" Margin="16,0,0,0" />
+                                    </StackPanel>
+                                    <TextBox x:Name="ShiftAmountBox" Text="{Binding ShiftAmountText, UpdateSourceTrigger=PropertyChanged}" TextAlignment="Right" Margin="0,8,0,0"
+                                             ui:ControlHelper.Header="Kwota (zł lub waluta wpisu)" ui:ControlHelper.PlaceholderText="0,00" />
+                                    <TextBlock TextWrapping="Wrap" Opacity="0.7" FontSize="12" Margin="0,8,0,0"
+                                               Text="Wpis w obcej walucie zmienia się w swojej walucie, a kwota w złotych liczy się po jego kursie. Wpisy, które po zmniejszeniu miałyby kwotę zero albo mniej, zostaną pominięte." />
+                                    <Button Content="Pokaż zapowiedź" Command="{Binding PlanShiftCommand}" Style="{StaticResource AccentButtonStyle}" Margin="0,14,0,0" />
+                                </StackPanel>
+                            </TabItem>
+
+                            <TabItem Header="Rozbijanie">
+                                <Grid Margin="10,12,10,0">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="*" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+                                    <StackPanel>
+                                        <TextBlock Text="Z każdego zaznaczonego wpisu wydzielasz część: nowy wpis w wybranej kategorii, a oryginał zostaje z resztą." TextWrapping="Wrap" Opacity="0.8" />
+                                        <ComboBox x:Name="SplitCategoryBox" ItemsSource="{Binding ChoiceCategories}" SelectedItem="{Binding SplitCategory, Mode=TwoWay}" HorizontalAlignment="Stretch" Margin="0,10,0,0"
+                                                  ui:ControlHelper.Header="Kategoria wydzielonych części" />
+                                        <StackPanel Orientation="Horizontal" Margin="0,10,0,6">
+                                            <TextBox Text="{Binding SplitAllText, UpdateSourceTrigger=PropertyChanged}" Width="90" TextAlignment="Right" ui:ControlHelper.PlaceholderText="kwota" />
+                                            <Button Content="Wpisz wszystkim" Command="{Binding SplitFillAllCommand}" Margin="8,0,0,0" />
+                                            <Button Content="Połowa" Command="{Binding SplitHalfCommand}" Margin="8,0,0,0" ToolTip="Każda część to połowa kwoty wpisu" />
+                                        </StackPanel>
+                                    </StackPanel>
+                                    <DataGrid x:Name="SplitGrid" Grid.Row="1" ItemsSource="{Binding SplitItems}" AutoGenerateColumns="False" CanUserAddRows="False" HeadersVisibility="Column"
+                                              GridLinesVisibility="All" SelectionUnit="Cell" RowHeight="30">
+                                        <DataGrid.Columns>
+                                            <DataGridTextColumn Header="Data" Binding="{Binding Row.Date, StringFormat=yyyy-MM-dd}" IsReadOnly="True" Width="90" ElementStyle="{StaticResource PartLeft}" />
+                                            <DataGridTextColumn Header="Miejsce" Binding="{Binding Row.Place}" IsReadOnly="True" Width="*" ElementStyle="{StaticResource PartLeft}" />
+                                            <DataGridTextColumn Header="Kwota" Binding="{Binding AmountText}" IsReadOnly="True" Width="85" ElementStyle="{StaticResource PartRight}" />
+                                            <DataGridTextColumn Header="Część" Binding="{Binding PartText, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" Width="80" ElementStyle="{StaticResource PartRight}" />
+                                            <DataGridTextColumn Header="Zostaje" Binding="{Binding RestText}" IsReadOnly="True" Width="85" ElementStyle="{StaticResource PartRight}" />
+                                        </DataGrid.Columns>
+                                    </DataGrid>
+                                    <Button Grid.Row="2" Content="Pokaż zapowiedź" Command="{Binding PlanSplitCommand}" Style="{StaticResource AccentButtonStyle}" Margin="0,10,0,0" />
+                                </Grid>
+                            </TabItem>
+
+                            <TabItem Header="Dodawanie co miesiąc">
+                                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                    <StackPanel Margin="10,12,10,0">
+                                        <TextBlock Text="Jeden wpis w każdym miesiącu zakresu, jednorazowo (bez zakładania powtarzania)." TextWrapping="Wrap" Opacity="0.8" />
+                                        <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                                            <RadioButton Content="Wydatek" GroupName="addtype" IsChecked="{Binding AddExpense, Mode=TwoWay}" MinWidth="0" />
+                                            <RadioButton x:Name="AddIncomeButton" Content="Przychód" GroupName="addtype" IsChecked="{Binding AddIncome, Mode=TwoWay}" MinWidth="0" Margin="16,0,0,0" />
+                                        </StackPanel>
+                                        <TextBox Text="{Binding AddAmountText, UpdateSourceTrigger=PropertyChanged}" TextAlignment="Right" Margin="0,8,0,0" ui:ControlHelper.Header="Kwota (zł)" ui:ControlHelper.PlaceholderText="0,00" />
+                                        <ComboBox ItemsSource="{Binding ChoiceCategories}" SelectedItem="{Binding AddCategory, Mode=TwoWay}" HorizontalAlignment="Stretch" Margin="0,8,0,0" ui:ControlHelper.Header="Kategoria" />
+                                        <TextBox Text="{Binding AddPlace, UpdateSourceTrigger=PropertyChanged}" Margin="0,8,0,0" ui:ControlHelper.Header="Miejsce" />
+                                        <TextBox Text="{Binding AddNote, UpdateSourceTrigger=PropertyChanged}" Margin="0,8,0,0" ui:ControlHelper.Header="Notatka" />
+                                        <Grid Margin="0,8,0,0">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <DatePicker SelectedDate="{Binding AddFrom, Mode=TwoWay}" HorizontalAlignment="Stretch" Margin="0,0,6,0" ui:ControlHelper.Header="Od" />
+                                            <DatePicker Grid.Column="1" SelectedDate="{Binding AddTo, Mode=TwoWay}" HorizontalAlignment="Stretch" Margin="6,0,0,0" ui:ControlHelper.Header="Do" />
+                                        </Grid>
+                                        <ui:NumberBox Value="{Binding AddDay, Mode=TwoWay}" Minimum="1" Maximum="31" SpinButtonPlacementMode="Inline" Width="170" HorizontalAlignment="Left" Margin="0,8,0,0"
+                                                      ui:ControlHelper.Header="Dzień miesiąca" ToolTip="W krótszym miesiącu wpis wypada ostatniego dnia miesiąca" />
+                                        <TextBlock Text="{Binding AddDatesText}" TextWrapping="Wrap" Opacity="0.85" Margin="0,8,0,0" />
+                                        <Button Content="Pokaż zapowiedź" Command="{Binding PlanAddCommand}" Style="{StaticResource AccentButtonStyle}" Margin="0,12,0,8" />
+                                    </StackPanel>
+                                </ScrollViewer>
+                            </TabItem>
+                        </TabControl>
+                    </Grid>
+
+                    <GridSplitter Grid.Row="1" Height="8" HorizontalAlignment="Stretch" Background="Transparent" />
+
+                    <!-- the plan: what will be written -->
+                    <Border Grid.Row="2" BorderThickness="1" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}" Padding="10">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <TextBlock Text="Zapowiedź korekty (nic jeszcze nie zostało zapisane)" Style="{StaticResource Heading}" />
+                                    <TextBlock x:Name="PlanSummaryText" Text="{Binding PlanSummary}" TextWrapping="Wrap" FontWeight="SemiBold" />
+                                    <TextBlock Text="{Binding PlanSkipped}" TextWrapping="Wrap" Foreground="{StaticResource WarningBrush}" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top">
+                                    <Button x:Name="DiscardButton" Content="Odrzuć" Command="{Binding DiscardPlanCommand}" Margin="0,0,8,0" />
+                                    <Button x:Name="ApplyButton" Content="Zastosuj i sprawdź" Command="{Binding ApplyCommand}" IsEnabled="{Binding CanApply}" Style="{StaticResource AccentButtonStyle}" />
+                                </StackPanel>
+                            </Grid>
+                            <DataGrid x:Name="PlanGrid" Grid.Row="1" ItemsSource="{Binding PlanRows}" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" HeadersVisibility="Column"
+                                      GridLinesVisibility="All" Margin="0,8,0,0" RowHeight="28" EnableRowVirtualization="True">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Co" Binding="{Binding KindText}" Width="70" ElementStyle="{StaticResource CellText}" />
+                                    <DataGridTextColumn Header="Data" Binding="{Binding DateText}" Width="100" ElementStyle="{StaticResource CellText}" />
+                                    <DataGridTextColumn Header="Miejsce" Binding="{Binding Place}" Width="*" ElementStyle="{StaticResource CellText}" />
+                                    <DataGridTextColumn Header="Było" Binding="{Binding BeforeText}" Width="110" ElementStyle="{StaticResource RightText}" />
+                                    <DataGridTextColumn Header="Będzie" Binding="{Binding AfterText}" Width="110" ElementStyle="{StaticResource RightText}" />
+                                    <DataGridTextColumn Header="Kategoria" Binding="{Binding Category}" Width="*" ElementStyle="{StaticResource CellText}" />
+                                    <DataGridTextColumn Header="Notatka" Binding="{Binding Note}" Width="*" ElementStyle="{StaticResource CellText}" />
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </TabItem>
+
+            <!-- ================= 2. the check ================= -->
+            <TabItem Header="2. Kontrola przed i po">
+                <Grid Margin="0,12,0,0">
+                    <TextBlock Text="Po zastosowaniu (albo cofnięciu) korekty tu pojawi się porównanie sum przychodów i wydatków każdego dnia przed zmianą i po niej." TextWrapping="Wrap" Opacity="0.7"
+                               HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="560">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Visibility" Value="Visible" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding HasReport}" Value="True">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                    <Grid DataContext="{Binding Report}" Visibility="{Binding DataContext.HasReport, ElementName=Tabs, Converter={StaticResource BoolToVis}}">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <StackPanel>
+                            <TextBlock Text="{Binding Caption}" Style="{StaticResource Heading}" />
+                            <TextBlock x:Name="ReportBanner" Text="{Binding Banner}" TextWrapping="Wrap" FontSize="15" FontWeight="SemiBold" Margin="0,0,0,8">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="{StaticResource ExpenseBrush}" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsOk}" Value="True">
+                                                <Setter Property="Foreground" Value="{StaticResource IncomeBrush}" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </StackPanel>
+                        <DataGrid x:Name="TotalsGrid" Grid.Row="1" ItemsSource="{Binding Totals}" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" HeadersVisibility="Column"
+                                  GridLinesVisibility="All" HorizontalAlignment="Left" Margin="0,0,0,10">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Razem" Binding="{Binding Label}" Width="190" ElementStyle="{StaticResource CellText}" />
+                                <DataGridTextColumn Header="Przychody (zł)" Binding="{Binding Income}" Width="150" ElementStyle="{StaticResource RightText}" />
+                                <DataGridTextColumn Header="Wydatki (zł)" Binding="{Binding Expense}" Width="150" ElementStyle="{StaticResource RightText}" />
+                                <DataGridTextColumn Header="Wpisy" Binding="{Binding Count}" Width="90" ElementStyle="{StaticResource RightText}" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+                        <DataGrid x:Name="DaysGrid" Grid.Row="2" ItemsSource="{Binding Days}" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" HeadersVisibility="Column"
+                                  GridLinesVisibility="All" RowHeight="28" EnableRowVirtualization="True">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Data" Binding="{Binding DateText}" Width="95" ElementStyle="{StaticResource DayLeft}" />
+                                <DataGridTextColumn Header="Przychody przed" Binding="{Binding IncomeBefore}" Width="*" ElementStyle="{StaticResource DayRight}" />
+                                <DataGridTextColumn Header="po" Binding="{Binding IncomeAfter}" Width="*" ElementStyle="{StaticResource DayRight}" />
+                                <DataGridTextColumn Header="zmiana" Binding="{Binding IncomeChange}" Width="*" ElementStyle="{StaticResource DayRight}" />
+                                <DataGridTextColumn Header="zapowiedź" Binding="{Binding IncomeExpected}" Width="*" ElementStyle="{StaticResource DayRight}" />
+                                <DataGridTextColumn Header="Wydatki przed" Binding="{Binding ExpenseBefore}" Width="*" ElementStyle="{StaticResource DayRight}" />
+                                <DataGridTextColumn Header="po" Binding="{Binding ExpenseAfter}" Width="*" ElementStyle="{StaticResource DayRight}" />
+                                <DataGridTextColumn Header="zmiana" Binding="{Binding ExpenseChange}" Width="*" ElementStyle="{StaticResource DayRight}" />
+                                <DataGridTextColumn Header="zapowiedź" Binding="{Binding ExpenseExpected}" Width="*" ElementStyle="{StaticResource DayRight}" />
+                                <DataGridTextColumn Header="Wpisy przed" Binding="{Binding CountBefore}" Width="85" ElementStyle="{StaticResource DayRight}" />
+                                <DataGridTextColumn Header="po" Binding="{Binding CountAfter}" Width="60" ElementStyle="{StaticResource DayRight}" />
+                                <DataGridTextColumn Header="Stan" Binding="{Binding State}" Width="105" ElementStyle="{StaticResource DayLeft}" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+                        <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="0,10,0,0">
+                            <Button x:Name="ExportButton" Content="Zapisz raport do Excela…" Command="{Binding DataContext.ExportCommand, ElementName=Tabs}" />
+                            <Button x:Name="RevertButton" Content="Cofnij tę korektę" Command="{Binding DataContext.RevertCommand, ElementName=Tabs}" Margin="10,0,0,0"
+                                    IsEnabled="{Binding CanRevert}" />
+                        </StackPanel>
+                    </Grid>
+                </Grid>
+            </TabItem>
+
+            <!-- ================= 3. history ================= -->
+            <TabItem Header="3. Historia korekt">
+                <Grid Margin="0,12,0,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <DataGrid x:Name="HistoryGrid" ItemsSource="{Binding History}" SelectedItem="{Binding SelectedHistory, Mode=TwoWay}" AutoGenerateColumns="False" IsReadOnly="True"
+                              CanUserAddRows="False" SelectionMode="Single" HeadersVisibility="Column" GridLinesVisibility="All" RowHeight="30">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Kiedy" Binding="{Binding WhenText}" Width="150" ElementStyle="{StaticResource CellText}" />
+                            <DataGridTextColumn Header="Korekta" Binding="{Binding Title}" Width="*" ElementStyle="{StaticResource CellText}" />
+                            <DataGridTextColumn Header="Wpisy" Binding="{Binding CountText}" Width="110" ElementStyle="{StaticResource CellText}" />
+                            <DataGridTextColumn Header="Stan" Binding="{Binding StateText}" Width="190" ElementStyle="{StaticResource CellText}" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                    <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,10,0,0">
+                        <Button x:Name="HistoryShowButton" Content="Pokaż zapisaną kontrolę" Command="{Binding ShowSelectedHistoryCommand}" />
+                        <Button x:Name="HistoryRevertButton" Content="Cofnij zaznaczoną korektę" Command="{Binding RevertCommand}" CommandParameter="{Binding SelectedHistory}" Margin="10,0,0,0" />
+                    </StackPanel>
+                </Grid>
+            </TabItem>
+        </TabControl>
+
+        <!-- the status line -->
+        <Grid Grid.Row="2" Margin="0,8,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="200" />
+            </Grid.ColumnDefinitions>
+            <TextBlock x:Name="StatusText" Text="{Binding Status}" TextWrapping="Wrap" VerticalAlignment="Center" />
+            <ProgressBar Grid.Column="1" IsIndeterminate="True" Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}" />
+        </Grid>
+    </Grid>
+</Window>

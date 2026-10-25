@@ -26,6 +26,7 @@
   <ItemGroup>
     <ProjectReference Include="..\BudzetDomowy.App\BudzetDomowy.App.csproj" />
     <ProjectReference Include="..\BudzetDomowy.Core\BudzetDomowy.Core.csproj" />
+    <ProjectReference Include="..\BudzetDomowy.Korekta\BudzetDomowy.Korekta.csproj" />
   </ItemGroup>
 
 </Project>

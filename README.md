@@ -103,6 +103,18 @@ W podglądzie (ostatni krok) wiersze z błędem, z ostrzeżeniem i **pominięte*
 
 Transakcje do **Excela** (ikona w prawym górnym rogu ekranu Transakcje: wpisy pasujące do filtrów i okresu; w Ustawieniach – wszystkie), raport miesiąca lub roku do Excela.
 
+## Korekty danych (osobne narzędzie)
+
+Do jednorazowych poprawek dużej liczby wpisów służy osobny program **BudzetDomowy.Korekta.exe** (nie wchodzi do wydania głównego programu; budujesz go `tools\publish-korekta.ps1`). Umieść go obok `BudzetDomowy.exe`, a sam znajdzie folder z danymi (z `Data\settings.json`); inaczej wskaż folder przyciskiem *Wybierz…* (pamięta ostatni). Przy pierwszym wczytaniu buduje własną bazę z dzienników, co trwa chwilę. Może pracować przy zamkniętym programie głównym albo obok niego.
+
+* **Zmiana kwot:** zaznaczasz wpisy (filtry po datach, rodzaju, kategorii z podkategoriami, miejscu, notatce i kwocie; Ctrl+A albo „Zaznacz wszystkie widoczne”) i każdy z nich zmniejszasz albo zwiększasz o tę samą kwotę. Wpis w obcej walucie zmienia się w swojej walucie. Wpisy, które po zmniejszeniu miałyby kwotę zero albo mniej, są pomijane i policzone.
+* **Rozbijanie:** zaznaczasz wpisy, wybierasz kategorię części i wpisujesz osobną kwotę części dla każdego wpisu (albo tę samą dla wszystkich, albo połowę). Oryginał zostaje z resztą i swoją kategorią, a część staje się nowym wpisem tego samego dnia, miejsca, notatki i waluty.
+* **Dodawanie co miesiąc:** wydatek albo przychód w każdym miesiącu zakresu dat, w wybranym dniu miesiąca (w krótszym miesiącu: ostatniego dnia). Najpierw widać liczbę i zakres dat.
+* **Zapowiedź:** każda operacja najpierw pokazuje, co dokładnie zostanie zapisane (było → będzie, nowe wpisy) i jaki będzie skutek dla sum; dopiero „Zastosuj i sprawdź” zapisuje.
+* **Kontrola przed i po:** przed zapisem tworzona jest kopia zapasowa. Potem narzędzie porównuje **każdy dzień** (sumy przychodów, wydatków i liczbę wpisów) przed zmianą i po niej: zmiana każdego dnia musi być dokładnie taka, jaką zapowiedziała korekta (dla rozbijania: zero; dla dni, których korekta nie dotyka: zero). Dni, w których jest inaczej, są zaznaczone na czerwono. Raport można zapisać do Excela.
+* **Cofanie:** korekta zapisuje się w folderze `Korekty` obok dzienników (z poprzednimi wersjami zmienionych wpisów). „Cofnij tę korektę” przywraca je zwykłymi zdarzeniami (więc dociera na pozostałe komputery bez przebudowy) i też sprawdza dni. Zmiany zapisują się w osobnym dzienniku narzędzia, nie w dziennikach innych komputerów.
+* Jeśli dane zmienią się między zapowiedzią a zapisem (inny komputer, program główny), nic nie zostanie zapisane i trzeba zaplanować korektę ponownie.
+
 ## Gdzie program trzyma swoje dane
 
 Ustawienia, dzienniki (logi), lokalna baza, kopie zapasowe i identyfikator komputera leżą w folderze **`Data` obok pliku `BudzetDomowy.exe`** (nie w AppData). Stare wersje trzymały je w `%LocalAppData%\BudzetDomowy`: przy pierwszym starcie nowa wersja kopiuje stamtąd dane (stary folder zostaje i można go usunąć ręcznie), więc komputer pozostaje tym samym urządzeniem w folderze danych. Jeśli program leży w miejscu, gdzie nie wolno zapisywać (np. `Program Files`), używa dawnego folderu w AppData.
