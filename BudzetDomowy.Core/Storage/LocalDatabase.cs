@@ -6,6 +6,9 @@ namespace BudzetDomowy.Core.Storage;
 /// Local SQLite database: a materialised view of all journals plus a few purely local tables
 /// (journal offsets, exchange rate cache). Must live outside OneDrive.
 /// </summary>
+/// <summary>The data was written by a newer version of the program: this one must be updated before it can work with it.</summary>
+public sealed class NewerDataException(string message) : InvalidOperationException(message);
+
 public sealed class LocalDatabase
 {
     /// <summary>Each entry upgrades the schema by one version (PRAGMA user_version).</summary>
@@ -182,7 +185,7 @@ public sealed class LocalDatabase
         using var conn = Open();
         var version = Scalar<long>(conn, "PRAGMA user_version");
         if (version > Migrations.Length)
-            throw new InvalidOperationException(
+            throw new NewerDataException(
                 $"Local database has schema v{version}, newer than this app supports (v{Migrations.Length}).");
 
         for (var v = (int)version; v < Migrations.Length; v++)

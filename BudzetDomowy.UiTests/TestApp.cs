@@ -83,10 +83,12 @@ public sealed class FakeUpdatePrompt : IUpdatePrompt
 {
     public bool Answer { get; set; }
     public int Asked { get; private set; }
+    public bool LastDataIsNewer { get; private set; }
 
-    public bool Confirm(ReleaseInfo release, Version current)
+    public bool Confirm(ReleaseInfo release, Version current, bool dataIsNewer = false)
     {
         Asked++;
+        LastDataIsNewer = dataIsNewer;
         return Answer;
     }
 }

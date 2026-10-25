@@ -5,7 +5,7 @@ Desktopowa aplikacja do wpisywania przychodów i wydatków oraz monitorowania bu
 
 ## Stos technologiczny
 - C# / .NET 8, WPF, wzorzec MVVM (CommunityToolkit.Mvvm), wstrzykiwanie zależności (Microsoft.Extensions.DependencyInjection).
-- Lokalna baza SQLite (Microsoft.Data.Sqlite, ewentualnie Dapper). Baza leży w %LocalAppData%\BudzetDomowy\, NIGDY w folderze OneDrive.
+- Lokalna baza SQLite (Microsoft.Data.Sqlite, ewentualnie Dapper). Baza leży w folderze Data obok programu (awaryjnie w %LocalAppData%\BudzetDomowy\, gdy tam nie można zapisywać), NIGDY w folderze OneDrive.
 - Wykresy: LiveCharts2 (LiveChartsCore.SkiaSharpView.WPF).
 - Excel: ClosedXML (import i eksport .xlsx).
 - Testy: xUnit.

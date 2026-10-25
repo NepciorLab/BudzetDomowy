@@ -55,8 +55,12 @@
             <!-- Today's date, big -->
             <Border Grid.Row="0" Background="{StaticResource HeaderBrush}" Padding="20,8">
                 <Grid>
-                    <TextBlock Text="{Binding TodayText}" FontSize="30" FontWeight="Bold" Foreground="White"
-                               VerticalAlignment="Center" />
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding TodayText}" FontSize="30" FontWeight="Bold" Foreground="White" VerticalAlignment="Center" />
+                        <TextBlock x:Name="ClockLabel" Text="{Binding ClockText}" FontSize="30" FontWeight="Light" Foreground="#E6FFFFFF"
+                                   VerticalAlignment="Center" Margin="24,0,0,0"
+                                   Visibility="{Binding ShowClock, Source={x:Static infra:UiPreferences.Instance}, Converter={x:Static infra:BoolToVisibilityConverter.Visible}}" />
+                    </StackPanel>
                     <TextBlock Text="{infra:Str AppTitleUpper}" FontSize="13" FontWeight="SemiBold" Foreground="#CCFFFFFF"
                                HorizontalAlignment="Right" VerticalAlignment="Center" />
                 </Grid>

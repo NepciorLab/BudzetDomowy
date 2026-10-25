@@ -25,7 +25,7 @@
   <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
   <data name="AppTitle" xml:space="preserve"><value>Budżet domowy</value></data>
   <data name="ProfileSuffix" xml:space="preserve"><value> [profil {0}]</value></data>
-  <data name="StartupFailed" xml:space="preserve"><value>Program nie mógł się uruchomić. Szczegóły zapisano w dzienniku (folder %LOCALAPPDATA%\BudzetDomowy\logs).</value></data>
+  <data name="StartupFailed" xml:space="preserve"><value>Program nie mógł się uruchomić. Szczegóły zapisano w dzienniku (folder Data\logs obok programu).</value></data>
   <data name="Cancel" xml:space="preserve"><value>Anuluj</value></data>
   <data name="Close" xml:space="preserve"><value>Zamknij</value></data>
   <data name="Undo" xml:space="preserve"><value>Cofnij</value></data>
@@ -565,7 +565,7 @@ Pobrać i zainstalować ją teraz? Program uruchomi się ponownie.</value></data
   <data name="RecurEdit" xml:space="preserve"><value>Zmień</value></data>
   <data name="RecurSaveChanges" xml:space="preserve"><value>Zapisz zmiany</value></data>
   <data name="SettingsBackup" xml:space="preserve"><value>BackUp</value></data>
-  <data name="BackupIntro" xml:space="preserve"><value>Program codziennie robi kopię zapasową wszystkich zapisów (dzienników) z folderu danych i trzyma ostatnie {0} kopii. Kopie leżą na tym komputerze, poza folderem synchronizowanym przez OneDrive.</value></data>
+  <data name="BackupIntro" xml:space="preserve"><value>Program codziennie robi kopię zapasową wszystkich zapisów (dzienników) z folderu danych i trzyma ostatnie {0} kopii. Kopie leżą w podfolderze Backups folderu danych, więc dzięki OneDrive widzi je i może z nich przywracać każdy komputer.</value></data>
   <data name="BackupFolderLabel" xml:space="preserve"><value>Folder kopii</value></data>
   <data name="BackupCreateNow" xml:space="preserve"><value>Utwórz kopię teraz</value></data>
   <data name="BackupRestore" xml:space="preserve"><value>Przywróć wybraną kopię…</value></data>
@@ -589,6 +589,11 @@ Na drugim komputerze po przywróceniu użyj Ustawienia → Diagnostyka → Odbud
   <data name="BackupRestoring" xml:space="preserve"><value>Przywracam…</value></data>
   <data name="BackupRestored" xml:space="preserve"><value>Przywrócono dane z kopii: {0}.</value></data>
   <data name="BackupRestoreFailed" xml:space="preserve"><value>Nie udało się przywrócić kopii: {0}</value></data>
+  <data name="UpdatePromptDataNewer" xml:space="preserve"><value>Dane zostały zapisane nowszą wersją programu ({0}), a to jest wersja {1}, która ich nie rozumie. Zainstaluj aktualizację, żeby dalej pracować.
+
+Pobrać i zainstalować ją teraz? Program uruchomi się ponownie.</value></data>
+  <data name="StartupNewerData" xml:space="preserve"><value>Dane zostały zapisane nowszą wersją programu, a aktualizacji nie udało się zainstalować. Pobierz najnowszą wersję z https://github.com/NepciorLab/BudzetDomowy/releases i uruchom ją.</value></data>
+  <data name="SettingsShowClock" xml:space="preserve"><value>Pokazuj zegar obok daty</value></data>
   <data name="PeriodAll" xml:space="preserve"><value>Wszystko</value></data>
   <data name="PeriodAllTitle" xml:space="preserve"><value>Wszystkie wpisy</value></data>
 </root>

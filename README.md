@@ -2,7 +2,7 @@
 
 Program dla Windows 11 do wpisywania przychodów i wydatków oraz pilnowania budżetu domowego. Pracują w nim dwie osoby na dwóch komputerach na wspólnych danych. Interfejs jest po polsku, walutą bazową jest złoty.
 
-Wersja **0.4.0**.
+Wersja **0.4.1**.
 
 ## Uruchomienie
 
@@ -52,7 +52,7 @@ Skróty ekranów: Ctrl+1 … Ctrl+7 (Pulpit, Transakcje, Budżety, Wydarzenia, W
 
 ### Wygląd
 
-Ustawienia → **Wygląd**: motyw, skala interfejsu (mały / średni / duży, działa od razu), symbol koloru kategorii (kółko, kwadrat albo pionowa kreska), pokazywanie znaków „+” i „−” przy kwotach, kolorowanie kwot (czerwone wydatki, zielone przychody; po wyłączeniu kwoty mają zwykły kolor tekstu motywu) oraz karta pokazywana po uruchomieniu programu (domyślnie Pulpit, albo *Ostatnio wybrana*). W palecie kolorów kategorii ptaszkiem są oznaczone kolory, które już ma jakaś kategoria.
+Ustawienia → **Wygląd**: motyw, zegar obok daty u góry (można wyłączyć), skala interfejsu (mały / średni / duży, działa od razu), symbol koloru kategorii (kółko, kwadrat albo pionowa kreska), pokazywanie znaków „+” i „−” przy kwotach, kolorowanie kwot (czerwone wydatki, zielone przychody; po wyłączeniu kwoty mają zwykły kolor tekstu motywu) oraz karta pokazywana po uruchomieniu programu (domyślnie Pulpit, albo *Ostatnio wybrana*). W palecie kolorów kategorii ptaszkiem są oznaczone kolory, które już ma jakaś kategoria.
 
 ### Aktualizacje
 
@@ -82,9 +82,17 @@ Transakcje do **Excela** (ikona w prawym górnym rogu ekranu Transakcje: wpisy p
 
 Ustawienia → Ogólne → *Włącz globalny skrót szybkiego dodawania i ikonę w zasobniku* (domyślnie Ctrl+Alt+B, można zmienić w Ustawieniach → Skróty klawiszowe). Skrót i kliknięcie ikony otwierają małe okno szybkiego dodania. Domyślnie wyłączone.
 
+### Gdzie program trzyma swoje dane
+
+Ustawienia, dzienniki (logi), lokalna baza, kopie zapasowe i identyfikator komputera leżą w folderze **`Data` obok pliku `BudzetDomowy.exe`** (nie w AppData). Stare wersje trzymały je w `%LocalAppData%\BudzetDomowy`: przy pierwszym starcie nowa wersja kopiuje stamtąd dane (stary folder zostaje i można go usunąć ręcznie), więc komputer pozostaje tym samym urządzeniem w folderze danych. Jeśli program leży w miejscu, gdzie nie wolno zapisywać (np. `Program Files`), używa dawnego folderu w AppData.
+
+### Nowsze dane, starsza wersja
+
+Gdy dane zapisała nowsza wersja programu, ta starsza najpierw sprawdza w GitHubie, czy jest aktualizacja (niezależnie od ustawienia automatycznych aktualizacji), i proponuje jej zainstalowanie zamiast pokazywać błąd. Błąd pokazuje się dopiero, gdy aktualizacji nie ma albo się nie powiodła.
+
 ## Kopie zapasowe w programie
 
-Ustawienia → **BackUp**: program raz dziennie (kilka sekund po starcie i potem co kilka godzin, jeśli dzisiejszej kopii jeszcze nie ma) robi kopię wszystkich zapisów (dzienników) z folderu danych i trzyma **10 ostatnich**. Kopie to pliki `.zip` w podfolderze `Backups` folderu lokalnego (na tym komputerze, poza OneDrive). Zakładka pokazuje listę kopii (data, rodzaj: codzienna / ręczna / przed przywróceniem, rozmiar), pozwala zrobić kopię od ręki, otworzyć folder kopii i **przywrócić** wybraną. Przed przywróceniem program robi kopię obecnego stanu, więc można do niego wrócić tą samą drogą. Przywrócenie podmienia dzienniki w folderze danych (wycofuje też zmiany z innych komputerów, których dzienniki są nowsze); na drugim komputerze użyj potem Diagnostyka → *Odbuduj bazę z dzienników*.
+Ustawienia → **BackUp**: program raz dziennie (kilka sekund po starcie i potem co kilka godzin, jeśli dzisiejszej kopii jeszcze nie ma) robi kopię wszystkich zapisów (dzienników) z folderu danych i trzyma **10 ostatnich**. Kopie to pliki `.zip` w podfolderze `Backups` **folderu danych** (czyli w OneDrive), więc każdy komputer je widzi i może z nich przywracać; kopie zrobione przez 0.4.0 w folderze lokalnym są przy starcie tam przenoszone. Gdy jeden komputer zrobił już dzisiejszą kopię, drugi nie robi kolejnej. Zakładka pokazuje listę kopii (data, rodzaj: codzienna / ręczna / przed przywróceniem, rozmiar), pozwala zrobić kopię od ręki, otworzyć folder kopii i **przywrócić** wybraną. Przed przywróceniem program robi kopię obecnego stanu, więc można do niego wrócić tą samą drogą. Przywrócenie podmienia dzienniki w folderze danych (wycofuje też zmiany z innych komputerów, których dzienniki są nowsze); na drugim komputerze użyj potem Diagnostyka → *Odbuduj bazę z dzienników*.
 
 ## Kopia zapasowa ręczna
 
@@ -104,7 +112,7 @@ Ustawienia → **Diagnostyka** pokazuje urządzenia, liczbę zdarzeń i rozmiary
 | „Zaktualizuj program” | W folderze są dane zapisane przez nowszą wersję programu. Do czasu aktualizacji zapisywanie jest wyłączone, żeby nic nie uszkodzić. |
 | „Folder danych jest niedostępny” | Sprawdź, czy dysk/OneDrive działa i czy folder nie został przeniesiony. |
 | Dane wyglądają na niepełne albo dziwne | Diagnostyka → **Odbuduj bazę z dzienników** (bezpieczne; dziennik się nie zmienia). Przycisk jest zablokowany, dopóki są pliki tylko w chmurze lub folder jest niedostępny. |
-| Błąd, którego nie rozumiesz | Komunikat jest krótki, szczegóły są w pliku dziennika: `%LocalAppData%\BudzetDomowy\logs` (przycisk w Diagnostyce). Przechowywane jest 14 dni. |
+| Błąd, którego nie rozumiesz | Komunikat jest krótki, szczegóły są w pliku dziennika: `Data\logs` obok programu (przycisk w Diagnostyce). Przechowywane jest 14 dni. |
 
 ## Znane ograniczenia
 

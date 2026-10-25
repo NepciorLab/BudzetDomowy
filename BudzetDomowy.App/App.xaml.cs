@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Markup;
 using BudzetDomowy.App.Infrastructure;
 using BudzetDomowy.App.Infrastructure.Updates;
+using BudzetDomowy.Core.Storage;
 using BudzetDomowy.App.ViewModels;
 using BudzetDomowy.App.Views;
 using BudzetDomowy.Core;
@@ -25,10 +26,14 @@ public partial class App : Application
         base.OnStartup(e);
         ShutdownMode = ShutdownMode.OnExplicitShutdown;
         AppPaths.Initialize(e.Args);
+        string? moved = null;
+        try { moved = AppPaths.MigrateFromLegacy(); }                       // data of older versions: from %LocalAppData% to the folder of the program
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { moved = "move failed: " + ex.Message; }
         SetTaskbarIdentity();
         SetPolishCulture();
         AmountBoxes.Register();
-        AppLog.Info($"Starting (profile: {AppPaths.Profile ?? "default"}).");
+        AppLog.Info($"Starting (profile: {AppPaths.Profile ?? "default"}, data in '{AppPaths.SettingsDir}').");
+        if (moved is not null) AppLog.Info("Data moved next to the program: " + moved);
         InstallErrorHandlers();
 
         // two copies on the same profile would share one database and one journal: refuse politely
@@ -56,6 +61,13 @@ public partial class App : Application
             try
             {
                 _core = BudgetCore.Create(AppPaths.LocalDir, settings.DataFolder, settings.DeviceName, log: AppLog.Instance);
+            }
+            catch (NewerDataException ex)
+            {
+                // the data was written by a newer version: offer the update before showing any error
+                AppLog.Error("The local data is from a newer version of the program.", ex);
+                HandleNewerDataAtStartup(settings);
+                return;
             }
             catch (Exception ex)
             {
@@ -124,12 +136,22 @@ public partial class App : Application
             .BuildServiceProvider();
 
         _services = services;
+
+        // newer data found by the synchronisation: the update is offered at once instead of errors
+        var watcher = new NewerDataWatcher(services.GetRequiredService<UpdateService>(), work => Dispatcher.BeginInvoke(async () =>
+        {
+            try { await work(); }
+            catch (Exception ex) { AppLog.Warn("Offering the update failed: " + ex.Message); }
+        }));
+        _core.Sync.StatusChanged += (_, status) => watcher.Observe(status);
+
         // the quick-add host first: the Settings screen reads whether it is running when it is built
         StartBackgroundMode(settings, services);
         var main = services.GetRequiredService<MainWindow>();
         MainWindow = main;
         ShutdownMode = ShutdownMode.OnMainWindowClose;
         main.Show();
+        watcher.Observe(_core.Sync.Status);
         services.GetRequiredService<BackupViewModel>().StartDaily(TimeSpan.FromSeconds(25), TimeSpan.FromHours(3));
         StartUpdateCheck(services);
     }
@@ -147,6 +169,22 @@ public partial class App : Application
         {
             AppLog.Warn("Update check failed: " + e.Message);   // never a reason to disturb the user
         }
+    }
+
+    /// <summary>The local database is from a newer version: look for the update first; an error only when there is none (or it was declined).</summary>
+    private async void HandleNewerDataAtStartup(AppSettings settings)
+    {
+        try
+        {
+            var updates = new UpdateService(new SettingsStore(settings), new GitHubReleases(GitHubReleases.CreateClient()), new WpfUpdatePrompt(), new AppRestarter());
+            if (await updates.OfferUpdateAsync(dataIsNewer: true)) return;   // the program restarts itself
+        }
+        catch (Exception ex)
+        {
+            AppLog.Warn("Looking for an update failed: " + ex.Message);
+        }
+        MessageBox.Show(Res.Get("StartupNewerData"), Res.Get("AppTitle"), MessageBoxButton.OK, MessageBoxImage.Information);
+        Shutdown(1);
     }
 
     private static void UseConfiguredLocalFolder(AppSettings settings)

@@ -44,8 +44,9 @@ public sealed partial class MainViewModel : ObservableObject
     [ObservableProperty] private Brush _syncBrush = Brushes.Gray;
     [ObservableProperty] private string _syncGlyph = "●";
     [ObservableProperty] private string _todayText = "";
+    [ObservableProperty] private string _clockText = "";
 
-    private readonly System.Windows.Threading.DispatcherTimer _clock = new() { Interval = TimeSpan.FromSeconds(20) };
+    private readonly System.Windows.Threading.DispatcherTimer _clock = new() { Interval = TimeSpan.FromSeconds(1) };
 
     /// <summary>The window shows the details dialog.</summary>
     public event Action? SyncDetailsRequested;
@@ -125,8 +126,12 @@ public sealed partial class MainViewModel : ObservableObject
     }
 
     /// <summary>Weekday, day, month and year in capitals, e.g. SOBOTA, 24 PAŹDZIERNIKA 2026.</summary>
-    private void UpdateToday() =>
-        TodayText = DateTime.Now.ToString("dddd, d MMMM yyyy", CultureInfo.CurrentCulture).ToUpper(CultureInfo.CurrentCulture);
+    private void UpdateToday()
+    {
+        var now = DateTime.Now;
+        TodayText = now.ToString("dddd, d MMMM yyyy", CultureInfo.CurrentCulture).ToUpper(CultureInfo.CurrentCulture);
+        ClockText = now.ToString("HH:mm", CultureInfo.CurrentCulture);
+    }
 
     /// <summary>The page to open at startup: the chosen one, or the one used last.</summary>
     public static string StartPageKey(AppSettings s) => s.StartPage == "last" ? s.LastPage : s.StartPage;

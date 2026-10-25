@@ -53,14 +53,25 @@ public sealed partial class BackupViewModel : ObservableObject
         _core = core;
         _hub = hub;
         _dialogs = dialogs;
-        Reload();
+        _ = ReloadAsync();                                 // reading the list opens every zip; in a synchronised folder that may take a moment
     }
 
-    public void Reload()
+    /// <summary>Reads the list off the UI thread and fills it there.</summary>
+    public async Task ReloadAsync()
+    {
+        IReadOnlyList<BackupInfo> list;
+        try { list = await Task.Run(() => _core.Backups.List()); }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException) { return; }
+        Fill(list);
+    }
+
+    public void Reload() => Fill(_core.Backups.List());
+
+    private void Fill(IReadOnlyList<BackupInfo> list)
     {
         var keep = Selected?.Info.Path;
         Items.Clear();
-        foreach (var info in _core.Backups.List()) Items.Add(new BackupRow(info));
+        foreach (var info in list) Items.Add(new BackupRow(info));
         Selected = keep is null ? null : Items.FirstOrDefault(r => r.Info.Path == keep);
         OnPropertyChanged(nameof(HasItems));
     }

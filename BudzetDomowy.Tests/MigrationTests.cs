@@ -69,6 +69,6 @@ public class MigrationTests : IDisposable
         Exec(db, $"PRAGMA user_version = {LocalDatabase.CurrentVersion + 1}");
         SqliteConnection.ClearAllPools();
 
-        Assert.Throws<InvalidOperationException>(() => new LocalDatabase(path));
+        Assert.Throws<BudzetDomowy.Core.Storage.NewerDataException>(() => new LocalDatabase(path));   // a kind of InvalidOperationException the program can answer with an update
     }
 }

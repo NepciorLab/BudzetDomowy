@@ -18,6 +18,7 @@ public sealed partial class UiPreferences : ObservableObject
     [ObservableProperty] private MarkerShape _marker = MarkerShape.Circle;
     [ObservableProperty] private bool _showMinus = true;
     [ObservableProperty] private bool _colorAmounts = true;
+    [ObservableProperty] private bool _showClock = true;
 
     /// <summary>Raised when scale, symbol or amount style changed (screens that format text refresh themselves).</summary>
     public event EventHandler? AppearanceChanged;
@@ -64,6 +65,7 @@ public sealed partial class UiPreferences : ObservableObject
             Marker = s.CategoryMarker;
             ShowMinus = s.ShowMinus;
             ColorAmounts = s.ColorAmounts;
+            ShowClock = s.ShowClock;
         }
         finally
         {
@@ -102,6 +104,8 @@ public sealed partial class UiPreferences : ObservableObject
         Save(x => x with { ShowMinus = value });
         Appearance();
     }
+
+    partial void OnShowClockChanged(bool value) => Save(x => x with { ShowClock = value });
 
     partial void OnColorAmountsChanged(bool value)
     {

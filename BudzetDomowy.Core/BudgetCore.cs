@@ -32,7 +32,7 @@ public sealed class BudgetCore : IDisposable
     public RecurringService Recurring { get; }
     public ImportService Import { get; }
 
-    /// <summary>Daily copies of the journals, kept next to the local database (outside the synchronised folder).</summary>
+    /// <summary>Daily copies of the journals, kept in the shared data folder so that every computer sees them.</summary>
     public BackupService Backups { get; }
 
     private BudgetCore(DeviceIdentity device, string dataFolder, string localDataDir, LocalDatabase db, SyncOptions? syncOptions, IExchangeRateSource? rateSource)
@@ -55,7 +55,7 @@ public sealed class BudgetCore : IDisposable
         Budgets = new BudgetService(Recorder, Reader);
         Recurring = new RecurringService(Recorder, Reader, Transactions, Rates);
         Import = new ImportService(Reader, Transactions, Categories);
-        Backups = new BackupService(dataFolder, Path.Combine(localDataDir, "Backups"));
+        Backups = new BackupService(dataFolder, Path.Combine(dataFolder, "Backups"));
     }
 
     /// <summary>Puts the data back as it was in <paramref name="backup"/> and replays it into the database.</summary>
@@ -73,7 +73,10 @@ public sealed class BudgetCore : IDisposable
         }
         var device = DeviceIdentity.LoadOrCreate(localDataDir, deviceName);
         var db = new LocalDatabase(Path.Combine(localDataDir, DatabaseFileName));
-        return new BudgetCore(device, dataFolder, localDataDir, db, syncOptions, rateSource);
+        var core = new BudgetCore(device, dataFolder, localDataDir, db, syncOptions, rateSource);
+        try { core.Backups.AdoptFrom(Path.Combine(localDataDir, "Backups")); }      // copies made by 0.4.0 in the local folder
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException) { }
+        return core;
     }
 
     public void Dispose() => Sync.Dispose();

@@ -6,7 +6,8 @@ namespace BudzetDomowy.App.Infrastructure.Updates;
 /// <summary>Asks the user whether to install a newer version that was found.</summary>
 public interface IUpdatePrompt
 {
-    bool Confirm(ReleaseInfo release, Version current);
+    /// <param name="dataIsNewer">The data on disk was written by a newer version: without the update this one cannot work.</param>
+    bool Confirm(ReleaseInfo release, Version current, bool dataIsNewer = false);
 }
 
 /// <summary>Checks GitHub for a newer version at startup (when switched on) or on request, and installs it.</summary>
@@ -80,12 +81,27 @@ public sealed class UpdateService
     public async Task RunAutomaticAsync(CancellationToken ct = default)
     {
         if (!_store.Current.AutoUpdate) return;
+        await OfferUpdateAsync(dataIsNewer: false, ct).ConfigureAwait(true);
+    }
+
+    /// <summary>
+    /// Looks for a newer version and, when there is one and the user agrees, installs it and restarts the program.
+    /// Used when the data turned out to be written by a newer version (whatever the setting for automatic checks):
+    /// the user is offered the update instead of an error. False when no update was started.
+    /// </summary>
+    public async Task<bool> OfferUpdateAsync(bool dataIsNewer, CancellationToken ct = default)
+    {
         var check = await CheckAsync(ct).ConfigureAwait(true);
-        if (check is not { State: UpdateState.Available, Release: { } release }) return;
-        if (!_prompt.Confirm(release, Current)) return;
+        if (check is not { State: UpdateState.Available, Release: { } release }) return false;
+        if (!_prompt.Confirm(release, Current, dataIsNewer)) return false;
 
         var error = await InstallAsync(release, null, ct).ConfigureAwait(true);
-        if (error is null) Restart();
-        else AppLog.Warn("Automatic update failed: " + error);
+        if (error is not null)
+        {
+            AppLog.Warn("Update failed: " + error);
+            return false;
+        }
+        Restart();
+        return true;
     }
 }

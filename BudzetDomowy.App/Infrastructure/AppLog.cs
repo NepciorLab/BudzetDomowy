@@ -2,7 +2,7 @@ using BudzetDomowy.Core.Logging;
 
 namespace BudzetDomowy.App.Infrastructure;
 
-/// <summary>The program's log: %LocalAppData%\BudzetDomowy[\Profiles\X]\logs, one file per day, two weeks kept.</summary>
+/// <summary>The program's log: Data\logs next to the program (Data\Profiles\X\logs for a profile), one file per day, two weeks kept.</summary>
 public static class AppLog
 {
     private static readonly Lazy<FileLog> Log = new(() => new FileLog(AppPaths.LogDir));

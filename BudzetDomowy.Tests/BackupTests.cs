@@ -196,7 +196,7 @@ public sealed class BackupTests : IDisposable
         core.Transactions.Add(new DateOnly(2026, 10, 2), TransactionType.Expense, 20m, category.Id, "", null);
 
         var backup = core.Backups.Create(BackupKind.Manual)!;
-        Assert.StartsWith(Path.Combine(local, "Backups"), backup.Path);                 // next to the local database, not in the shared folder
+        Assert.StartsWith(Path.Combine(Data, "Backups"), backup.Path);                  // in the shared data folder, so every computer sees it
 
         core.Transactions.Add(new DateOnly(2026, 10, 3), TransactionType.Expense, 30m, category.Id, "", null);
         Assert.Equal(3, core.Reader.GetTransactions().Count);
@@ -214,5 +214,55 @@ public sealed class BackupTests : IDisposable
         core.RestoreBackup(safety);
         Assert.Equal(3, core.Reader.GetTransactions().Count);
         Assert.Contains(core.Reader.GetTransactions(), t => t.AmountPln == 30m);
+    }
+
+    [Fact]
+    public void ASecondComputerSeesTheSameCopies_AndDoesNotMakeAnotherOneToday()
+    {
+        var a = BudgetCore.Create(Path.Combine(_root, "local-a"), Data, "A");
+        var b = BudgetCore.Create(Path.Combine(_root, "local-b"), Data, "B");
+        _cores.Add(a);
+        _cores.Add(b);
+        a.Categories.SeedIfEmpty();
+
+        Assert.NotNull(a.Backups.EnsureDaily());
+        Assert.Equal(a.Backups.BackupFolder, b.Backups.BackupFolder);
+        Assert.Equal(Path.Combine(Data, "Backups"), b.Backups.BackupFolder);
+        Assert.Single(b.Backups.List());
+        Assert.Null(b.Backups.EnsureDaily());                     // A already made today's copy
+    }
+
+    [Fact]
+    public void CopiesOfAnEarlierVersion_AreMovedFromTheLocalFolderToTheSharedOne()
+    {
+        WriteJournal(DeviceA, "a\n");
+        var local = Path.Combine(_root, "local-old", "Backups");
+        Directory.CreateDirectory(local);
+        var old = new BackupService(Data, local, () => new DateTime(2026, 10, 20, 4, 0, 0)).Create(BackupKind.Automatic)!;
+        var shared = Service();
+        shared.Create(BackupKind.Manual);
+
+        Assert.Equal(1, shared.AdoptFrom(local));
+        Assert.False(File.Exists(old.Path));
+        Assert.Equal(2, shared.List().Count);
+        Assert.Equal(0, shared.AdoptFrom(local));                  // nothing left to move
+        Assert.Equal(0, shared.AdoptFrom(Backups));                // the same folder: nothing to do
+        Assert.Equal(0, shared.AdoptFrom(Path.Combine(_root, "missing")));
+    }
+
+    [Fact]
+    public void CreatingTheCoreMovesLocalCopiesOfVersion040()
+    {
+        var localDir = Path.Combine(_root, "local-core");
+        var oldFolder = Path.Combine(localDir, "Backups");
+        Directory.CreateDirectory(oldFolder);
+        WriteJournal(DeviceA, "a\n");
+        new BackupService(Data, oldFolder, () => new DateTime(2026, 10, 20, 4, 0, 0)).Create(BackupKind.Automatic);
+
+        var core = BudgetCore.Create(localDir, Data, "Test");
+        _cores.Add(core);
+
+        Assert.Empty(Directory.GetFiles(oldFolder, "*.zip"));
+        Assert.Contains(core.Backups.List(), b => b.CreatedLocal == new DateTime(2026, 10, 20, 4, 0, 0));
     }
 }

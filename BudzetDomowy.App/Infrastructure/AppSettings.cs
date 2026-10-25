@@ -35,6 +35,9 @@ public sealed record AppSettings
     /// <summary>The screen that was open when the program was last used.</summary>
     public string LastPage { get; init; } = "dashboard";
 
+    /// <summary>A clock beside the date at the top.</summary>
+    public bool ShowClock { get; init; } = true;
+
     /// <summary>Show "+" and "−" in front of amounts.</summary>
     public bool ShowMinus { get; init; } = true;
 
