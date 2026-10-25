@@ -206,6 +206,7 @@ public class V2UiTests
     public void Reports_ListPlacesWithTheirTotals_ForThePickedPeriod() => WithApp(app =>
     {
         var vm = app.Get<ReportsViewModel>();
+        vm.IsYear = false;                                    // the month: the table follows the period of the report
         var places = vm.Places;
 
         Assert.True(places.HasRows);

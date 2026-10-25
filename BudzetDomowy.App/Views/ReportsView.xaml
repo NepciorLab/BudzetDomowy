@@ -22,32 +22,63 @@
         </Style>
     </UserControl.Resources>
 
-    <ScrollViewer VerticalScrollBarVisibility="Auto">
-        <StackPanel Margin="16,12,4,12">
-            <!-- Which report: overview, comparisons, places (a strip of tabs; the content below follows the selection) -->
-            <TabControl SelectedIndex="{Binding TabIndex, Mode=TwoWay}" Padding="0" Margin="0,0,0,10" BorderThickness="0">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- the part that stays in place: the tabs (as in Settings) and the period -->
+        <StackPanel Margin="16,8,16,0">
+            <TabControl SelectedIndex="{Binding TabIndex, Mode=TwoWay}" Background="Transparent" Padding="0" Margin="0,0,0,8" BorderThickness="0">
                 <TabItem Header="{infra:Str ReportTabOverview}" />
                 <TabItem Header="{infra:Str ReportTabCompare}" />
                 <TabItem Header="{infra:Str ReportTabPlaces}" />
             </TabControl>
 
-            <!-- Period -->
-            <StackPanel Orientation="Horizontal" Margin="0,0,0,12" Visibility="{Binding ShowPeriod, Converter={StaticResource BoolToVis}}">
-                <RadioButton Content="{infra:Str ReportMonth}" IsChecked="{Binding IsMonth, Mode=OneWay}" GroupName="scope" Click="MonthScope_Click" MinWidth="0" />
-                <RadioButton Content="{infra:Str ReportYear}" IsChecked="{Binding IsYear, Mode=OneWay}" GroupName="scope" Click="YearScope_Click" MinWidth="0" Margin="8,0,24,0" />
-                <Button Content="◀" Command="{Binding PreviousCommand}" Width="40" ToolTip="{infra:Str PeriodPrevious}" />
-                <TextBlock Text="{Binding Title}" FontSize="24" FontWeight="SemiBold" Width="240" TextAlignment="Center" VerticalAlignment="Center" />
-                <Button Content="▶" Command="{Binding NextCommand}" Width="40" ToolTip="{infra:Str PeriodNext}" />
-                <Button Content="{infra:Str DashToday}" Command="{Binding CurrentCommand}" Margin="12,0,0,0" />
-                <Button Content="{infra:Str ExportReportButton}" Command="{Binding ExportCommand}" Margin="24,0,0,0" ToolTip="{infra:Str ExportReportTip}"
-                        Visibility="{Binding IsOverview, Converter={StaticResource BoolToVis}}" />
-            </StackPanel>
+            <!-- Period: everything, year, month; arrows; Excel on the right -->
+            <Grid Margin="0,0,0,10" Visibility="{Binding ShowPeriod, Converter={StaticResource BoolToVis}}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel Orientation="Horizontal">
+                    <RadioButton Content="{infra:Str ReportAll}" IsChecked="{Binding IsAll, Mode=OneWay}" GroupName="scope"
+                                 Command="{Binding SetScopeCommand}" CommandParameter="All" MinWidth="0" />
+                    <RadioButton Content="{infra:Str ReportYear}" IsChecked="{Binding IsYear, Mode=OneWay}" GroupName="scope"
+                                 Command="{Binding SetScopeCommand}" CommandParameter="Year" MinWidth="0" Margin="8,0,0,0" />
+                    <RadioButton Content="{infra:Str ReportMonth}" IsChecked="{Binding IsMonth, Mode=OneWay}" GroupName="scope"
+                                 Command="{Binding SetScopeCommand}" CommandParameter="Month" MinWidth="0" Margin="8,0,24,0" />
+                    <Button Content="◀" Command="{Binding PreviousCommand}" Width="40" ToolTip="{infra:Str PeriodPrevious}"
+                            Visibility="{Binding HasArrows, Converter={StaticResource BoolToVis}}" />
+                    <TextBlock Text="{Binding Title}" FontSize="24" FontWeight="SemiBold" MinWidth="240" TextAlignment="Center" VerticalAlignment="Center" />
+                    <Button Content="▶" Command="{Binding NextCommand}" Width="40" ToolTip="{infra:Str PeriodNext}"
+                            Visibility="{Binding HasArrows, Converter={StaticResource BoolToVis}}" />
+                    <Button Content="{infra:Str DashToday}" Command="{Binding CurrentCommand}" Margin="12,0,0,0"
+                            Visibility="{Binding HasArrows, Converter={StaticResource BoolToVis}}" />
+                </StackPanel>
+                <!-- Excel icon: the report of the period (everything: the list of all transactions) -->
+                <Button Grid.Column="2" Command="{Binding ExportCommand}" ToolTip="{infra:Str ExportReportTip}" Padding="6" HorizontalAlignment="Right"
+                        Visibility="{Binding IsOverview, Converter={StaticResource BoolToVis}}">
+                    <Border Width="26" Height="26" CornerRadius="4" Background="#217346">
+                        <Grid>
+                            <Path Data="M5,6 L21,6 M5,11 L21,11 M5,16 L21,16 M5,21 L21,21 M11,6 L11,21" Stroke="#66FFFFFF" StrokeThickness="0.8" />
+                            <TextBlock Text="X" Foreground="White" FontWeight="Black" FontSize="17" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Grid>
+                    </Border>
+                </Button>
+            </Grid>
+        </StackPanel>
+
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="16,0,4,12">
 
             <!-- ================= overview ================= -->
             <StackPanel Visibility="{Binding IsOverview, Converter={StaticResource BoolToVis}}">
 
             <!-- Summary and comparison -->
-            <Border Style="{StaticResource Card}">
+            <Border Style="{StaticResource Card}" Visibility="{Binding ShowComparison, Converter={StaticResource BoolToVis}}">
                 <StackPanel>
                     <TextBlock Style="{StaticResource Heading}">
                         <Run Text="{infra:Str ReportCompareWith}" /> <Run Text="{Binding PreviousTitle, Mode=OneWay}" />
@@ -428,5 +459,6 @@
             </StackPanel>
             </Grid>
         </StackPanel>
-    </ScrollViewer>
+        </ScrollViewer>
+    </Grid>
 </UserControl>

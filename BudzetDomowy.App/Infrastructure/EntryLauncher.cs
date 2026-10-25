@@ -15,7 +15,7 @@ public sealed class WpfEntryLauncher : IEntryLauncher
 {
     private readonly BudgetCore _core;
     private readonly ToastService _toast;
-    private EntryWindow? _open;
+    private Window? _open;
 
     public WpfEntryLauncher(BudgetCore core, ToastService toast)
     {
@@ -31,7 +31,8 @@ public sealed class WpfEntryLauncher : IEntryLauncher
             return;
         }
 
-        var window = new EntryWindow(new EntryViewModel(_core, _toast, income));
+        var vm = new EntryViewModel(_core, _toast, income);
+        Window window = income ? new IncomeWindow(vm) : new EntryWindow(vm);          // an income is simpler: no place, no items, no event
         if (Application.Current?.MainWindow is { IsVisible: true } main && main != window) window.Owner = main;
         else window.WindowStartupLocation = WindowStartupLocation.CenterScreen;
         _open = window;

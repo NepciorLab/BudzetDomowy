@@ -70,13 +70,11 @@ public sealed partial class SettingsViewModel : ObservableObject
     private readonly SettingsStore _store;
     private readonly Func<ImportViewModel> _createImport;
     private readonly ExportActions _exports;
-    private readonly IBackgroundHost _background;
     private readonly IFileDialogs _dialogs;
     private readonly IAppRestarter _restarter;
     private readonly UpdateService _updates;
     private ReleaseInfo? _foundRelease;
     private FolderCheck? _pendingCheck;
-    private bool _restoringBackground;
 
     public CategoriesViewModel Categories { get; }
     public DiagnosticsViewModel Diagnostics { get; }
@@ -150,8 +148,6 @@ public sealed partial class SettingsViewModel : ObservableObject
         }
     }
 
-    [ObservableProperty] private bool _backgroundMode;
-    [ObservableProperty] private string _backgroundMessage = "";
 
     /// <summary>The program's keys: first the fixed ones, then those that can be changed.</summary>
     public IReadOnlyList<ShortcutRow> Shortcuts { get; } =
@@ -189,12 +185,6 @@ public sealed partial class SettingsViewModel : ObservableObject
 
         row.IsEditing = false;
         row.Reload();
-        if (id == ShortcutMap.GlobalQuickAdd && _background.IsActive)
-        {
-            // the global key is registered with Windows: register it again under the new keys
-            _background.Stop();
-            if (!_background.Start(out var problem)) BackgroundMessage = problem ?? "";
-        }
     }
 
     [RelayCommand]
@@ -205,11 +195,6 @@ public sealed partial class SettingsViewModel : ObservableObject
         row.Message = "";
         row.IsEditing = false;
         row.Reload();
-        if (id == ShortcutMap.GlobalQuickAdd && _background.IsActive)
-        {
-            _background.Stop();
-            _background.Start(out _);
-        }
     }
 
     public IReadOnlyList<ThemeOption> Themes { get; } =
@@ -262,21 +247,19 @@ public sealed partial class SettingsViewModel : ObservableObject
     public string DeviceId => _core.Device.DeviceId;
 
     public SettingsViewModel(BudgetCore core, SettingsStore store, CategoriesViewModel categories,
-        Func<ImportViewModel> createImport, ExportActions exports, DiagnosticsViewModel diagnostics, IBackgroundHost background, IFileDialogs dialogs, IAppRestarter restarter, UpdateService updates, BackupViewModel backup)
+        Func<ImportViewModel> createImport, ExportActions exports, DiagnosticsViewModel diagnostics, IFileDialogs dialogs, IAppRestarter restarter, UpdateService updates, BackupViewModel backup)
     {
         _core = core;
         _store = store;
         Categories = categories;
         _createImport = createImport;
         _exports = exports;
-        _background = background;
         _dialogs = dialogs;
         _restarter = restarter;
         _updates = updates;
         Backup = backup;
         _autoUpdate = store.Current.AutoUpdate;
         Diagnostics = diagnostics;
-        _backgroundMode = store.Current.BackgroundMode && background.IsActive;
         _selectedTheme = Themes.First(t => t.Choice == store.Current.Theme);
         _selectedStartPage = StartPages.FirstOrDefault(p => p.Key == store.Current.StartPage) ?? StartPages[1];
         _selectedScale = Scales.First(s => s.Choice == store.Current.UiScale);
@@ -286,28 +269,6 @@ public sealed partial class SettingsViewModel : ObservableObject
             self.OnPropertyChanged(nameof(SampleExpense));
             self.OnPropertyChanged(nameof(SampleIncome));
         });
-    }
-
-    partial void OnBackgroundModeChanged(bool value)
-    {
-        if (_restoringBackground) return;
-        BackgroundMessage = "";
-        if (value)
-        {
-            if (!_background.Start(out var error))
-            {
-                BackgroundMessage = error ?? "";
-                _restoringBackground = true;
-                BackgroundMode = false;
-                _restoringBackground = false;
-                return;
-            }
-        }
-        else
-        {
-            _background.Stop();
-        }
-        _store.Update(s => s with { BackgroundMode = value });
     }
 
     partial void OnSelectedThemeChanged(ThemeOption value)

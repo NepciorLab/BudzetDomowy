@@ -7,6 +7,9 @@ public enum ThemeChoice { System, Light, Dark }
 
 public enum UiScaleChoice { Small, Medium, Large }
 
+/// <summary>What the reports overview covers.</summary>
+public enum ReportPeriod { All, Year, Month }
+
 /// <summary>The little symbol that marks a category colour.</summary>
 public enum MarkerShape { Circle, Square, Bar }
 
@@ -16,9 +19,6 @@ public sealed record AppSettings
     public string? DataFolder { get; init; }
     public string? DeviceName { get; init; }
     public ThemeChoice Theme { get; init; } = ThemeChoice.System;
-
-    /// <summary>Global shortcut Ctrl+Alt+B and a tray icon for quick entries (off by default).</summary>
-    public bool BackgroundMode { get; init; }
 
     /// <summary>Folder for the local database and device identity instead of the default one (null = default).</summary>
     public string? LocalDataFolder { get; init; }
@@ -34,6 +34,9 @@ public sealed record AppSettings
 
     /// <summary>The screen that was open when the program was last used.</summary>
     public string LastPage { get; init; } = "dashboard";
+
+    /// <summary>The period chosen at the top of the reports; the program starts with the one used last (a year at first).</summary>
+    public ReportPeriod ReportsPeriod { get; init; } = ReportPeriod.Year;
 
     /// <summary>A clock beside the date at the top.</summary>
     public bool ShowClock { get; init; } = true;

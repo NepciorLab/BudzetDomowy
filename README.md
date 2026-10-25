@@ -2,7 +2,7 @@
 
 Program dla Windows 11 do wpisywania przychodów i wydatków oraz pilnowania budżetu domowego. Pracują w nim dwie osoby na dwóch komputerach na wspólnych danych. Interfejs jest po polsku, walutą bazową jest złoty.
 
-Wersja **0.5.0**.
+Wersja **0.6.0**.
 
 ## Uruchomienie
 
@@ -32,7 +32,7 @@ Drugą kopię programu możesz uruchomić jako „drugi komputer”: `BudzetDomo
 
 ## Codzienne używanie
 
-U góry każdego ekranu są dwa przyciski z podpowiedzią klawiszy: **W – nowy wydatek** i **Q – nowy przychód** (klawisze działają, gdy nie piszesz w żadnym polu; można je zmienić w Ustawieniach → Skróty klawiszowe). Otwierają okno wpisu:
+U góry każdego ekranu są dwa przyciski z podpowiedzią klawiszy: **W – nowy wydatek** i **Q – nowy przychód** (klawisze działają, gdy nie piszesz w żadnym polu; można je zmienić w Ustawieniach → Skróty klawiszowe). **Nowy przychód** to proste okno: data, kwota (może być działaniem), waluta, kategoria i notatka. **Nowy wydatek** otwiera okno paragonu:
 
 * Na górze dane całego paragonu: **data, miejsce, kwota łączna, waluta, wydarzenie** (i notatka). Poniżej **pozycje**: kategoria i kwota. Pierwsza pozycja dostaje całą kwotę łączną i kategorię, którą najczęściej przypisywałeś temu miejscu.
 * **Enter** przechodzi do następnego pola. Po zatwierdzeniu kategorii Enter przechodzi do jej kwoty i zaznacza ją całą: Enter ją przyjmuje, albo wpisujesz inną kwotę. Gdy kwota jest mniejsza niż to, co zostało do rozdysponowania, pojawia się następna pozycja z resztą i kolejną w kolejności częstości kategorią tego miejsca (taką, której żadna pozycja jeszcze nie używa); tak do wyzerowania. Wtedy Enter przechodzi do przycisku **Zatwierdź**. Przycisk **+** dodaje pozycję ręcznie, **✕** ją usuwa; **Ctrl+Enter** zatwierdza z dowolnego pola, **Esc** zamyka okno.
@@ -49,7 +49,7 @@ U góry każdego ekranu są dwa przyciski z podpowiedzią klawiszy: **W – nowy
 * Klawisze skrótów można zmienić: Ustawienia → Skróty klawiszowe → *Zmień…* (program nie pozwoli przypisać klawisza, który ma już inne polecenie albo który jest zarezerwowany, np. Ctrl+C).
 * Pełna lista skrótów: **F1** albo Ustawienia → Skróty klawiszowe.
 
-Ekrany: **Pulpit** (miesiąc, kafelki, wykres kategorii z podkategoriami, paski budżetów, ostatnie wpisy, trwające wydarzenie), **Transakcje** (edycja w miejscu, filtry, przeglądanie tygodniowe, miesięczne, roczne, całe (*Wszystko*) albo w dowolnym zakresie, domyślnie bieżący miesiąc; na dole sumy wszystkich pasujących wpisów, a obok po prawej zaznaczonych; ikona Excela w prawym górnym rogu eksportuje to, co widać), **Budżety** (limity miesięczne z historią zmian), **Wydarzenia** (np. wakacje: koszty osobno, koszt na dzień, porównanie z planem), **Wpisy cykliczne** (osobny ekran: każdy wpis ma wymaganą nazwę; po kliknięciu wpisu widać jego szczegóły tylko do odczytu, a przycisk *Zmień* włącza edycję i zamienia się w *Zapisz zmiany*; pole *Potwierdzaj wykonanie* sprawia, że przy każdym terminie program pyta „czy to miało miejsce?”: Tak dodaje wpis, Nie pomija ten termin na zawsze, Później pyta przy następnym uruchomieniu; pytania pokazują się tylko, gdy okno programu jest widoczne), **Raporty** (zakładki: *Przegląd* – miesiąc lub rok, porównanie z poprzednim okresem (tylko tych zakresów, które istnieją: bieżący okres do dziś i poprzedni do tego samego dnia sprzed miesiąca/roku, a gdy dane zaczynają się później – od tego dnia; przy takim skróceniu pod tabelą jest uwaga, że przegląd jest niepełny), trend z wykresem sum (przychody, wydatki, bilans) obok, średnie na dzień, tydzień i miesiąc dla wybranej kategorii; *Porównania* – lata obok siebie miesiąc po miesiącu albo wybrane miesiące obok siebie kategoria po kategorii, osobno dla wydatków i przychodów, wykres słupkowy, liniowy albo *Średnie* (dla każdego roku średnia miesięczna narastająco: styczeń, średnia stycznia i lutego, średnia trzech pierwszych miesięcy…); *Miejsca* – sumy według miejsc w wybranym okresie), **Ustawienia** (wygląd, kategorie z wyborem ikony z listy i koloru, import i eksport, diagnostyka, skróty klawiszowe).
+Ekrany: **Pulpit** (miesiąc, kafelki, wykres kategorii z podkategoriami, paski budżetów, ostatnie wpisy, trwające wydarzenie), **Transakcje** (edycja w miejscu, filtry, przeglądanie tygodniowe, miesięczne, roczne, całe (*Wszystko*) albo w dowolnym zakresie, domyślnie bieżący miesiąc; na dole sumy wszystkich pasujących wpisów, a obok po prawej zaznaczonych; ikona Excela w prawym górnym rogu eksportuje to, co widać), **Budżety** (limity miesięczne z historią zmian), **Wydarzenia** (np. wakacje: koszty osobno, koszt na dzień, porównanie z planem), **Wpisy cykliczne** (osobny ekran: każdy wpis ma wymaganą nazwę; po kliknięciu wpisu widać jego szczegóły tylko do odczytu, a przycisk *Zmień* włącza edycję i zamienia się w *Zapisz zmiany*; pole *Potwierdzaj wykonanie* sprawia, że przy każdym terminie program pyta „czy to miało miejsce?”: Tak dodaje wpis, Nie pomija ten termin na zawsze, Później pyta przy następnym uruchomieniu; pytania pokazują się tylko, gdy okno programu jest widoczne), **Raporty** (zakładki: *Przegląd* – u góry wybierasz kolejno **Wszystko, Rok, Miesiąc** (domyślnie zawsze rok; wybór jest zapamiętywany do następnego uruchomienia; „Wszystko” obejmuje cały okres bez porównania, a ikona Excela eksportuje wtedy listę wszystkich transakcji), porównanie z poprzednim okresem (tylko tych zakresów, które istnieją: bieżący okres do dziś i poprzedni do tego samego dnia sprzed miesiąca/roku, a gdy dane zaczynają się później – od tego dnia; przy takim skróceniu pod tabelą jest uwaga, że przegląd jest niepełny), trend z wykresem sum (przychody, wydatki, bilans) obok, średnie na dzień, tydzień i miesiąc dla wybranej kategorii; *Porównania* – lata obok siebie miesiąc po miesiącu albo wybrane miesiące obok siebie kategoria po kategorii, osobno dla wydatków i przychodów, wykres słupkowy, liniowy albo *Średnie* (dla każdego roku średnia miesięczna narastająco: styczeń, średnia stycznia i lutego, średnia trzech pierwszych miesięcy…); *Miejsca* – sumy według miejsc w wybranym okresie), **Ustawienia** (wygląd, kategorie z wyborem ikony z listy i koloru, import i eksport, diagnostyka, skróty klawiszowe).
 
 Skróty ekranów: Ctrl+1 … Ctrl+7 (Pulpit, Transakcje, Budżety, Wydarzenia, Wpisy cykliczne, Raporty, Ustawienia).
 
@@ -81,11 +81,7 @@ Ustawienia → **Import i eksport** → *Importuj z Excela*. Kreator wczytuje pl
 
 Transakcje do **Excela** (ikona w prawym górnym rogu ekranu Transakcje: wpisy pasujące do filtrów i okresu; w Ustawieniach – wszystkie), raport miesiąca lub roku do Excela.
 
-### Szybkie dodawanie spoza programu (opcjonalne)
-
-Ustawienia → Ogólne → *Włącz globalny skrót szybkiego dodawania i ikonę w zasobniku* (domyślnie Ctrl+Alt+B, można zmienić w Ustawieniach → Skróty klawiszowe). Skrót i kliknięcie ikony otwierają okno nowego wydatku. Domyślnie wyłączone.
-
-### Gdzie program trzyma swoje dane
+## Gdzie program trzyma swoje dane
 
 Ustawienia, dzienniki (logi), lokalna baza, kopie zapasowe i identyfikator komputera leżą w folderze **`Data` obok pliku `BudzetDomowy.exe`** (nie w AppData). Stare wersje trzymały je w `%LocalAppData%\BudzetDomowy`: przy pierwszym starcie nowa wersja kopiuje stamtąd dane (stary folder zostaje i można go usunąć ręcznie), więc komputer pozostaje tym samym urządzeniem w folderze danych. Jeśli program leży w miejscu, gdzie nie wolno zapisywać (np. `Program Files`), używa dawnego folderu w AppData.
 

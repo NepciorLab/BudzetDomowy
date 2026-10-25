@@ -23,7 +23,6 @@ public sealed class ShortcutMap
     public const string NextPeriod = "Period.Next";
     public const string TxChangeCategory = "Tx.ChangeCategory";
     public const string TxDelete = "Tx.Delete";
-    public const string GlobalQuickAdd = "Global.QuickAdd";
     public const string GoPrefix = "Go.";
 
     /// <summary>Screens in the order of the navigation list (the id is the page key).</summary>
@@ -40,7 +39,6 @@ public sealed class ShortcutMap
         new(TxChangeCategory, "Ctrl+K", "KeyCtrlK"),
         new(TxDelete, "Delete", "KeyDel"),
         new(Help, "F1", "KeyF1"),
-        new(GlobalQuickAdd, "Ctrl+Alt+B", "KeyGlobal"),
     ];
 
     /// <summary>Keys the program needs for itself or that belong to the system; they cannot be assigned.</summary>

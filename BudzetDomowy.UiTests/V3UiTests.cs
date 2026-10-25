@@ -195,20 +195,6 @@ public class V3UiTests
     });
 
     [Fact]
-    public void Settings_TheQuickAddOptionStaysCheckedWhenTheHostIsRunning() => WithApp(app =>
-    {
-        var host = (FakeHost)app.Services.GetService(typeof(IBackgroundHost))!;
-        var store = app.Get<SettingsStore>();
-        store.Update(s => s with { BackgroundMode = true });
-        host.Start(out _);                                                    // the program starts the host before it builds the screens
-
-        var vm = new SettingsViewModel(app.Core, store, app.Get<CategoriesViewModel>(), () => app.Get<ImportViewModel>(), app.Get<ExportActions>(),
-            app.Get<DiagnosticsViewModel>(), host, app.Get<IFileDialogs>(), app.Get<IAppRestarter>(), app.Get<UpdateService>(), app.Get<BackupViewModel>());
-        Assert.True(vm.BackgroundMode);
-        Assert.True(store.Current.BackgroundMode);                            // and the setting itself is still on
-    });
-
-    [Fact]
     public void Appearance_ScaleAndSymbolAreChosenInSettings() => WithApp(app => WithPreferences(app, prefs =>
     {
         var vm = app.Get<SettingsViewModel>();

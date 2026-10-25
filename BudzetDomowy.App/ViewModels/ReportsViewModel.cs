@@ -25,6 +25,7 @@ public sealed partial class ReportsViewModel : ObservableObject, IPeriodNavigabl
 {
     private readonly BudgetCore _core;
     private readonly ExportActions _exports;
+    private readonly SettingsStore _store;
 
     [ObservableProperty, NotifyPropertyChangedFor(nameof(IsOverview)), NotifyPropertyChangedFor(nameof(IsCompare)),
         NotifyPropertyChangedFor(nameof(IsPlaces)), NotifyPropertyChangedFor(nameof(ShowPeriod))] private ReportTab _tab;
@@ -49,7 +50,23 @@ public sealed partial class ReportsViewModel : ObservableObject, IPeriodNavigabl
     public CompareViewModel Compare { get; }
     public PlacesViewModel Places { get; }
 
-    [ObservableProperty, NotifyPropertyChangedFor(nameof(IsMonth))] private bool _isYear;
+    /// <summary>Everything, one year or one month; remembered for the next start of the program.</summary>
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(IsAll)), NotifyPropertyChangedFor(nameof(IsYear)), NotifyPropertyChangedFor(nameof(IsMonth)),
+        NotifyPropertyChangedFor(nameof(HasArrows))] private ReportPeriod _scope;
+
+    public bool IsAll => Scope == ReportPeriod.All;
+    public bool IsMonth => Scope == ReportPeriod.Month;
+
+    public bool IsYear
+    {
+        get => Scope == ReportPeriod.Year;
+        set => Scope = value ? ReportPeriod.Year : ReportPeriod.Month;
+    }
+
+    /// <summary>A year and a month have a previous and a next one; "everything" has not.</summary>
+    public bool HasArrows => !IsAll;
+
+    public bool ShowComparison => !IsAll;
     [ObservableProperty] private DateOnly _anchor = BudgetMath.MonthStart(DateOnly.FromDateTime(DateTime.Today));
 
     [ObservableProperty] private string _title = "";
@@ -97,14 +114,14 @@ public sealed partial class ReportsViewModel : ObservableObject, IPeriodNavigabl
     [ObservableProperty] private IReadOnlyList<EventRow> _events = [];
     [ObservableProperty] private bool _hasEvents;
 
-    public bool IsMonth => !IsYear;
-
     public LiveChartsCore.SkiaSharpView.Painting.SolidColorPaint LegendTextPaint => ChartFactory.TextPaint();
 
-    public ReportsViewModel(BudgetCore core, DataHub hub, ExportActions exports)
+    public ReportsViewModel(BudgetCore core, DataHub hub, ExportActions exports, SettingsStore store)
     {
         _core = core;
         _exports = exports;
+        _store = store;
+        _scope = store.Current.ReportsPeriod;
         Compare = new CompareViewModel(core);
         Places = new PlacesViewModel(core);
         var today = DateTime.Today;
@@ -119,7 +136,17 @@ public sealed partial class ReportsViewModel : ObservableObject, IPeriodNavigabl
         Reload();
     }
 
-    partial void OnIsYearChanged(bool value) => Reload();
+    partial void OnScopeChanged(ReportPeriod value)
+    {
+        if (_store.Current.ReportsPeriod != value) _store.Update(x => x with { ReportsPeriod = value });
+        Reload();
+    }
+
+    [RelayCommand]
+    private void SetScope(string? key)
+    {
+        if (Enum.TryParse<ReportPeriod>(key, out var scope)) Scope = scope;
+    }
     partial void OnTrendLinesChanged(bool value) => Reload();
 
     [RelayCommand]
@@ -149,8 +176,15 @@ public sealed partial class ReportsViewModel : ObservableObject, IPeriodNavigabl
         ReloadAverages();
     }
 
-    public void PreviousPeriod() => Anchor = IsYear ? Anchor.AddYears(-1) : Anchor.AddMonths(-1);
-    public void NextPeriod() => Anchor = IsYear ? Anchor.AddYears(1) : Anchor.AddMonths(1);
+    public void PreviousPeriod()
+    {
+        if (!IsAll) Anchor = IsYear ? Anchor.AddYears(-1) : Anchor.AddMonths(-1);
+    }
+
+    public void NextPeriod()
+    {
+        if (!IsAll) Anchor = IsYear ? Anchor.AddYears(1) : Anchor.AddMonths(1);
+    }
 
     [RelayCommand]
     private void Previous() => PreviousPeriod();
@@ -159,7 +193,12 @@ public sealed partial class ReportsViewModel : ObservableObject, IPeriodNavigabl
     private void Next() => NextPeriod();
 
     [RelayCommand]
-    private void Export() => _exports.Report(IsYear ? ReportScope.Year : ReportScope.Month, Anchor);
+    private void Export()
+    {
+        // a year or a month: its report; everything: the list of all transactions
+        if (IsAll) _exports.Transactions(_core.Reader.GetTransactions().ToList(), csv: false);
+        else _exports.Report(IsYear ? ReportScope.Year : ReportScope.Month, Anchor);
+    }
 
     [RelayCommand]
     private void Current() => Anchor = BudgetMath.MonthStart(DateOnly.FromDateTime(DateTime.Today));
@@ -181,37 +220,55 @@ public sealed partial class ReportsViewModel : ObservableObject, IPeriodNavigabl
 
         DateOnly from, to;
         var today = DateOnly.FromDateTime(DateTime.Today);
-        var kind = IsYear ? PeriodKind.Year : PeriodKind.Month;
-        (from, to) = PeriodRanges.Range(kind, IsYear ? new DateOnly(Anchor.Year, 1, 1) : Anchor);
-        Title = IsYear ? Anchor.Year.ToString(CultureInfo.CurrentCulture) : MonthName(Anchor);
-        PreviousTitle = IsYear ? (Anchor.Year - 1).ToString(CultureInfo.CurrentCulture) : MonthName(Anchor.AddMonths(-1));
+        AvailableComparison available;
+        PeriodComparison cmp;
+        if (IsAll)
+        {
+            // everything there is: from the first booked day to today; nothing to compare it with
+            from = all.Count > 0 ? all.Min(t => t.Date) : today;
+            to = all.Count > 0 && all.Max(t => t.Date) > today ? all.Max(t => t.Date) : today;
+            Title = Res.Get("ReportAllTitle");
+            PreviousTitle = "";
+            ComparisonNote = "";
+            cmp = new PeriodComparison(PeriodReports.Summary(all, from, to), PeriodReports.Summary(all, to.AddDays(1), to));
+        }
+        else
+        {
+            var kind = IsYear ? PeriodKind.Year : PeriodKind.Month;
+            (from, to) = PeriodRanges.Range(kind, IsYear ? new DateOnly(Anchor.Year, 1, 1) : Anchor);
+            Title = IsYear ? Anchor.Year.ToString(CultureInfo.CurrentCulture) : MonthName(Anchor);
+            PreviousTitle = IsYear ? (Anchor.Year - 1).ToString(CultureInfo.CurrentCulture) : MonthName(Anchor.AddMonths(-1));
 
-        // only the part that both periods have is compared; when something is cut off the overview says so
-        var available = PeriodReports.CompareAvailable(all, kind, IsYear ? new DateOnly(Anchor.Year, 1, 1) : Anchor, today);
-        var cmp = available.Comparison;
-        ComparisonNote = available.IsPartial
-            ? Res.Format("ReportPartialNote", Range(cmp.Current), Range(cmp.Previous))
-            : "";
+            // only the part that both periods have is compared; when something is cut off the overview says so
+            available = PeriodReports.CompareAvailable(all, kind, IsYear ? new DateOnly(Anchor.Year, 1, 1) : Anchor, today);
+            cmp = available.Comparison;
+            ComparisonNote = available.IsPartial
+                ? Res.Format("ReportPartialNote", Range(cmp.Current), Range(cmp.Previous))
+                : "";
+        }
 
         var whole = PeriodReports.Summary(all, from, to);
         IncomeText = Money(whole.Income);
         ExpenseText = Money(whole.Expense);
         BalanceText = Money(whole.Balance);
-        Comparison =
-        [
-            Row(Res.Get("ReportIncome"), cmp.Income, higherIsBetter: true),
-            Row(Res.Get("ReportExpenses"), cmp.Expense, higherIsBetter: false),
-            Row(Res.Get("ReportBalance"), cmp.Balance, higherIsBetter: true),
-        ];
+        Comparison = IsAll
+            ? []
+            :
+            [
+                Row(Res.Get("ReportIncome"), cmp.Income, higherIsBetter: true),
+                Row(Res.Get("ReportExpenses"), cmp.Expense, higherIsBetter: false),
+                Row(Res.Get("ReportBalance"), cmp.Balance, higherIsBetter: true),
+            ];
 
         // trend: the year's twelve months, or the twelve months ending with the chosen one
-        var firstMonth = IsYear ? new DateOnly(Anchor.Year, 1, 1) : Anchor.AddMonths(-11);
-        var lastMonth = IsYear ? new DateOnly(Anchor.Year, 12, 1) : Anchor;
+        var firstMonth = IsAll ? BudgetMath.MonthStart(from) : IsYear ? new DateOnly(Anchor.Year, 1, 1) : Anchor.AddMonths(-11);
+        var lastMonth = IsAll ? BudgetMath.MonthStart(to) : IsYear ? new DateOnly(Anchor.Year, 12, 1) : Anchor;
+        if (IsAll && lastMonth.AddMonths(-59) > firstMonth) firstMonth = lastMonth.AddMonths(-59);       // the last five years at most: more would not fit
         var points = PeriodReports.MonthlyTrend(all, firstMonth, lastMonth);
         TrendSeries = ChartFactory.IncomeExpenseColumns(points, Res.Get("ReportIncome"), Res.Get("ReportExpenses"), TrendLines);
         TrendXAxes = ChartFactory.MonthAxes(points, IsYear ? "MMM" : "MMM yy");
         TrendYAxes = ChartFactory.MoneyAxes();
-        TrendTitle = IsYear ? Res.Format("ReportTrendYear", Anchor.Year) : Res.Get("ReportTrend12");
+        TrendTitle = IsAll ? Res.Get("ReportTrendAll") : IsYear ? Res.Format("ReportTrendYear", Anchor.Year) : Res.Get("ReportTrend12");
 
         SumSeries = ChartFactory.SumColumns(points.Sum(p => p.Income), points.Sum(p => p.Expense),
             Res.Get("ReportIncome"), Res.Get("ReportExpenses"), Res.Get("ReportBalance"));

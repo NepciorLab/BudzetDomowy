@@ -83,11 +83,6 @@
                                 Visibility="{Binding UpdateAvailable, Converter={x:Static infra:BoolToVisibilityConverter.Visible}}" />
                     </StackPanel>
                     <TextBlock Text="{Binding UpdateMessage}" TextWrapping="Wrap" Margin="0,8,0,0" />
-
-                    <TextBlock Text="{infra:Str SettingsBackgroundHeading}" FontSize="18" FontWeight="SemiBold" Margin="0,28,0,8" />
-                    <CheckBox IsChecked="{Binding BackgroundMode, Mode=TwoWay}" Content="{infra:Str SettingsBackgroundOption}" />
-                    <TextBlock Text="{infra:Str SettingsBackgroundHint}" TextWrapping="Wrap" Opacity="0.7" Margin="0,4,0,0" />
-                    <TextBlock Text="{Binding BackgroundMessage}" TextWrapping="Wrap" Foreground="{StaticResource ExpenseBrush}" Margin="0,6,0,0" />
                 </StackPanel>
             </ScrollViewer>
         </TabItem>

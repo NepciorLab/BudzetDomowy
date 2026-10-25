@@ -17,7 +17,6 @@ public partial class App : Application
     private BudgetCore? _core;
     private Mutex? _instanceLock;
     private ServiceProvider? _services;
-    private IBackgroundHost? _host;
     private DateTime _lastErrorToast = DateTime.MinValue;
 
     protected override void OnStartup(StartupEventArgs e)
@@ -115,7 +114,6 @@ public partial class App : Application
             .AddSingleton<ReportsViewModel>()
             .AddSingleton<RecurringViewModel>()
             .AddSingleton<DiagnosticsViewModel>()
-            .AddSingleton<IBackgroundHost, TrayHotkeyHost>()
             .AddSingleton<IAppRestarter, AppRestarter>()
             .AddSingleton<IFileDialogs, WpfFileDialogs>()
             .AddSingleton<IMessageDialogs, WpfMessageDialogs>()
@@ -144,8 +142,6 @@ public partial class App : Application
         }));
         _core.Sync.StatusChanged += (_, status) => watcher.Observe(status);
 
-        // the quick-add host first: the Settings screen reads whether it is running when it is built
-        StartBackgroundMode(settings, services);
         var main = services.GetRequiredService<MainWindow>();
         MainWindow = main;
         ShutdownMode = ShutdownMode.OnMainWindowClose;
@@ -201,24 +197,6 @@ public partial class App : Application
         }
     }
 
-    private void StartBackgroundMode(AppSettings settings, ServiceProvider services)
-    {
-        _host = services.GetRequiredService<IBackgroundHost>();
-        _host.QuickAddRequested += ShowQuickAdd;
-        _host.OpenMainRequested += () =>
-        {
-            if (MainWindow is not { } w) return;
-            w.Show();
-            if (w.WindowState == WindowState.Minimized) w.WindowState = WindowState.Normal;
-            w.Activate();
-        };
-        _host.ExitRequested += () => Shutdown();
-        if (settings.BackgroundMode && !_host.Start(out var error)) AppLog.Warn("Background mode could not start: " + error);
-    }
-
-    /// <summary>The global key and the tray icon: the window for a new expense, above whatever is on the screen.</summary>
-    private void ShowQuickAdd() => _services!.GetRequiredService<IEntryLauncher>().Open(income: false);
-
     // ----- no unhandled error ever reaches the user as a stack trace: it goes to the log, the user sees a short calm note -----
 
     private void InstallErrorHandlers()
@@ -251,7 +229,6 @@ public partial class App : Application
 
     protected override void OnExit(ExitEventArgs e)
     {
-        _host?.Dispose();
         _instanceLock?.ReleaseMutex();
         _instanceLock?.Dispose();
         _core?.Dispose();

@@ -15,38 +15,6 @@ public class Phase6UiTests
     }
 
     [Fact]
-    public void BackgroundMode_StartsAndStopsTheHost_AndRemembersTheChoice() => WithApp(app =>
-    {
-        var host = (FakeHost)app.Services.GetService(typeof(IBackgroundHost))!;
-        var vm = app.Get<SettingsViewModel>();
-        var store = app.Get<SettingsStore>();
-        Assert.False(vm.BackgroundMode);
-
-        vm.BackgroundMode = true;
-        Assert.True(host.IsActive);
-        Assert.True(store.Current.BackgroundMode);
-
-        vm.BackgroundMode = false;
-        Assert.False(host.IsActive);
-        Assert.False(store.Current.BackgroundMode);
-    });
-
-    [Fact]
-    public void BackgroundMode_WhenTheShortcutIsTaken_SwitchesBackAndExplainsWhy() => WithApp(app =>
-    {
-        var host = (FakeHost)app.Services.GetService(typeof(IBackgroundHost))!;
-        host.Refuse = true;
-        var vm = app.Get<SettingsViewModel>();
-
-        vm.BackgroundMode = true;
-
-        Assert.False(vm.BackgroundMode);
-        Assert.False(host.IsActive);
-        Assert.False(app.Get<SettingsStore>().Current.BackgroundMode);
-        Assert.False(string.IsNullOrEmpty(vm.BackgroundMessage));
-    });
-
-    [Fact]
     public void Diagnostics_ListsDevicesAndRebuildsTheDatabaseFromTheJournals()
     {
         using var app = new TestApp();
@@ -57,7 +25,7 @@ public class Phase6UiTests
         Assert.True(device.EventCount > 10);
         Assert.Contains("TEST-PC", device.Name);
         Assert.Matches(@"\d", device.JournalSize);
-        Assert.Contains("0.5.0", vm.Version);
+        Assert.Contains("0.6.0", vm.Version);
 
         var before = app.Core.Reader.GetTransactions().Count;
         UiHost.RunAsync(async () =>
@@ -96,9 +64,8 @@ public class Phase6UiTests
         UiHost.Layout(second, 1100, 760);
         var keys = UiHost.Texts(second);
         UiHost.Render(second, 1100, 760, "settings-shortcuts");
-        Assert.Contains("Ctrl + Alt + B", keys);
         Assert.Contains("F1", keys);
-        Assert.Equal(21, vm.Shortcuts.Count);
+        Assert.Equal(20, vm.Shortcuts.Count);
     });
 
     [Fact]

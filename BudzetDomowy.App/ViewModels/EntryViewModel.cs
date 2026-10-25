@@ -126,6 +126,9 @@ public sealed partial class EntryViewModel : ObservableObject
     public bool IsIncome { get; }
     public string Title => Res.Get(IsIncome ? "EntryTitleIncome" : "EntryTitleExpense");
     public ObservableCollection<EntryLineViewModel> Lines { get; } = [];
+
+    /// <summary>The only line of an income (it has no items): the window binds its category to it.</summary>
+    public EntryLineViewModel Main => Lines[0];
     public IReadOnlyList<CategoryOption> Categories { get; }
     public IReadOnlyList<CurrencyOption> Currencies { get; }
     public IReadOnlyList<EventOption> Events { get; }
@@ -185,7 +188,7 @@ public sealed partial class EntryViewModel : ObservableObject
         var options = new List<EventOption> { new(Guid.Empty, Res.Get("NoEvent")) };
         options.AddRange(_specialEvents.OrderByDescending(e => e.DateFrom).Select(e => new EventOption(e.Id, e.Name)));
         Events = options;
-        ApplyDefaultEvent();
+        if (!isIncome) ApplyDefaultEvent();                  // an income has no event
 
         var first = new EntryLineViewModel(this);
         first.SetAuto("");
@@ -371,7 +374,7 @@ public sealed partial class EntryViewModel : ObservableObject
     /// <summary>While the date is inside an event's dates that event is suggested; choosing "no event" switches it off.</summary>
     private void ApplyDefaultEvent()
     {
-        if (_eventSource is EventSource.Manual or EventSource.Rule) return;
+        if (IsIncome || _eventSource is EventSource.Manual or EventSource.Rule) return;
         var date = DateOnly.FromDateTime(Date ?? DateTime.Today);
         var active = SpecialEvents.ActiveOn(_specialEvents, date);
         _applying = true;
