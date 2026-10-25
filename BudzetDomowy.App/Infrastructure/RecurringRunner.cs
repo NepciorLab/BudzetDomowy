@@ -94,8 +94,8 @@ public sealed class RecurringRunner
         var culture = CultureInfo.CurrentCulture;
         var sign = UiPreferences.Instance.SignOf(t.Type == TransactionType.Income);
         var amount = sign + t.Amount.ToString("N2", culture) + " " + t.CurrencyCode;
-        var title = t.Place.Length > 0 ? t.Place : t.Note.Length > 0 ? t.Note : Res.Get("RecurPromptNoName");
-        if (t.Place.Length > 0 && t.Note.Length > 0) title += " – " + t.Note;
+        var title = t.Name.Length > 0 ? t.Name : t.Place.Length > 0 ? t.Place : t.Note.Length > 0 ? t.Note : Res.Get("RecurPromptNoName");
+        if (t.Name.Length == 0 && t.Place.Length > 0 && t.Note.Length > 0) title += " – " + t.Note;
 
         var byId = _core.Reader.GetCategories().ToDictionary(c => c.Id);
         var category = CategoryHelpers.PathOf(t.CategoryId, byId);

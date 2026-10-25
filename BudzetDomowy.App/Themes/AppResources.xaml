@@ -10,6 +10,9 @@
                     <ResourceDictionary.MergedDictionaries>
                         <ui:ColorPaletteResources TargetTheme="Light" Accent="#E65100" />
                     </ResourceDictionary.MergedDictionaries>
+                    <!-- the chosen tab is a lighter grey than the rest of the strip -->
+                    <SolidColorBrush x:Key="TabViewItemHeaderBackgroundSelected" Color="#C9CCD3" />
+                    <SolidColorBrush x:Key="TabViewItemHeaderBackgroundPointerOver" Color="#E1E3E8" />
                 </ResourceDictionary>
                 <ResourceDictionary x:Key="Dark">
                     <ResourceDictionary.MergedDictionaries>
@@ -17,6 +20,8 @@
                                                   AltMediumHigh="#262A33" ChromeMedium="#2F343F" ChromeMediumLow="#2F343F"
                                                   ChromeLow="#363B47" />
                     </ResourceDictionary.MergedDictionaries>
+                    <SolidColorBrush x:Key="TabViewItemHeaderBackgroundSelected" Color="#5A6070" />
+                    <SolidColorBrush x:Key="TabViewItemHeaderBackgroundPointerOver" Color="#434856" />
                 </ResourceDictionary>
             </ui:ThemeResources.ThemeDictionaries>
         </ui:ThemeResources>
@@ -26,6 +31,12 @@
     <SolidColorBrush x:Key="ExpenseBrush" Color="#E53935" />
     <SolidColorBrush x:Key="IncomeBrush" Color="#43A047" />
     <SolidColorBrush x:Key="WarningBrush" Color="#F9A825" />
+
+    <!-- a discreet vertical line between the columns of every table -->
+    <SolidColorBrush x:Key="GridVerticalLineBrush" Color="#30808080" />
+    <Style TargetType="DataGrid" BasedOn="{StaticResource DefaultDataGridStyle}">
+        <Setter Property="VerticalGridLinesBrush" Value="{StaticResource GridVerticalLineBrush}" />
+    </Style>
 
     <!-- An amount that has an IsIncome property: red / green when colouring is on, the normal text colour of the theme otherwise -->
     <Style x:Key="AmountText" TargetType="TextBlock">

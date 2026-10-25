@@ -22,6 +22,9 @@ public sealed record PeriodComparison(PeriodSummary Current, PeriodSummary Previ
     public Change Balance => new(Current.Balance, Previous.Balance);
 }
 
+/// <param name="IsPartial">The ranges were cut: the current period is not over, or the previous one has no data for its whole length.</param>
+public sealed record AvailableComparison(PeriodComparison Comparison, bool IsPartial);
+
 public sealed record MonthPoint(DateOnly Month, decimal Income, decimal Expense)
 {
     public decimal Balance => Income - Expense;
@@ -73,6 +76,41 @@ public static class PeriodReports
     {
         var list = all as IReadOnlyCollection<Transaction> ?? all.ToList();
         return new PeriodComparison(MonthSummary(list, month), MonthSummary(list, month.AddMonths(-1)));
+    }
+
+    /// <summary>
+    /// Compares a month or year with the one before it, but only over the part both have: a running period is cut at today and the
+    /// previous period at the same day one month / year earlier; where the data starts later than the previous period begins, both
+    /// start at the same later date. The result says when something was cut off (the overview then warns that it is incomplete).
+    /// </summary>
+    public static AvailableComparison CompareAvailable(IEnumerable<Transaction> all, PeriodKind kind, DateOnly anchor, DateOnly today)
+    {
+        var list = all as IReadOnlyCollection<Transaction> ?? all.ToList();
+        var (p0, p1) = PeriodRanges.Range(kind, anchor);
+        var (q0, q1) = PeriodRanges.Range(kind, PeriodRanges.Shift(kind, anchor, -1));
+
+        var end = p1 < today ? p1 : today;                                    // the days of the current period that happened
+        // "the same day a year / month ago"; a finished period is compared with the whole previous one
+        var previousEnd = end == p1 ? q1 : PeriodRanges.Shift(kind, end, -1);
+        if (previousEnd > q1) previousEnd = q1;
+
+        var start = p0;
+        var previousStart = q0;
+        if (list.Count > 0)
+        {
+            var first = list.Min(t => t.Date);
+            if (first > q0)
+            {
+                previousStart = first;                                         // the previous period has data only from here
+                var aligned = PeriodRanges.Shift(kind, first, 1);
+                start = aligned > p0 ? aligned : p0;
+            }
+        }
+
+        var current = Summary(list, start, end);
+        var previous = Summary(list, previousStart, previousEnd);
+        var partial = start > p0 || end < p1 || previousStart > q0 || previousEnd < q1;
+        return new AvailableComparison(new PeriodComparison(current, previous), partial);
     }
 
     public static PeriodComparison CompareYear(IEnumerable<Transaction> all, int year)

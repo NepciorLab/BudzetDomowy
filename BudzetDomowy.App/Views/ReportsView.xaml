@@ -94,6 +94,17 @@
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
+                    <TextBlock Text="{Binding ComparisonNote}" TextWrapping="Wrap" Margin="0,8,0,0" Opacity="0.75" FontSize="12">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Style.Triggers>
+                                    <Trigger Property="Text" Value="">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
                 </StackPanel>
             </Border>
 
@@ -109,8 +120,20 @@
                                          Command="{Binding SetTrendStyleCommand}" CommandParameter="Lines" MinWidth="0" Margin="8,0,0,0" />
                         </StackPanel>
                     </Grid>
-                    <lvc:CartesianChart Series="{Binding TrendSeries}" XAxes="{Binding TrendXAxes}" YAxes="{Binding TrendYAxes}"
-                                        LegendPosition="Bottom" LegendTextPaint="{Binding LegendTextPaint}" Height="280" />
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="300" />
+                        </Grid.ColumnDefinitions>
+                        <lvc:CartesianChart Series="{Binding TrendSeries}" XAxes="{Binding TrendXAxes}" YAxes="{Binding TrendYAxes}"
+                                            LegendPosition="Bottom" LegendTextPaint="{Binding LegendTextPaint}" Height="280" />
+                        <!-- the sums of everything the chart on the left shows -->
+                        <StackPanel Grid.Column="1" Margin="16,0,0,0">
+                            <TextBlock Text="{Binding SumTitle}" Opacity="0.75" TextWrapping="Wrap" Margin="0,0,0,2" />
+                            <lvc:CartesianChart Series="{Binding SumSeries}" XAxes="{Binding SumXAxes}" YAxes="{Binding SumYAxes}"
+                                                LegendPosition="Bottom" LegendTextPaint="{Binding LegendTextPaint}" Height="260" />
+                        </StackPanel>
+                    </Grid>
                 </StackPanel>
             </Border>
 
@@ -163,7 +186,7 @@
                                 </TreeView.ItemContainerStyle>
                                 <TreeView.ItemTemplate>
                                     <HierarchicalDataTemplate DataType="{x:Type vm:BreakdownNode}" ItemsSource="{Binding Children}">
-                                        <StackPanel Orientation="Horizontal" Margin="0,2">
+                                        <StackPanel Orientation="Horizontal" Margin="0,2,26,2">
                                             <controls:CategoryMarker Size="10" Color="{Binding Color}" Margin="0,0,8,0" />
                                             <TextBlock Text="{Binding Name}" MinWidth="170" />
                                             <TextBlock Text="{Binding AmountText}" FontWeight="SemiBold" MinWidth="110" TextAlignment="Right" />
@@ -365,7 +388,7 @@
                         <TextBlock Text="{Binding Summary}" FontWeight="SemiBold" Margin="0,0,0,8" />
                         <DataGrid ItemsSource="{Binding Rows}" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False"
                                   CanUserDeleteRows="False" SelectionMode="Extended" SelectionUnit="FullRow" HeadersVisibility="Column"
-                                  GridLinesVisibility="Horizontal" MaxHeight="440" MaxWidth="760" HorizontalAlignment="Left"
+                                  GridLinesVisibility="All" MaxHeight="440" MaxWidth="760" HorizontalAlignment="Left"
                                   AlternationCount="2" AlternatingRowBackground="{DynamicResource SystemControlBackgroundListLowBrush}"
                                   infra:GridBehaviors.ColumnChooserKey="places"
                                   infra:GridBehaviors.AutoFit="{Binding AutoFitColumns, Source={x:Static infra:UiPreferences.Instance}}"
@@ -375,7 +398,7 @@
                                 <DataGridTextColumn Header="{infra:Str PlacesColCount}" Binding="{Binding Count}" Width="90">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock">
-                                            <Setter Property="TextAlignment" Value="Right" />
+                                            <Setter Property="TextAlignment" Value="Center" />
                                             <Setter Property="VerticalAlignment" Value="Center" />
                                         </Style>
                                     </DataGridTextColumn.ElementStyle>

@@ -9,13 +9,8 @@ namespace BudzetDomowy.App.Infrastructure.Updates;
 public sealed class GitHubReleases
 {
     private readonly HttpClient _http;
-    private readonly Func<string?> _token;
 
-    public GitHubReleases(HttpClient http, Func<string?> token)
-    {
-        _http = http;
-        _token = token;
-    }
+    public GitHubReleases(HttpClient http) => _http = http;
 
     public static HttpClient CreateClient() => new() { Timeout = TimeSpan.FromSeconds(30) };
 
@@ -24,7 +19,6 @@ public sealed class GitHubReleases
         var request = new HttpRequestMessage(HttpMethod.Get, url);
         request.Headers.UserAgent.Add(new ProductInfoHeaderValue("BudzetDomowy", "1"));
         request.Headers.Accept.ParseAdd(accept);
-        if (_token() is { Length: > 0 } token) request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
         return request;
     }
 
@@ -34,7 +28,7 @@ public sealed class GitHubReleases
         {
             using var request = Request($"https://api.github.com/repos/{repository}/releases/latest", "application/vnd.github+json");
             using var response = await _http.SendAsync(request, ct).ConfigureAwait(false);
-            if (response.StatusCode is HttpStatusCode.NotFound or HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
+            if (response.StatusCode == HttpStatusCode.NotFound)
                 return new UpdateCheck(UpdateState.NotFound, null, Res.Get("UpdateNotFound"));
             if (!response.IsSuccessStatusCode)
                 return new UpdateCheck(UpdateState.Failed, null, Res.Format("UpdateFailed", (int)response.StatusCode));
@@ -78,9 +72,7 @@ public sealed class GitHubReleases
 
     public async Task DownloadAsync(ReleaseAsset asset, string targetPath, IProgress<double>? progress = null, CancellationToken ct = default)
     {
-        // with a token the asset has to be fetched through the API address; the public address needs none
-        var useApi = _token() is { Length: > 0 } && asset.ApiUrl.Length > 0;
-        using var request = Request(useApi ? asset.ApiUrl : asset.DownloadUrl, useApi ? "application/octet-stream" : "*/*");
+        using var request = Request(asset.DownloadUrl, "*/*");
         using var response = await _http.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, ct).ConfigureAwait(false);
         response.EnsureSuccessStatusCode();
 

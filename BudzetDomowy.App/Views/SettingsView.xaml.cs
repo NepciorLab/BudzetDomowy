@@ -7,13 +7,6 @@ namespace BudzetDomowy.App.Views;
 
 public partial class SettingsView : UserControl
 {
-    private void SaveToken_Click(object sender, RoutedEventArgs e)
-    {
-        if (DataContext is not SettingsViewModel vm) return;
-        vm.SetUpdateToken(TokenBox.Password);
-        TokenBox.Clear();
-    }
-
     private static ShortcutRow? RowOf(object sender) => (sender as FrameworkElement)?.DataContext as ShortcutRow;
 
     private void ShortcutBox_PreviewKeyDown(object sender, KeyEventArgs e)

@@ -142,7 +142,7 @@
                 <TextBlock Text="{Binding Summary}" VerticalAlignment="Bottom" Margin="16,0,0,6" FontWeight="SemiBold" TextWrapping="Wrap" />
             </StackPanel>
             <DataGrid infra:GridBehaviors.ColumnChooserKey="import-preview" infra:GridBehaviors.AutoFit="{Binding AutoFitColumns, Source={x:Static infra:UiPreferences.Instance}}" Grid.Row="1" ItemsSource="{Binding PreviewRows}" AutoGenerateColumns="False" IsReadOnly="True" Margin="0,10,0,0"
-                      HeadersVisibility="Column" GridLinesVisibility="Horizontal" CanUserAddRows="False" EnableRowVirtualization="True"
+                      HeadersVisibility="Column" GridLinesVisibility="All" CanUserAddRows="False" EnableRowVirtualization="True"
                       AlternationCount="2" AlternatingRowBackground="{DynamicResource SystemControlBackgroundListLowBrush}">
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="{infra:Str ImportColSheet}" Binding="{Binding Sheet}" Width="80" />

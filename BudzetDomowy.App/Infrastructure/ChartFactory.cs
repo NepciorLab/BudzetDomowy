@@ -117,6 +117,40 @@ public static class ChartFactory
         },
     ];
 
+    /// <summary>One column each for the income, the expenses and the balance of everything shown (the balance may be negative).</summary>
+    public static IReadOnlyList<ISeries> SumColumns(decimal income, decimal expense, string incomeName, string expenseName, string balanceName)
+    {
+        ISeries Bar(string name, decimal value, SKColor color) => new ColumnSeries<double>
+        {
+            Name = name,
+            Values = [(double)value],
+            Fill = new SolidColorPaint(color),
+            MaxBarWidth = 60,
+            DataLabelsPaint = TextPaint(),
+            DataLabelsSize = 12,
+            DataLabelsPosition = DataLabelsPosition.End,
+            DataLabelsFormatter = point => point.Coordinate.PrimaryValue.ToString("N0", System.Globalization.CultureInfo.CurrentCulture),
+        };
+        return
+        [
+            Bar(incomeName, income, new SKColor(0x43, 0xA0, 0x47)),
+            Bar(expenseName, expense, new SKColor(0xE5, 0x39, 0x35)),
+            Bar(balanceName, income - expense, new SKColor(0xFB, 0x8C, 0x00)),
+        ];
+    }
+
+    /// <summary>Money axis that may go below zero.</summary>
+    public static IReadOnlyList<Axis> SignedMoneyAxes() =>
+    [
+        new Axis
+        {
+            LabelsPaint = TextPaint(),
+            TextSize = 12,
+            SeparatorsPaint = GridPaint(),
+            Labeler = v => v.ToString("N0", System.Globalization.CultureInfo.CurrentCulture),
+        },
+    ];
+
     public static IReadOnlyList<Axis> MoneyAxes() =>
     [
         new Axis

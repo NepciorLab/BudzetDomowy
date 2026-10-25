@@ -1,3 +1,4 @@
+using BudzetDomowy.Core.Backup;
 using BudzetDomowy.Core.Currency;
 using BudzetDomowy.Core.Excel;
 using BudzetDomowy.Core.Journal;
@@ -31,7 +32,10 @@ public sealed class BudgetCore : IDisposable
     public RecurringService Recurring { get; }
     public ImportService Import { get; }
 
-    private BudgetCore(DeviceIdentity device, string dataFolder, LocalDatabase db, SyncOptions? syncOptions, IExchangeRateSource? rateSource)
+    /// <summary>Daily copies of the journals, kept next to the local database (outside the synchronised folder).</summary>
+    public BackupService Backups { get; }
+
+    private BudgetCore(DeviceIdentity device, string dataFolder, string localDataDir, LocalDatabase db, SyncOptions? syncOptions, IExchangeRateSource? rateSource)
     {
         Device = device;
         DataFolder = dataFolder;
@@ -51,7 +55,11 @@ public sealed class BudgetCore : IDisposable
         Budgets = new BudgetService(Recorder, Reader);
         Recurring = new RecurringService(Recorder, Reader, Transactions, Rates);
         Import = new ImportService(Reader, Transactions, Categories);
+        Backups = new BackupService(dataFolder, Path.Combine(localDataDir, "Backups"));
     }
+
+    /// <summary>Puts the data back as it was in <paramref name="backup"/> and replays it into the database.</summary>
+    public SyncStatus RestoreBackup(BackupInfo backup) => Sync.Rebuild(() => Backups.RestoreFiles(backup));
 
     /// <param name="localDataDir">Per-installation folder (outside OneDrive): device.json and the SQLite database.</param>
     /// <param name="dataFolder">The shared (OneDrive-synchronised) folder with the journals.</param>
@@ -65,7 +73,7 @@ public sealed class BudgetCore : IDisposable
         }
         var device = DeviceIdentity.LoadOrCreate(localDataDir, deviceName);
         var db = new LocalDatabase(Path.Combine(localDataDir, DatabaseFileName));
-        return new BudgetCore(device, dataFolder, db, syncOptions, rateSource);
+        return new BudgetCore(device, dataFolder, localDataDir, db, syncOptions, rateSource);
     }
 
     public void Dispose() => Sync.Dispose();

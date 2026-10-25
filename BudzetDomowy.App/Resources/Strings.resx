@@ -541,7 +541,7 @@ Del – usuń zaznaczone transakcje</value></data>
   <data name="UpdateDownloading" xml:space="preserve"><value>Pobieram i instaluję…</value></data>
   <data name="UpdateUpToDate" xml:space="preserve"><value>Masz najnowszą wersję.</value></data>
   <data name="UpdateAvailable" xml:space="preserve"><value>Dostępna jest nowa wersja: {0}.</value></data>
-  <data name="UpdateNotFound" xml:space="preserve"><value>Nie znaleziono wydania w repozytorium. Jeśli repozytorium jest prywatne, wpisz poniżej token dostępu GitHub (tylko do odczytu).</value></data>
+  <data name="UpdateNotFound" xml:space="preserve"><value>Nie znaleziono wydania w repozytorium.</value></data>
   <data name="UpdateFailed" xml:space="preserve"><value>Nie udało się sprawdzić aktualizacji: {0}</value></data>
   <data name="UpdateIncomplete" xml:space="preserve"><value>Pobrany plik jest niekompletny.</value></data>
   <data name="UpdateNoExeInArchive" xml:space="preserve"><value>W pobranym archiwum nie ma pliku BudzetDomowy.exe.</value></data>
@@ -555,13 +555,40 @@ Del – usuń zaznaczone transakcje</value></data>
   <data name="UpdatePromptText" xml:space="preserve"><value>Dostępna jest nowa wersja programu: {0} (masz {1}).
 
 Pobrać i zainstalować ją teraz? Program uruchomi się ponownie.</value></data>
-  <data name="UpdateTokenHint" xml:space="preserve"><value>Repozytorium prywatne: token dostępu GitHub (Fine-grained, tylko odczyt zawartości). Jest zapisywany w ustawieniach w postaci chronionej dla Twojego konta Windows.</value></data>
-  <data name="UpdateTokenPlaceholder" xml:space="preserve"><value>token GitHub (opcjonalnie)</value></data>
-  <data name="UpdateTokenSave" xml:space="preserve"><value>Zapisz token</value></data>
-  <data name="UpdateTokenSaved" xml:space="preserve"><value>Token zapisany.</value></data>
-  <data name="UpdateTokenRemoved" xml:space="preserve"><value>Token usunięty.</value></data>
   <data name="SettingsStartPage" xml:space="preserve"><value>Karta po uruchomieniu programu</value></data>
   <data name="StartPageLast" xml:space="preserve"><value>Ostatnio wybrana</value></data>
+  <data name="ReportSumTitle" xml:space="preserve"><value>Razem w widocznym okresie</value></data>
+  <data name="ReportPartialNote" xml:space="preserve"><value>Przegląd jest niepełny: porównano tylko zakres {0} z zakresem {1}. Zakresy, w których nie ma danych (albo które jeszcze się nie zdarzyły), nie są uwzględnione.</value></data>
+  <data name="RecurName" xml:space="preserve"><value>Nazwa (wymagana)</value></data>
+  <data name="RecurNamePlaceholder" xml:space="preserve"><value>np. Czynsz</value></data>
+  <data name="RecurNameRequired" xml:space="preserve"><value>Podaj nazwę wpisu cyklicznego.</value></data>
+  <data name="RecurEdit" xml:space="preserve"><value>Zmień</value></data>
+  <data name="RecurSaveChanges" xml:space="preserve"><value>Zapisz zmiany</value></data>
+  <data name="SettingsBackup" xml:space="preserve"><value>BackUp</value></data>
+  <data name="BackupIntro" xml:space="preserve"><value>Program codziennie robi kopię zapasową wszystkich zapisów (dzienników) z folderu danych i trzyma ostatnie {0} kopii. Kopie leżą na tym komputerze, poza folderem synchronizowanym przez OneDrive.</value></data>
+  <data name="BackupFolderLabel" xml:space="preserve"><value>Folder kopii</value></data>
+  <data name="BackupCreateNow" xml:space="preserve"><value>Utwórz kopię teraz</value></data>
+  <data name="BackupRestore" xml:space="preserve"><value>Przywróć wybraną kopię…</value></data>
+  <data name="BackupColDate" xml:space="preserve"><value>Data i godzina</value></data>
+  <data name="BackupColKind" xml:space="preserve"><value>Rodzaj</value></data>
+  <data name="BackupColSize" xml:space="preserve"><value>Rozmiar</value></data>
+  <data name="BackupColFiles" xml:space="preserve"><value>Pliki zapisów</value></data>
+  <data name="BackupKindAutomatic" xml:space="preserve"><value>Codzienna</value></data>
+  <data name="BackupKindManual" xml:space="preserve"><value>Ręczna</value></data>
+  <data name="BackupKindBeforeRestore" xml:space="preserve"><value>Przed przywróceniem</value></data>
+  <data name="BackupCreating" xml:space="preserve"><value>Tworzę kopię…</value></data>
+  <data name="BackupNothing" xml:space="preserve"><value>Nie ma jeszcze żadnych zapisów do skopiowania.</value></data>
+  <data name="BackupCreated" xml:space="preserve"><value>Kopia z {0} została utworzona.</value></data>
+  <data name="BackupFailed" xml:space="preserve"><value>Nie udało się utworzyć kopii: {0}</value></data>
+  <data name="BackupRestoreTitle" xml:space="preserve"><value>Przywracanie kopii zapasowej</value></data>
+  <data name="BackupRestoreQuestion" xml:space="preserve"><value>Przywrócić dane z kopii: {0}?
+
+Wszystkie zmiany wprowadzone po tej chwili (także na innych komputerach) zostaną wycofane. Przed przywróceniem program zrobi kopię obecnego stanu, więc będzie można do niego wrócić.
+
+Na drugim komputerze po przywróceniu użyj Ustawienia → Diagnostyka → Odbuduj bazę z dzienników.</value></data>
+  <data name="BackupRestoring" xml:space="preserve"><value>Przywracam…</value></data>
+  <data name="BackupRestored" xml:space="preserve"><value>Przywrócono dane z kopii: {0}.</value></data>
+  <data name="BackupRestoreFailed" xml:space="preserve"><value>Nie udało się przywrócić kopii: {0}</value></data>
   <data name="PeriodAll" xml:space="preserve"><value>Wszystko</value></data>
   <data name="PeriodAllTitle" xml:space="preserve"><value>Wszystkie wpisy</value></data>
 </root>

@@ -83,11 +83,6 @@
                                 Visibility="{Binding UpdateAvailable, Converter={x:Static infra:BoolToVisibilityConverter.Visible}}" />
                     </StackPanel>
                     <TextBlock Text="{Binding UpdateMessage}" TextWrapping="Wrap" Margin="0,8,0,0" />
-                    <TextBlock Text="{infra:Str UpdateTokenHint}" TextWrapping="Wrap" Opacity="0.7" Margin="0,12,0,4" />
-                    <StackPanel Orientation="Horizontal">
-                        <PasswordBox x:Name="TokenBox" Width="320" ui:ControlHelper.PlaceholderText="{infra:Str UpdateTokenPlaceholder}" />
-                        <Button Content="{infra:Str UpdateTokenSave}" Click="SaveToken_Click" Margin="8,0,0,0" />
-                    </StackPanel>
 
                     <TextBlock Text="{infra:Str SettingsBackgroundHeading}" FontSize="18" FontWeight="SemiBold" Margin="0,28,0,8" />
                     <CheckBox IsChecked="{Binding BackgroundMode, Mode=TwoWay}" Content="{infra:Str SettingsBackgroundOption}" />
@@ -278,6 +273,42 @@
         <!-- Diagnostics -->
         <TabItem Header="{infra:Str SettingsDiagnostics}">
             <local:DiagnosticsView DataContext="{Binding Diagnostics}" />
+        </TabItem>
+
+        <!-- Backups -->
+        <TabItem Header="{infra:Str SettingsBackup}">
+            <Grid Margin="0,16,0,0" MaxWidth="900" HorizontalAlignment="Left" DataContext="{Binding Backup}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <StackPanel>
+                    <TextBlock Text="{Binding Intro}" TextWrapping="Wrap" Opacity="0.85" />
+                    <TextBlock Text="{infra:Str BackupFolderLabel}" Opacity="0.7" Margin="0,10,0,0" />
+                    <TextBlock Text="{Binding Folder}" TextWrapping="Wrap" />
+                </StackPanel>
+                <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,10,0,10">
+                    <Button Content="{infra:Str BackupCreateNow}" Command="{Binding CreateNowCommand}" Style="{StaticResource AccentButtonStyle}" Margin="0,0,8,0"
+                            IsEnabled="{Binding IsBusy, Converter={x:Static infra:BoolToVisibilityConverter.Not}}" />
+                    <Button Content="{infra:Str BackupRestore}" Command="{Binding RestoreCommand}" IsEnabled="{Binding CanRestore}" Margin="0,0,8,0" />
+                    <Button Content="{infra:Str SyncOpenFolder}" Command="{Binding OpenFolderCommand}" />
+                </StackPanel>
+                <DataGrid Grid.Row="2" ItemsSource="{Binding Items}" SelectedItem="{Binding Selected, Mode=TwoWay}" AutoGenerateColumns="False" IsReadOnly="True"
+                          CanUserAddRows="False" CanUserDeleteRows="False" SelectionMode="Single" SelectionUnit="FullRow" HeadersVisibility="Column"
+                          GridLinesVisibility="All" AlternationCount="2" AlternatingRowBackground="{DynamicResource SystemControlBackgroundListLowBrush}"
+                          infra:GridBehaviors.ColumnChooserKey="backups"
+                          infra:GridBehaviors.AutoFit="{Binding AutoFitColumns, Source={x:Static infra:UiPreferences.Instance}}">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="{infra:Str BackupColDate}" Binding="{Binding DateText}" Width="2*" />
+                        <DataGridTextColumn Header="{infra:Str BackupColKind}" Binding="{Binding KindText}" Width="*" />
+                        <DataGridTextColumn Header="{infra:Str BackupColSize}" Binding="{Binding SizeText}" Width="110" />
+                        <DataGridTextColumn Header="{infra:Str BackupColFiles}" Binding="{Binding Files}" Width="110" />
+                    </DataGrid.Columns>
+                </DataGrid>
+                <TextBlock Grid.Row="3" Text="{Binding Message}" TextWrapping="Wrap" Margin="0,10,0,0" Foreground="{DynamicResource SystemControlForegroundAccentBrush}" />
+            </Grid>
         </TabItem>
 
         <!-- Keyboard shortcuts -->

@@ -43,9 +43,12 @@
             </ListBox>
         </Grid>
 
-        <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto">
+        <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto" Visibility="{Binding ShowEditor, Converter={StaticResource BoolToVis}}">
             <StackPanel>
-                <StackPanel Orientation="Horizontal">
+                <TextBox Text="{Binding EditName, UpdateSourceTrigger=PropertyChanged}" IsReadOnly="{Binding IsReadOnly}" ui:ControlHelper.Header="{infra:Str RecurName}"
+                         ui:ControlHelper.PlaceholderText="{infra:Str RecurNamePlaceholder}" FontSize="16" FontWeight="SemiBold" />
+                <StackPanel IsEnabled="{Binding IsEditing}">
+                <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
                     <RadioButton Content="{infra:Str TypeExpense}" IsChecked="{Binding IsExpense, Mode=OneWay}"
                                  GroupName="rtype" Click="Expense_Click" MinWidth="0" />
                     <RadioButton Content="{infra:Str TypeIncome}" IsChecked="{Binding EditIsIncome, Mode=OneWay}"
@@ -98,8 +101,14 @@
                     <DatePicker Grid.Column="2" SelectedDate="{Binding EditEnd, Mode=TwoWay}" HorizontalAlignment="Stretch" ui:ControlHelper.Header="{infra:Str RecurEnd}" />
                 </Grid>
                 <CheckBox IsChecked="{Binding EditConfirm, Mode=TwoWay}" Content="{infra:Str RecurConfirmEach}" ToolTip="{infra:Str RecurConfirmEachTip}" Margin="0,12,0,0" />
+                </StackPanel>
                 <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
-                    <Button Content="{infra:Str CategorySave}" Command="{Binding SaveCommand}" Style="{StaticResource AccentButtonStyle}" Margin="0,0,8,0" />
+                    <Button Content="{infra:Str RecurEdit}" Command="{Binding EditCommand}" Style="{StaticResource AccentButtonStyle}" Margin="0,0,8,0"
+                            Visibility="{Binding CanEdit, Converter={StaticResource BoolToVis}}" />
+                    <Button Content="{infra:Str RecurSaveChanges}" Command="{Binding SaveCommand}" Style="{StaticResource AccentButtonStyle}" Margin="0,0,8,0"
+                            Visibility="{Binding IsEditing, Converter={StaticResource BoolToVis}}" />
+                    <Button Content="{infra:Str Cancel}" Command="{Binding CancelEditCommand}" Margin="0,0,8,0"
+                            Visibility="{Binding IsEditing, Converter={StaticResource BoolToVis}}" />
                     <Button Content="{infra:Str CategoryRemove}" Command="{Binding DeleteCommand}"
                             Visibility="{Binding HasSelection, Converter={StaticResource BoolToVis}}" />
                 </StackPanel>

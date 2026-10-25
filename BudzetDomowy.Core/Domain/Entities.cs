@@ -95,6 +95,9 @@ public sealed record Budget
 public sealed record RecurringTransaction
 {
     public Guid Id { get; init; }
+
+    /// <summary>The name this recurring entry is listed under.</summary>
+    public string Name { get; init; } = "";
     public TransactionType Type { get; init; }
     public decimal Amount { get; init; }
     public string CurrencyCode { get; init; } = "PLN";

@@ -58,6 +58,7 @@ public sealed partial class ReportsViewModel : ObservableObject, IPeriodNavigabl
     [ObservableProperty] private string _expenseText = "";
     [ObservableProperty] private string _balanceText = "";
     [ObservableProperty] private IReadOnlyList<ComparisonRow> _comparison = [];
+    [ObservableProperty] private string _comparisonNote = "";
 
     [ObservableProperty, NotifyPropertyChangedFor(nameof(TrendIsColumns))] private bool _trendLines;
     public bool TrendIsColumns => !TrendLines;
@@ -65,6 +66,12 @@ public sealed partial class ReportsViewModel : ObservableObject, IPeriodNavigabl
     [ObservableProperty] private IEnumerable<ICartesianAxis> _trendXAxes = [];
     [ObservableProperty] private IEnumerable<ICartesianAxis> _trendYAxes = [];
     [ObservableProperty] private string _trendTitle = "";
+
+    // the sums of everything the trend chart shows
+    [ObservableProperty] private IEnumerable<ISeries> _sumSeries = [];
+    [ObservableProperty] private IEnumerable<ICartesianAxis> _sumXAxes = [];
+    [ObservableProperty] private IEnumerable<ICartesianAxis> _sumYAxes = [];
+    [ObservableProperty] private string _sumTitle = "";
 
     [ObservableProperty] private IEnumerable<ISeries> _pieSeries = [];
     [ObservableProperty] private IReadOnlyList<PieSlice> _topCategories = [];
@@ -157,6 +164,9 @@ public sealed partial class ReportsViewModel : ObservableObject, IPeriodNavigabl
     [RelayCommand]
     private void Current() => Anchor = BudgetMath.MonthStart(DateOnly.FromDateTime(DateTime.Today));
 
+    private static string Range(PeriodSummary p) =>
+        p.To < p.From ? "—" : p.From.ToString("d", CultureInfo.CurrentCulture) + " – " + p.To.ToString("d", CultureInfo.CurrentCulture);
+
     private static string MonthName(DateOnly d)
     {
         var s = d.ToString("MMMM yyyy", CultureInfo.CurrentCulture);
@@ -170,27 +180,23 @@ public sealed partial class ReportsViewModel : ObservableObject, IPeriodNavigabl
         string Money(decimal v) => v.ToString("C2", CultureInfo.CurrentCulture);
 
         DateOnly from, to;
-        PeriodComparison cmp;
-        if (IsYear)
-        {
-            from = new DateOnly(Anchor.Year, 1, 1);
-            to = new DateOnly(Anchor.Year, 12, 31);
-            cmp = PeriodReports.CompareYear(all, Anchor.Year);
-            Title = Anchor.Year.ToString(CultureInfo.CurrentCulture);
-            PreviousTitle = (Anchor.Year - 1).ToString(CultureInfo.CurrentCulture);
-        }
-        else
-        {
-            from = Anchor;
-            to = PeriodReports.MonthEnd(Anchor);
-            cmp = PeriodReports.CompareMonth(all, Anchor);
-            Title = MonthName(Anchor);
-            PreviousTitle = MonthName(Anchor.AddMonths(-1));
-        }
+        var today = DateOnly.FromDateTime(DateTime.Today);
+        var kind = IsYear ? PeriodKind.Year : PeriodKind.Month;
+        (from, to) = PeriodRanges.Range(kind, IsYear ? new DateOnly(Anchor.Year, 1, 1) : Anchor);
+        Title = IsYear ? Anchor.Year.ToString(CultureInfo.CurrentCulture) : MonthName(Anchor);
+        PreviousTitle = IsYear ? (Anchor.Year - 1).ToString(CultureInfo.CurrentCulture) : MonthName(Anchor.AddMonths(-1));
 
-        IncomeText = Money(cmp.Current.Income);
-        ExpenseText = Money(cmp.Current.Expense);
-        BalanceText = Money(cmp.Current.Balance);
+        // only the part that both periods have is compared; when something is cut off the overview says so
+        var available = PeriodReports.CompareAvailable(all, kind, IsYear ? new DateOnly(Anchor.Year, 1, 1) : Anchor, today);
+        var cmp = available.Comparison;
+        ComparisonNote = available.IsPartial
+            ? Res.Format("ReportPartialNote", Range(cmp.Current), Range(cmp.Previous))
+            : "";
+
+        var whole = PeriodReports.Summary(all, from, to);
+        IncomeText = Money(whole.Income);
+        ExpenseText = Money(whole.Expense);
+        BalanceText = Money(whole.Balance);
         Comparison =
         [
             Row(Res.Get("ReportIncome"), cmp.Income, higherIsBetter: true),
@@ -206,6 +212,12 @@ public sealed partial class ReportsViewModel : ObservableObject, IPeriodNavigabl
         TrendXAxes = ChartFactory.MonthAxes(points, IsYear ? "MMM" : "MMM yy");
         TrendYAxes = ChartFactory.MoneyAxes();
         TrendTitle = IsYear ? Res.Format("ReportTrendYear", Anchor.Year) : Res.Get("ReportTrend12");
+
+        SumSeries = ChartFactory.SumColumns(points.Sum(p => p.Income), points.Sum(p => p.Expense),
+            Res.Get("ReportIncome"), Res.Get("ReportExpenses"), Res.Get("ReportBalance"));
+        SumXAxes = ChartFactory.LabelAxes([""]);
+        SumYAxes = ChartFactory.SignedMoneyAxes();
+        SumTitle = Res.Get("ReportSumTitle");
 
         // categories
         var roots = PeriodReports.Breakdown(all, cats, from, to, TransactionType.Expense);

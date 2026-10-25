@@ -48,7 +48,12 @@ public sealed partial class RecurringViewModel : ObservableObject
     public IReadOnlyList<CurrencyOption> Currencies { get; } = CurrencyCatalog.Ordered([]);
 
     [ObservableProperty] private IReadOnlyList<CategoryOption> _categories = [];
-    [ObservableProperty, NotifyPropertyChangedFor(nameof(HasSelection))] private RecurringItem? _selected;
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(HasSelection)), NotifyPropertyChangedFor(nameof(ShowEditor)), NotifyPropertyChangedFor(nameof(CanEdit))] private RecurringItem? _selected;
+
+    /// <summary>The details of a chosen entry are only shown; they can be changed after "Change" was pressed.</summary>
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(ShowEditor)), NotifyPropertyChangedFor(nameof(CanEdit)), NotifyPropertyChangedFor(nameof(IsReadOnly))] private bool _isEditing;
+
+    [ObservableProperty] private string _editName = "";
 
     [ObservableProperty, NotifyPropertyChangedFor(nameof(IsExpense))] private bool _editIsIncome;
     [ObservableProperty] private string _editAmount = "";
@@ -67,6 +72,9 @@ public sealed partial class RecurringViewModel : ObservableObject
     private bool _loading;
 
     public bool HasSelection => Selected is not null;
+    public bool ShowEditor => HasSelection || IsEditing;
+    public bool CanEdit => HasSelection && !IsEditing;
+    public bool IsReadOnly => !IsEditing;
     public bool IsExpense => !EditIsIncome;
     public bool IsWeekly => EditFrequency?.Frequency == RecurrenceFrequency.Weekly;
 
@@ -82,7 +90,9 @@ public sealed partial class RecurringViewModel : ObservableObject
 
     partial void OnSelectedChanged(RecurringItem? value)
     {
-        if (!_loading) LoadEditor(value);
+        if (_loading) return;
+        IsEditing = false;                    // choosing another entry shows its details, not an editor
+        LoadEditor(value);
     }
 
     partial void OnEditIsIncomeChanged(bool value) => ReloadCategories();
@@ -105,7 +115,7 @@ public sealed partial class RecurringViewModel : ObservableObject
             Items.Clear();
             foreach (var t in _core.Reader.GetRecurringTransactions())
             {
-                var title = t.Place.Length > 0 ? t.Place : t.Note.Length > 0 ? t.Note : CategoryHelpers.PathOf(t.CategoryId, cats);
+                var title = t.Name.Length > 0 ? t.Name : t.Place.Length > 0 ? t.Place : t.Note.Length > 0 ? t.Note : CategoryHelpers.PathOf(t.CategoryId, cats);
                 Items.Add(new RecurringItem(t, title.Length > 0 ? title : Res.Get("RecurUntitled"), Schedule(t),
                     (t.Type == TransactionType.Income ? "+" : "−") + t.Amount.ToString("N2", CultureInfo.CurrentCulture) + " " + t.CurrencyCode,
                     t.LastGeneratedDate is { } d ? Res.Format("RecurLast", d.ToString("d", CultureInfo.CurrentCulture)) : Res.Get("RecurNotYet")));
@@ -135,6 +145,7 @@ public sealed partial class RecurringViewModel : ObservableObject
         Message = "";
         if (item is null) return;
         var t = item.Model;
+        EditName = t.Name;
         EditIsIncome = t.Type == TransactionType.Income;
         EditAmount = t.Amount.ToString("0.##", CultureInfo.CurrentCulture);
         EditCurrency = t.CurrencyCode;
@@ -154,6 +165,8 @@ public sealed partial class RecurringViewModel : ObservableObject
         _loading = true;
         Selected = null;
         _loading = false;
+        IsEditing = true;
+        EditName = "";
         EditIsIncome = false;
         EditAmount = "";
         EditCurrency = CurrencyCatalog.Pln;
@@ -169,8 +182,27 @@ public sealed partial class RecurringViewModel : ObservableObject
     }
 
     [RelayCommand]
+    private void Edit()
+    {
+        if (Selected is not null) IsEditing = true;
+    }
+
+    [RelayCommand]
+    private void CancelEdit()
+    {
+        IsEditing = false;
+        if (Selected is { } item) LoadEditor(item);
+        Message = "";
+    }
+
+    [RelayCommand]
     private void Save()
     {
+        if (EditName.Trim().Length == 0)
+        {
+            Message = Res.Get("RecurNameRequired");
+            return;
+        }
         if (!AmountParser.TryParse(EditAmount, out var amount) || amount <= 0)
         {
             Message = Res.Get("QuickAddBadAmount");
@@ -190,6 +222,7 @@ public sealed partial class RecurringViewModel : ObservableObject
         var frequency = EditFrequency?.Frequency ?? RecurrenceFrequency.Monthly;
         var template = (Selected?.Model ?? new RecurringTransaction()) with
         {
+            Name = EditName.Trim(),
             Type = EditIsIncome ? TransactionType.Income : TransactionType.Expense,
             Amount = amount,
             CurrencyCode = EditCurrency,
@@ -208,6 +241,7 @@ public sealed partial class RecurringViewModel : ObservableObject
             var saved = Selected is null ? _core.Recurring.Add(template) : Save(template);
             Reload();
             Selected = Items.FirstOrDefault(i => i.Id == saved.Id);
+            IsEditing = false;
             Message = Res.Get("EventSaved");
         }
         catch (UpdateRequiredException)

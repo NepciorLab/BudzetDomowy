@@ -197,7 +197,7 @@
                 <!-- Transactions -->
                 <TextBlock Text="{infra:Str EventTransactions}" FontWeight="SemiBold" Margin="0,0,0,6" />
                 <DataGrid infra:GridBehaviors.ColumnChooserKey="event-transactions" infra:GridBehaviors.AutoFit="{Binding AutoFitColumns, Source={x:Static infra:UiPreferences.Instance}}" ItemsSource="{Binding Transactions}" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False"
-                          HeadersVisibility="Column" GridLinesVisibility="Horizontal" MaxHeight="420" Margin="0,0,12,16"
+                          HeadersVisibility="Column" GridLinesVisibility="All" MaxHeight="420" Margin="0,0,12,16"
                           AlternationCount="2" AlternatingRowBackground="{DynamicResource SystemControlBackgroundListLowBrush}">
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="{infra:Str ColDate}" Binding="{Binding Date, StringFormat='dd.MM.yyyy'}" Width="110" />

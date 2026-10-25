@@ -114,12 +114,16 @@ public sealed class SyncService : IDisposable
         finally { _running.Release(); }
     }
 
-    /// <summary>Drops the materialised data (keeping journals) and replays all journals from scratch.</summary>
-    public SyncStatus Rebuild()
+    /// <summary>
+    /// Drops the materialised data (keeping journals) and replays all journals from scratch.
+    /// <paramref name="changeJournals"/> runs first, while no other pass can: restoring a backup swaps the journals there.
+    /// </summary>
+    public SyncStatus Rebuild(Action? changeJournals = null)
     {
         _running.Wait();
         try
         {
+            changeJournals?.Invoke();
             _db.ClearMaterializedData();
             return RunPass();
         }

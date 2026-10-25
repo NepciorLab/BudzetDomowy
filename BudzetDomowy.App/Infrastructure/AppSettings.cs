@@ -47,9 +47,6 @@ public sealed record AppSettings
     /// <summary>GitHub repository ("owner/name") whose releases are checked for a newer version.</summary>
     public string UpdateRepository { get; init; } = "NepciorLab/BudzetDomowy";
 
-    /// <summary>Access token for reading the releases of a private repository, protected for this Windows user (empty = none).</summary>
-    public string? UpdateToken { get; init; }
-
     /// <summary>Own key for a shortcut (by command id), e.g. "Go.Reports" = "Ctrl+R".</summary>
     public Dictionary<string, string> Shortcuts { get; init; } = [];
 

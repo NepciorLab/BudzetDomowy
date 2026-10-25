@@ -52,7 +52,12 @@ public partial class TransactionsView : UserControl
     private void Grid_PreviewKeyDown(object sender, KeyEventArgs e)
     {
         if (Vm is not { } vm || IsEditing()) return;
-        if (ShortcutMap.Instance.Matches(ShortcutMap.TxDelete, e))
+        if (e.Key is Key.Home or Key.End && (Keyboard.Modifiers & ~(ModifierKeys.Shift | ModifierKeys.Control)) == 0)
+        {
+            GoToEdge(toEnd: e.Key == Key.End, extend: (Keyboard.Modifiers & ModifierKeys.Shift) != 0);   // first / last row, not first / last column
+            e.Handled = true;
+        }
+        else if (ShortcutMap.Instance.Matches(ShortcutMap.TxDelete, e))
         {
             vm.DeleteSelected();
             e.Handled = true;
@@ -62,6 +67,28 @@ public partial class TransactionsView : UserControl
             ShowCategoryFlyout();                         // changes the category of the selected rows
             e.Handled = true;
         }
+    }
+
+    /// <summary>Home and End jump to the first and the last row (with Shift the selection grows up to it).</summary>
+    private void GoToEdge(bool toEnd, bool extend)
+    {
+        if (Grid.Items.Count == 0) return;
+        var target = Grid.Items[toEnd ? Grid.Items.Count - 1 : 0];
+        var from = Grid.SelectedItem is { } current ? Grid.Items.IndexOf(current) : (toEnd ? 0 : Grid.Items.Count - 1);
+        var to = Grid.Items.IndexOf(target);
+
+        if (extend)
+        {
+            for (var i = Math.Min(from, to); i <= Math.Max(from, to); i++) Grid.SelectedItems.Add(Grid.Items[i]);
+        }
+        else
+        {
+            Grid.SelectedItems.Clear();
+            Grid.SelectedItem = target;
+        }
+        Grid.ScrollIntoView(target);
+        if (Grid.Columns.Count > 0) Grid.CurrentCell = new DataGridCellInfo(target, Grid.Columns.First(c => c.Visibility == Visibility.Visible));
+        Grid.Focus();
     }
 
     private bool IsEditing() => Keyboard.FocusedElement is TextBox or ComboBox or DatePicker

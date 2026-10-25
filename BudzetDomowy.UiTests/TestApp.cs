@@ -91,6 +91,19 @@ public sealed class FakeUpdatePrompt : IUpdatePrompt
     }
 }
 
+/// <summary>Answers yes/no questions from a setting instead of opening a message box.</summary>
+public sealed class FakeMessageDialogs : IMessageDialogs
+{
+    public bool Answer { get; set; } = true;
+    public List<string> Asked { get; } = [];
+
+    public bool Confirm(string title, string text)
+    {
+        Asked.Add(text);
+        return Answer;
+    }
+}
+
 /// <summary>Counts restarts instead of starting a new process.</summary>
 public sealed class FakeRestarter : IAppRestarter
 {
@@ -131,11 +144,13 @@ public sealed class TestApp : IDisposable
             .AddSingleton<IBackgroundHost, FakeHost>()
             .AddSingleton<IFileDialogs, FakeDialogs>()
             .AddSingleton<IAppRestarter, FakeRestarter>()
+            .AddSingleton<FakeMessageDialogs>()
+            .AddSingleton<IMessageDialogs>(sp => sp.GetRequiredService<FakeMessageDialogs>())
+            .AddSingleton<BackupViewModel>()
             .AddSingleton<FakeGitHub>()
             .AddSingleton<FakeUpdatePrompt>()
             .AddSingleton<IUpdatePrompt>(sp => sp.GetRequiredService<FakeUpdatePrompt>())
-            .AddSingleton(sp => new GitHubReleases(new System.Net.Http.HttpClient(sp.GetRequiredService<FakeGitHub>()),
-                () => TokenProtector.Unprotect(sp.GetRequiredService<SettingsStore>().Current.UpdateToken)))
+            .AddSingleton(sp => new GitHubReleases(new System.Net.Http.HttpClient(sp.GetRequiredService<FakeGitHub>())))
             .AddSingleton(sp => new UpdateService(sp.GetRequiredService<SettingsStore>(), sp.GetRequiredService<GitHubReleases>(),
                 sp.GetRequiredService<IUpdatePrompt>(), sp.GetRequiredService<IAppRestarter>(), Path.Combine(_root, "BudzetDomowy.exe"), new Version(0, 1, 0)))
             .AddSingleton<FakeRecurringPrompt>()
@@ -173,7 +188,7 @@ public sealed class TestApp : IDisposable
         Core.Transactions.Add(today.AddMonths(-2), TransactionType.Expense, 900m, Id("Auto"), "", null, place: "Warsztat");
         Core.Recurring.Add(new RecurringTransaction
         {
-            Type = TransactionType.Expense, Amount = 1200m, CategoryId = Id("Rachunki"), Place = "Spółdzielnia", Note = "czynsz",
+            Type = TransactionType.Expense, Amount = 1200m, CategoryId = Id("Rachunki"), Name = "Czynsz", Place = "Spółdzielnia", Note = "czynsz",
             Frequency = RecurrenceFrequency.Monthly, Day = 5, StartDate = today.AddMonths(2),
         });
     }

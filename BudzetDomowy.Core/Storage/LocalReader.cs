@@ -112,7 +112,7 @@ public sealed class LocalReader
         });
 
     public IReadOnlyList<RecurringTransaction> GetRecurringTransactions() => Query(
-        "SELECT id, type, amount, currency_code, category_id, note, event_id, frequency, day, start_date, end_date, last_generated_date, place, confirm_each, skipped_dates FROM recurring_transactions ORDER BY start_date, id",
+        "SELECT id, type, amount, currency_code, category_id, note, event_id, frequency, day, start_date, end_date, last_generated_date, place, confirm_each, skipped_dates, name FROM recurring_transactions ORDER BY start_date, id",
         r => new RecurringTransaction
         {
             Id = Guid.Parse(r.GetString(0)),
@@ -130,6 +130,7 @@ public sealed class LocalReader
             Place = r.GetString(12),
             ConfirmEach = r.GetInt32(13) != 0,
             SkippedDates = r.GetString(14).Length == 0 ? [] : r.GetString(14).Split(',').Select(ParseDay).ToList(),
+            Name = r.GetString(15),
         });
 
     public IReadOnlyList<CategoryRule> GetCategoryRules() => Query("SELECT id, pattern, category_id, event_id, use_count FROM category_rules ORDER BY pattern, id",

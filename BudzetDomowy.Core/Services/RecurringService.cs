@@ -84,12 +84,12 @@ public sealed class RecurringService
 
     public RecurringTransaction Add(RecurringTransaction template)
     {
-        var t = template with { Id = template.Id == Guid.Empty ? Guid.NewGuid() : template.Id, Note = template.Note.Trim(), Place = template.Place.Trim() };
+        var t = template with { Id = template.Id == Guid.Empty ? Guid.NewGuid() : template.Id, Name = template.Name.Trim(), Note = template.Note.Trim(), Place = template.Place.Trim() };
         _recorder.Save(t);
         return t;
     }
 
-    public void Save(RecurringTransaction t) => _recorder.Save(t with { Note = t.Note.Trim(), Place = t.Place.Trim() });
+    public void Save(RecurringTransaction t) => _recorder.Save(t with { Name = t.Name.Trim(), Note = t.Note.Trim(), Place = t.Place.Trim() });
 
     /// <summary>Deletes the template; transactions already generated from it stay.</summary>
     public void Delete(Guid id) => _recorder.Delete(EntityTypes.RecurringTransaction, id);

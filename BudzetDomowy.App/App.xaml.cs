@@ -107,9 +107,11 @@ public partial class App : Application
             .AddSingleton<IBackgroundHost, TrayHotkeyHost>()
             .AddSingleton<IAppRestarter, AppRestarter>()
             .AddSingleton<IFileDialogs, WpfFileDialogs>()
+            .AddSingleton<IMessageDialogs, WpfMessageDialogs>()
+            .AddSingleton<BackupViewModel>()
             .AddSingleton<IRecurringPrompt, WpfRecurringPrompt>()
             .AddSingleton<IUpdatePrompt, WpfUpdatePrompt>()
-            .AddSingleton(sp => new GitHubReleases(GitHubReleases.CreateClient(), () => TokenProtector.Unprotect(sp.GetRequiredService<SettingsStore>().Current.UpdateToken)))
+            .AddSingleton(_ => new GitHubReleases(GitHubReleases.CreateClient()))
             .AddSingleton<UpdateService>()
             .AddSingleton<RecurringRunner>()
             .AddSingleton<ImportMappingStore>()
@@ -128,6 +130,7 @@ public partial class App : Application
         MainWindow = main;
         ShutdownMode = ShutdownMode.OnMainWindowClose;
         main.Show();
+        services.GetRequiredService<BackupViewModel>().StartDaily(TimeSpan.FromSeconds(25), TimeSpan.FromHours(3));
         StartUpdateCheck(services);
     }
 

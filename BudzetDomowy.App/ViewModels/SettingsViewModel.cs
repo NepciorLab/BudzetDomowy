@@ -63,7 +63,8 @@ public sealed partial class ShortcutRow : ObservableObject
 public sealed partial class SettingsViewModel : ObservableObject
 {
     public const int AppearanceTab = 1;
-    public const int ShortcutsTab = 5;
+    public const int BackupTab = 5;
+    public const int ShortcutsTab = 6;
 
     private readonly BudgetCore _core;
     private readonly SettingsStore _store;
@@ -79,6 +80,7 @@ public sealed partial class SettingsViewModel : ObservableObject
 
     public CategoriesViewModel Categories { get; }
     public DiagnosticsViewModel Diagnostics { get; }
+    public BackupViewModel Backup { get; }
 
     [ObservableProperty] private int _selectedTab;
 
@@ -100,20 +102,11 @@ public sealed partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private string _updateMessage = "";
     [ObservableProperty] private bool _updateAvailable;
     [ObservableProperty] private bool _updateBusy;
-    [ObservableProperty] private bool _updateTokenSet;
 
     public string CurrentVersionText => _updates.Current.ToString(3);
     public string UpdateRepository => _store.Current.UpdateRepository;
 
     partial void OnAutoUpdateChanged(bool value) => _store.Update(s => s with { AutoUpdate = value });
-
-    /// <summary>The access token typed in Settings (empty removes it); kept protected for this Windows user.</summary>
-    public void SetUpdateToken(string token)
-    {
-        _store.Update(s => s with { UpdateToken = TokenProtector.Protect(token) });
-        UpdateTokenSet = !string.IsNullOrEmpty(_store.Current.UpdateToken);
-        UpdateMessage = Res.Get(UpdateTokenSet ? "UpdateTokenSaved" : "UpdateTokenRemoved");
-    }
 
     [RelayCommand]
     private async Task CheckUpdateAsync()
@@ -269,7 +262,7 @@ public sealed partial class SettingsViewModel : ObservableObject
     public string DeviceId => _core.Device.DeviceId;
 
     public SettingsViewModel(BudgetCore core, SettingsStore store, CategoriesViewModel categories,
-        Func<ImportViewModel> createImport, ExportActions exports, DiagnosticsViewModel diagnostics, IBackgroundHost background, IFileDialogs dialogs, IAppRestarter restarter, UpdateService updates)
+        Func<ImportViewModel> createImport, ExportActions exports, DiagnosticsViewModel diagnostics, IBackgroundHost background, IFileDialogs dialogs, IAppRestarter restarter, UpdateService updates, BackupViewModel backup)
     {
         _core = core;
         _store = store;
@@ -280,8 +273,8 @@ public sealed partial class SettingsViewModel : ObservableObject
         _dialogs = dialogs;
         _restarter = restarter;
         _updates = updates;
+        Backup = backup;
         _autoUpdate = store.Current.AutoUpdate;
-        UpdateTokenSet = !string.IsNullOrEmpty(store.Current.UpdateToken);
         Diagnostics = diagnostics;
         _backgroundMode = store.Current.BackgroundMode && background.IsActive;
         _selectedTheme = Themes.First(t => t.Choice == store.Current.Theme);

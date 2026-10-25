@@ -144,6 +144,10 @@ public sealed class LocalDatabase
         ALTER TABLE recurring_transactions ADD COLUMN confirm_each INTEGER NOT NULL DEFAULT 0;
         ALTER TABLE recurring_transactions ADD COLUMN skipped_dates TEXT NOT NULL DEFAULT '';
         """,
+        // v5: a name for each recurring entry
+        """
+        ALTER TABLE recurring_transactions ADD COLUMN name TEXT NOT NULL DEFAULT '';
+        """,
     ];
 
     public static int CurrentVersion => Migrations.Length;

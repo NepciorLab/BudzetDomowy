@@ -218,7 +218,7 @@ public class V3UiTests
         host.Start(out _);                                                    // the program starts the host before it builds the screens
 
         var vm = new SettingsViewModel(app.Core, store, app.Get<CategoriesViewModel>(), () => app.Get<ImportViewModel>(), app.Get<ExportActions>(),
-            app.Get<DiagnosticsViewModel>(), host, app.Get<IFileDialogs>(), app.Get<IAppRestarter>(), app.Get<UpdateService>());
+            app.Get<DiagnosticsViewModel>(), host, app.Get<IFileDialogs>(), app.Get<IAppRestarter>(), app.Get<UpdateService>(), app.Get<BackupViewModel>());
         Assert.True(vm.BackgroundMode);
         Assert.True(store.Current.BackgroundMode);                            // and the setting itself is still on
     });
@@ -559,7 +559,7 @@ public class V3UiTests
         github.Responses[ReleaseUrl] = (HttpStatusCode.NotFound, []);        // a private repository without a token looks like this
         var missing = await updates.CheckAsync();
         Assert.Equal(UpdateState.NotFound, missing.State);
-        Assert.Contains("token", missing.Message);
+        Assert.Contains("wydania", missing.Message);
 
         github.Responses[ReleaseUrl] = (HttpStatusCode.InternalServerError, []);
         Assert.Equal(UpdateState.Failed, (await updates.CheckAsync()).State);
@@ -569,32 +569,14 @@ public class V3UiTests
     });
 
     [Fact]
-    public void Updates_ATokenIsSentOnlyWhenSet_AndKeptProtected() => WithAppAsync(async app =>
+    public void Updates_AskGitHubAnonymously() => WithAppAsync(async app =>
     {
         var github = app.Get<FakeGitHub>();
-        var updates = app.Get<UpdateService>();
-        var vm = app.Get<SettingsViewModel>();
         github.Responses[ReleaseUrl] = (HttpStatusCode.OK, Encoding.UTF8.GetBytes(ReleaseJson("v0.1.0")));
 
-        await updates.CheckAsync();
-        Assert.Null(github.Requests[^1].Headers.Authorization);
-        Assert.False(vm.UpdateTokenSet);
-
-        vm.SetUpdateToken("  github_pat_secret  ");
-        Assert.True(vm.UpdateTokenSet);
-        var stored = app.Get<SettingsStore>().Current.UpdateToken!;
-        Assert.DoesNotContain("secret", stored);                              // not readable in the settings file
-        Assert.Equal("github_pat_secret", TokenProtector.Unprotect(stored));
-
-        await updates.CheckAsync();
-        Assert.Equal("Bearer", github.Requests[^1].Headers.Authorization!.Scheme);
-        Assert.Equal("github_pat_secret", github.Requests[^1].Headers.Authorization!.Parameter);
+        await app.Get<UpdateService>().CheckAsync();
+        Assert.Null(github.Requests[^1].Headers.Authorization);               // the repository is public: no credentials are needed or sent
         Assert.Contains("BudzetDomowy", github.Requests[^1].Headers.UserAgent.ToString());
-
-        vm.SetUpdateToken("");
-        Assert.False(vm.UpdateTokenSet);
-        Assert.Null(app.Get<SettingsStore>().Current.UpdateToken);
-        Assert.Null(TokenProtector.Unprotect("not a protected value"));
     });
 
     private static byte[] ProgramBytes() => File.ReadAllBytes(typeof(UpdateService).Assembly.Location);   // a real PE file with a real version

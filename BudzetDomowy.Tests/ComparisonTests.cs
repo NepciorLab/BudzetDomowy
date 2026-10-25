@@ -69,6 +69,44 @@ public class ComparisonTests
     }
 
     [Fact]
+    public void CompareAvailable_CutsARunningYearAndItsPredecessorAtTheSameDay()
+    {
+        var tx = new[]
+        {
+            Make.Expense("2025-02-10", 100), Make.Expense("2025-09-20", 50), Make.Expense("2025-11-30", 400),   // 2025: November is after "a year ago today"
+            Make.Expense("2026-01-15", 70), Make.Expense("2026-10-01", 30),
+            Make.Income("2025-03-01", 1000), Make.Income("2026-03-01", 1200),
+        };
+        var today = new DateOnly(2026, 10, 25);
+
+        var result = PeriodReports.CompareAvailable(tx, PeriodKind.Year, new DateOnly(2026, 6, 1), today);
+        var c = result.Comparison;
+        Assert.True(result.IsPartial);
+        // the data of 2025 starts on 10 Feb, so both years are compared from 10 Feb, and the running year only up to today
+        Assert.Equal((new DateOnly(2026, 2, 10), new DateOnly(2026, 10, 25)), (c.Current.From, c.Current.To));
+        Assert.Equal((new DateOnly(2025, 2, 10), new DateOnly(2025, 10, 25)), (c.Previous.From, c.Previous.To));
+        Assert.Equal(30m, c.Current.Expense);                                                                        // 15 Jan 2026 has no counterpart in 2025 and is left out
+        Assert.Equal(150m, c.Previous.Expense);                                                                      // the 400 of 30 Nov is after "a year ago today"
+        Assert.Equal(1200m, c.Current.Income);
+    }
+
+    [Fact]
+    public void CompareAvailable_ACompleteMonthWithCompleteDataIsNotMarkedPartial()
+    {
+        var tx = new[] { Make.Expense("2026-07-02", 10), Make.Expense("2026-08-31", 20), Make.Expense("2026-09-05", 30) };
+        var result = PeriodReports.CompareAvailable(tx, PeriodKind.Month, new DateOnly(2026, 9, 1), new DateOnly(2026, 10, 25));
+        Assert.False(result.IsPartial);
+        Assert.Equal(30m, result.Comparison.Current.Expense);
+        Assert.Equal(20m, result.Comparison.Previous.Expense);
+
+        var running = PeriodReports.CompareAvailable(tx, PeriodKind.Month, new DateOnly(2026, 9, 1), new DateOnly(2026, 9, 10));
+        Assert.True(running.IsPartial);                                                                              // 10 Sep against 10 Aug
+        Assert.Equal(new DateOnly(2026, 8, 10), running.Comparison.Previous.To);
+
+        Assert.False(PeriodReports.CompareAvailable([], PeriodKind.Year, new DateOnly(2020, 1, 1), new DateOnly(2026, 10, 25)).IsPartial);
+    }
+
+    [Fact]
     public void CumulativeAverages_AverageTheMonthsSoFar_AndLeaveFutureMonthsEmpty()
     {
         var months = new decimal[12];

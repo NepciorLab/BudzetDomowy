@@ -100,7 +100,7 @@
                   infra:GridBehaviors.ColumnChooserKey="transactions"
                   infra:GridBehaviors.AutoFit="{Binding AutoFitColumns, Source={x:Static infra:UiPreferences.Instance}}" AutoGenerateColumns="False"
                   SelectionMode="Extended" SelectionUnit="FullRow" CanUserAddRows="False" CanUserDeleteRows="False"
-                  CanUserResizeRows="False" GridLinesVisibility="Horizontal" HeadersVisibility="Column"
+                  CanUserResizeRows="False" GridLinesVisibility="All" HeadersVisibility="Column"
                   EnableRowVirtualization="True" RowHeight="34" ClipboardCopyMode="ExcludeHeader"
                   AlternationCount="2" AlternatingRowBackground="{DynamicResource SystemControlBackgroundListLowBrush}"
                   BeginningEdit="Grid_BeginningEdit" CellEditEnding="Grid_CellEditEnding"
