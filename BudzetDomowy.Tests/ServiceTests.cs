@@ -271,6 +271,42 @@ public class CoreServiceTests : IDisposable
     }
 
     [Fact]
+    public void PeriodArrows_LeadOnlyToPeriodsWithEntries_AndToThePresentOneOnceItHasBegun()
+    {
+        var c = NewCore("a");
+        c.Transactions.Add(new DateOnly(2026, 3, 10), TransactionType.Expense, 5m, null, "x", null);
+        c.Transactions.Add(new DateOnly(2026, 6, 20), TransactionType.Expense, 5m, null, "x", null);
+        var today = new DateOnly(2026, 9, 15);
+        DateOnly? Go(PeriodKind kind, string anchor, int direction) => PeriodNavigation.Target(kind, DateOnly.Parse(anchor), direction, c.Reader, today);
+
+        Assert.Equal(new DateOnly(2026, 6, 20), Go(PeriodKind.Month, "2026-03-01", +1));      // April and May have nothing: leaped over
+        Assert.Equal(today, Go(PeriodKind.Month, "2026-06-01", +1));                          // then the present month, which has begun
+        Assert.Null(Go(PeriodKind.Month, "2026-09-01", +1));                                  // and nothing after it
+        Assert.Equal(new DateOnly(2026, 3, 10), Go(PeriodKind.Month, "2026-06-01", -1));
+        Assert.Null(Go(PeriodKind.Month, "2026-03-01", -1));                                  // nothing before the first entry
+        Assert.Equal(new DateOnly(2026, 6, 20), Go(PeriodKind.Month, "2026-09-01", -1));
+
+        Assert.Equal(new DateOnly(2026, 3, 10), Go(PeriodKind.Year, "2025-01-01", +1));
+        Assert.Null(Go(PeriodKind.Year, "2026-05-05", +1));
+        Assert.Equal(new DateOnly(2026, 3, 10), Go(PeriodKind.Week, "2026-06-20", -1));
+        Assert.Equal(new DateOnly(2026, 6, 20), Go(PeriodKind.Day, "2026-03-10", +1));
+        Assert.True(PeriodNavigation.CanMove(PeriodKind.Month, new DateOnly(2026, 8, 1), +1, c.Reader, today));
+        Assert.Equal(new DateOnly(2026, 3, 10), c.Reader.LatestEntryDayBefore(new DateOnly(2026, 6, 20)));
+        Assert.Equal(new DateOnly(2026, 6, 20), c.Reader.EarliestEntryDayAfter(new DateOnly(2026, 3, 10)));
+    }
+
+    [Fact]
+    public void RemovingACategory_ThatIsAPayeesDefault_ArchivesIt()
+    {
+        var c = NewCore("a");
+        var cat = c.Categories.Add("Czynsz", null, CategoryType.Expense);
+        c.Payments.AddPayee("Wspólnota", "61 1090 1014 0000 0712 1981 2874", cat.Id);
+
+        Assert.Equal(CategoryRemoval.Archived, c.Categories.Remove(cat.Id));
+        Assert.True(c.Reader.GetCategories().First(x => x.Id == cat.Id).IsArchived);
+    }
+
+    [Fact]
     public void Move_ReordersSiblingsOnly()
     {
         var c = NewCore("a");

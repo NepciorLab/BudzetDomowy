@@ -27,8 +27,9 @@ public sealed partial class CategoryNode : ObservableObject
 
 public sealed record ParentOption(Guid Key, string Name);
 
-/// <param name="IsUsed">Some category already has this colour (it gets a tick).</param>
-public sealed record PaletteColor(string Hex, bool IsUsed);
+/// <param name="IsUsed">Another category already has this colour (it gets a small dot).</param>
+/// <param name="IsCurrent">The colour of the selected category (it gets a tick).</param>
+public sealed record PaletteColor(string Hex, bool IsUsed, bool IsCurrent);
 
 public sealed record CategoryTypeOption(CategoryType Type, string Label)
 {
@@ -58,6 +59,7 @@ public sealed partial class CategoriesViewModel : ObservableObject
     ];
 
     [ObservableProperty] private IReadOnlyList<PaletteColor> _palette = [];
+    private IReadOnlyList<Category> _categories = [];
 
     /// <summary>Pictures to choose from; any other emoji can still be typed in.</summary>
     public IReadOnlyList<string> IconChoices { get; } =
@@ -99,6 +101,18 @@ public sealed partial class CategoriesViewModel : ObservableObject
         LoadEditor(value);
     }
 
+    partial void OnEditColorChanged(string value) => BuildPalette();
+
+    /// <summary>The ring follows the colour in the box, so it moves at once when another one is picked or typed.</summary>
+    private void BuildPalette()
+    {
+        var selected = SelectedNode?.Model.Id;
+        var others = _categories.Where(c => c.Id != selected).Select(c => c.Color).Where(c => c.Length > 0)
+                                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var current = EditColor.Trim();
+        Palette = PaletteHexes.Select(h => new PaletteColor(h, others.Contains(h), SelectedNode is not null && string.Equals(h, current, StringComparison.OrdinalIgnoreCase))).ToList();
+    }
+
     private void LoadEditor(CategoryNode? node)
     {
         Message = "";
@@ -109,6 +123,7 @@ public sealed partial class CategoriesViewModel : ObservableObject
         EditColor = c.Color;
         EditType = Types.First(t => t.Type == c.Type);
         EditArchived = c.IsArchived;
+        BuildPalette();
 
         var all = _core.Reader.GetCategories();
         var excluded = CategoryHelpers.WithDescendants(c.Id, all);
@@ -127,8 +142,7 @@ public sealed partial class CategoriesViewModel : ObservableObject
             foreach (var n in Flatten(Roots)) if (!n.IsExpanded) _collapsed.Add(n.Model.Id); else _collapsed.Remove(n.Model.Id);
 
             var all = _core.Reader.GetCategories();
-            var used = all.Select(c => c.Color).Where(c => c.Length > 0).ToHashSet(StringComparer.OrdinalIgnoreCase);
-            Palette = PaletteHexes.Select(h => new PaletteColor(h, used.Contains(h))).ToList();
+            _categories = all;
             var ids = all.Select(c => c.Id).ToHashSet();
             var byParent = all.ToLookup(c => c.ParentId is { } p && ids.Contains(p) ? p : Guid.Empty);
 
@@ -151,6 +165,7 @@ public sealed partial class CategoriesViewModel : ObservableObject
             _loading = false;
         }
         LoadEditor(SelectedNode);
+        BuildPalette();
     }
 
     private static IEnumerable<Category> Ordered(IEnumerable<Category> cs) =>

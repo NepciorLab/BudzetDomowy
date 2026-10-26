@@ -33,7 +33,7 @@ public class ChartsTabTests
         app.Core.Transactions.Add(D(date), type, amount, category, "n", null, place: "p");
 
     /// <summary>Data from 2024-02-10 to 2025-12-31: groceries (with a subcategory), fuel, electricity, and one salary on the last day.</summary>
-    private static ChartsViewModel Setup(TestApp app, bool open = true)
+    private static ChartsViewModel Setup(TestApp app, bool open = true, bool topFive = true)
     {
         Add(app, "2024-02-10", 80m, Cat(app, "Prąd", "Rachunki"));
         Add(app, "2025-01-05", 100m, Cat(app, "Supermarket", "Spożywcze"));
@@ -44,6 +44,7 @@ public class ChartsTabTests
         Add(app, "2025-12-31", 1000m, Cat(app, "Wynagrodzenie"), TransactionType.Income);
         var vm = new ChartsViewModel(app.Core) { RebuildDelay = TimeSpan.Zero };
         if (open) vm.EnsureFresh();
+        if (open && topFive) vm.AddTop(5, TransactionType.Expense);                         // most tests want categories; the program itself starts with one line of all expenses
         return vm;
     }
 
@@ -130,9 +131,10 @@ public class ChartsTabTests
 
         var labels = ((Axis)vm.XAxes.First()).Labels!;
         Assert.Equal(23, labels.Count);                                                      // every point keeps its place
-        Assert.Equal(12, labels.Count(l => l.Length > 0));                                   // every second one has a label
-        Assert.NotEqual("", labels[0]);
-        Assert.Equal("", labels[1]);
+        Assert.Equal(7, labels.Count(l => l.Length > 0));                                    // January, April, July and October only
+        Assert.Equal("", labels[0]);                                                         // February 2024
+        Assert.Equal("kwi 24", labels[2].ToLowerInvariant().Replace(".", ""));
+        Assert.Equal("sty 25", labels[11].ToLowerInvariant().Replace(".", ""));
 
         vm.SetRange(D("2025-01-01"), D("2025-06-30"));
         Assert.All(((Axis)vm.XAxes.First()).Labels!, l => Assert.NotEqual("", l));           // a short range: every label
@@ -143,12 +145,16 @@ public class ChartsTabTests
     [Fact]
     public void TheFirstTimeTheBiggestMainCategoriesAreThere_ForTheWholeRange() => WithApp(app =>
     {
-        var vm = Setup(app);
+        var vm = Setup(app, topFive: false);                                                 // what the program shows the first time: all the expenses in one line
 
-        Assert.Equal(["Auto", "Spożywcze", "Rachunki"], vm.Chips.Select(c => c.Name));        // 400, 350, 80
-        Assert.Equal(["Auto", "Spożywcze", "Rachunki"], vm.Series.Select(s => s.Name));
-        Assert.Equal(3, vm.Chips.Select(c => c.Color).Distinct().Count());
+        Assert.Equal(["Wszystkie wydatki"], vm.Chips.Select(c => c.Name));
+        Assert.Equal(["Wszystkie wydatki"], vm.Series.Select(s => s.Name));
+        Assert.Equal(830d, Values(vm.Series.Single()).Sum());                                // 80 + 350 + 400
         Assert.False(vm.ShowHint);
+
+        vm.AddTop(5, TransactionType.Expense);                                               // the quick choice still gives the biggest categories
+        Assert.Equal(["Auto", "Spożywcze", "Rachunki"], vm.Chips.Select(c => c.Name));        // 400, 350, 80
+        Assert.Equal(3, vm.Chips.Select(c => c.Color).Distinct().Count());
     });
 
     [Fact]
@@ -238,6 +244,89 @@ public class ChartsTabTests
         vm.SetRange(D("2025-12-01"), D("2025-12-31"));
         vm.AddTop(5, TransactionType.Income);
         Assert.Equal(["Wynagrodzenie"], vm.Chips.Select(c => c.Name));
+    });
+
+    [Fact]
+    public void AllTheExpenses_OrAllTheIncome_CanBeOneLine_AlsoWithWhatHasNoCategory() => WithApp(app =>
+    {
+        var vm = Setup(app, topFive: false);
+        app.Core.Transactions.Add(D("2025-02-02"), TransactionType.Expense, 20m, null, "bez kategorii", null);
+        vm.Reload();
+
+        Assert.Equal(850d, Values(vm.Series.Single()).Sum());                                // the 20 without a category is on the line too
+        Assert.Equal("#E53935", vm.Chips.Single().Color);
+
+        Assert.True(vm.AddTotal(TransactionType.Income));
+        Assert.False(vm.AddTotal(TransactionType.Income));                                   // not twice
+        Assert.Equal(["Wszystkie wydatki", "Wszystkie przychody"], vm.Chips.Select(c => c.Name));
+        Assert.Equal(1000d, Values(vm.Series.Last()).Sum());
+
+        vm.AddCategory(Cat(app, "Auto"));                                                    // together with a category
+        Assert.Equal(3, vm.Series.Count());
+        vm.Reload();
+        Assert.Equal(3, vm.Chips.Count);                                                     // a total is not "a category that has disappeared"
+
+        vm.SplitChipCommand.Execute(vm.Chips[0]);                                            // there is nothing to split it into
+        Assert.Equal(3, vm.Chips.Count);
+    });
+
+    [Fact]
+    public void TheLabelsOfTheAxis_StandAtTheSameMomentsOfTheYear()
+    {
+        static List<DateOnly> Months(DateOnly from, int count) => Enumerable.Range(0, count).Select(i => from.AddMonths(i)).ToList();
+
+        // 15 years: only the Januaries (the quarters or half years would be too many)
+        var years15 = Months(D("2011-01-01"), 190);
+        var labelled = ChartBuckets.AxisLabels(years15, ChartStep.Month).Select((l, i) => (l, i)).Where(x => x.l.Length > 0).Select(x => years15[x.i]).ToList();
+        Assert.Equal(16, labelled.Count);
+        Assert.All(labelled, d => Assert.Equal(1, d.Month));
+
+        // 8 years: January and July
+        var years8 = Months(D("2015-03-01"), 96);
+        labelled = ChartBuckets.AxisLabels(years8, ChartStep.Month).Select((l, i) => (l, i)).Where(x => x.l.Length > 0).Select(x => years8[x.i]).ToList();
+        Assert.All(labelled, d => Assert.Contains(d.Month, new[] { 1, 7 }));
+        Assert.Equal(16, labelled.Count);
+
+        // a year or two: every month; the same starting point in another year gives the same months
+        Assert.Equal(12, ChartBuckets.AxisLabels(Months(D("2025-01-01"), 12), ChartStep.Month).Count(l => l.Length > 0));
+        Assert.Equal(12, ChartBuckets.AxisLabels(Months(D("2025-06-01"), 12), ChartStep.Month).Count(l => l.Length > 0));
+
+        // weeks are labelled with the month they start; years with the year, every second one when there are many
+        var weeks = ChartBuckets.Starts(D("2025-01-01"), D("2025-12-31"), ChartStep.Week);
+        var weekLabels = ChartBuckets.AxisLabels(weeks, ChartStep.Week);
+        Assert.Equal(13, weekLabels.Count(l => l.Length > 0));                              // the twelve months and the January of 2026 that begins in the last week
+        var years = ChartBuckets.Starts(D("2000-05-05"), D("2024-02-02"), ChartStep.Year);
+        var yearLabels = ChartBuckets.AxisLabels(years, ChartStep.Year);
+        Assert.All(yearLabels.Where(l => l.Length > 0), l => Assert.Equal(0, int.Parse(l) % 2));
+
+        // a few weeks that hold no first of a month are labelled by their own dates
+        var fewWeeks = ChartBuckets.Starts(D("2025-03-03"), D("2025-03-20"), ChartStep.Week);
+        Assert.All(ChartBuckets.AxisLabels(fewWeeks, ChartStep.Week), l => Assert.NotEqual("", l));
+    }
+
+    [Fact]
+    public void ThePeriodInTheTooltip_IsTheMonthTheYearOrTheDatesWhenItIsAWeekOrCut()
+    {
+        var from = D("2024-02-10");
+        var to = D("2025-12-15");
+        Assert.Equal("styczeń 2025", ChartBuckets.Period(D("2025-01-01"), ChartStep.Month, from, to));
+        Assert.Equal("10.02.2024 – 29.02.2024", ChartBuckets.Period(D("2024-02-01"), ChartStep.Month, from, to));     // the first month is cut by the range
+        Assert.Equal("01.12.2025 – 15.12.2025", ChartBuckets.Period(D("2025-12-01"), ChartStep.Month, from, to));     // and so is the last
+        Assert.Equal("2025", ChartBuckets.Period(D("2025-01-01"), ChartStep.Year, D("2020-01-01"), D("2026-12-31")));
+        Assert.Equal("10.03.2025 – 16.03.2025", ChartBuckets.Period(D("2025-03-10"), ChartStep.Week, from, to));
+    }
+
+    [Fact]
+    public void TheLinesHaveATooltipThatNamesThePeriod() => WithApp(app =>
+    {
+        var vm = Setup(app);
+        var line = (LineSeries<double>)vm.Series.First();
+        var money = typeof(ChartFactory).GetMethod(nameof(ChartFactory.MoneyTip))!;
+        Assert.NotEqual(money, line.YToolTipLabelFormatter!.Method);                         // more than the sum alone
+
+        var axis = (Axis)vm.XAxes.First();
+        Assert.Equal(1, axis.MinStep);                                                       // without it LiveCharts writes every n-th label and skips the chosen ones
+        Assert.True(axis.ForceStepToMin);
     });
 
     // ----- the tags -----
@@ -352,7 +441,7 @@ public class ChartsTabTests
         Assert.False(reports.ShowPeriod);                                                    // the charts have a range of their own
         Assert.False(reports.Charts.Stale);
         Assert.True(reports.Charts.HasData);
-        Assert.Equal(["Auto"], reports.Charts.Chips.Select(c => c.Name));
+        Assert.Equal(["Wszystkie wydatki"], reports.Charts.Chips.Select(c => c.Name));
 
         reports.TabIndex = (int)ReportTab.Overview;
         Assert.True(reports.ShowPeriod);
@@ -455,6 +544,9 @@ public class ChartsTabTests
         reports.TabIndex = (int)ReportTab.Charts;
         UiHost.Layout(view, 1250, 1100);
 
+        Assert.Equal(["Wszystkie wydatki"], reports.Charts.Chips.Select(c => c.Name));
+        reports.Charts.AddTop(5, TransactionType.Expense);                                   // the biggest categories of the whole range instead
+        UiHost.Layout(view, 1250, 1100);
         var tabs = UiHost.Descendants<TabControl>(view).First();
         Assert.Contains("Wykresy", tabs.Items.Cast<TabItem>().Select(t => t.Header?.ToString()));
 

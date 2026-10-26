@@ -227,12 +227,16 @@
                                             Background="{Binding Hex, Converter={StaticResource HexToBrush}}"
                                             Command="{Binding DataContext.PickColorCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                             CommandParameter="{Binding Hex}" ToolTip="{Binding Hex}">
-                                        <TextBlock Text="✔" Foreground="White" FontWeight="Bold" FontSize="15" HorizontalAlignment="Center" VerticalAlignment="Center"
-                                                   Visibility="{Binding IsUsed, Converter={StaticResource BoolToVis}}">
-                                            <TextBlock.Effect>
-                                                <DropShadowEffect ShadowDepth="0" BlurRadius="3" Opacity="0.9" />
-                                            </TextBlock.Effect>
-                                        </TextBlock>
+                                        <Grid>
+                                            <TextBlock Text="✔" Foreground="White" FontWeight="Bold" FontSize="15" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                       Visibility="{Binding IsCurrent, Converter={StaticResource BoolToVis}}">
+                                                <TextBlock.Effect>
+                                                    <DropShadowEffect ShadowDepth="0" BlurRadius="3" Opacity="0.9" />
+                                                </TextBlock.Effect>
+                                            </TextBlock>
+                                            <Ellipse Width="6" Height="6" Fill="White" Stroke="#66000000" StrokeThickness="0.5" HorizontalAlignment="Right" VerticalAlignment="Top"
+                                                     Margin="0,3,3,0" Visibility="{Binding IsUsed, Converter={StaticResource BoolToVis}}" />
+                                        </Grid>
                                     </Button>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>

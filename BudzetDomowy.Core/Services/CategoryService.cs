@@ -37,8 +37,8 @@ public sealed class CategoryService
     public void Save(Category c) => _recorder.Save(c with { Name = c.Name.Trim() });
 
     /// <summary>
-    /// Deletes a category that is not used anywhere; a used one (transactions, subcategories, budgets, rules)
-    /// is archived instead so history stays intact.
+    /// Deletes a category that is not used anywhere; a used one (transactions, subcategories, budgets, recurring
+    /// entries, payees) is archived instead so history stays intact.
     /// </summary>
     public CategoryRemoval Remove(Guid id)
     {
@@ -47,7 +47,8 @@ public sealed class CategoryService
         var used = _reader.CountTransactionsInCategory(id) > 0
                    || all.Any(c => c.ParentId == id)
                    || _reader.GetBudgets().Any(b => b.CategoryId == id)
-                   || _reader.GetRecurringTransactions().Any(r => r.CategoryId == id);
+                   || _reader.GetRecurringTransactions().Any(r => r.CategoryId == id)
+                   || _reader.GetPayees().Any(p => p.CategoryId == id);
         if (used)
         {
             _recorder.Save(category with { IsArchived = true });

@@ -65,9 +65,11 @@
         <WrapPanel Grid.Row="1" Orientation="Horizontal">
             <controls:FilterComboBox Choices="{Binding FilterCategories}" DisplayMemberPath="DisplayName"
                                      SelectedValuePath="Id" SelectedValue="{Binding CategoryFilter, Mode=TwoWay}"
-                                     Width="230" Margin="0,0,8,8"
+                                     Width="230" Margin="0,0,4,8"
                                      ui:ControlHelper.Header="{infra:Str FilterCategory}"
                                      ui:ControlHelper.PlaceholderText="{infra:Str FilterAllCategories}" />
+            <CheckBox IsChecked="{Binding IncludeSubcategories, Mode=TwoWay}" IsEnabled="{Binding HasCategoryFilter}" Content="{infra:Str FilterWithSubcategories}"
+                      ToolTip="{infra:Str FilterWithSubcategoriesTip}" VerticalAlignment="Bottom" Margin="0,0,12,8" MinWidth="0" />
             <ComboBox ItemsSource="{Binding FilterEvents}" DisplayMemberPath="Name" SelectedValuePath="Key"
                       SelectedValue="{Binding EventFilter, Mode=TwoWay}" Width="160" Margin="0,0,8,8"
                       ui:ControlHelper.Header="{infra:Str FilterEvent}" />

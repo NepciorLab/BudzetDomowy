@@ -80,8 +80,8 @@ public sealed partial class CompareViewModel : ObservableObject
     [ObservableProperty] private IReadOnlyList<PickItem> _picks = [];
 
     [ObservableProperty] private IEnumerable<ISeries> _series = [];
-    [ObservableProperty] private IEnumerable<ICartesianAxis> _xAxes = [];
-    [ObservableProperty] private IEnumerable<ICartesianAxis> _yAxes = [];
+    [ObservableProperty] private IEnumerable<ICartesianAxis> _xAxes = ChartFactory.LabelAxes([""]);        // never empty: LiveCharts cannot measure a chart without axes
+    [ObservableProperty] private IEnumerable<ICartesianAxis> _yAxes = ChartFactory.MoneyAxes();
     [ObservableProperty] private IReadOnlyList<CompareTotal> _totals = [];
     [ObservableProperty] private bool _hasData;
     [ObservableProperty] private string _title = "";

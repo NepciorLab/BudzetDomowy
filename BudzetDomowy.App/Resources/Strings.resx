@@ -122,6 +122,8 @@
   <data name="FilterType" xml:space="preserve"><value>Rodzaj</value></data>
   <data name="FilterSearch" xml:space="preserve"><value>Szukaj</value></data>
   <data name="FilterSearchHint" xml:space="preserve"><value>miejsce, notatka, kwota</value></data>
+  <data name="FilterWithSubcategories" xml:space="preserve"><value>z podkategoriami</value></data>
+  <data name="FilterWithSubcategoriesTip" xml:space="preserve"><value>Zaznaczone: wybrana kategoria pokazuje też wpisy jej podkategorii. Odznacz, żeby zobaczyć tylko wpisy zapisane bezpośrednio w tej kategorii.</value></data>
   <data name="FilterAllCategories" xml:space="preserve"><value>Wszystkie kategorie</value></data>
   <data name="FilterAllEvents" xml:space="preserve"><value>Wszystkie</value></data>
   <data name="FilterAllTypes" xml:space="preserve"><value>Wszystkie</value></data>
@@ -791,6 +793,10 @@ Dodaj rachunki przyciskiem „Zaplanuj płatności”.</value></data>
   <data name="ChartQuickExpenses10" xml:space="preserve"><value>10 największych kategorii wydatków</value></data>
   <data name="ChartQuickIncome" xml:space="preserve"><value>Największe kategorie przychodów</value></data>
   <data name="ChartClear" xml:space="preserve"><value>Wyczyść</value></data>
+  <data name="ChartAllExpenses" xml:space="preserve"><value>Wszystkie wydatki</value></data>
+  <data name="ChartAllIncome" xml:space="preserve"><value>Wszystkie przychody</value></data>
+  <data name="ChartAddAllExpenses" xml:space="preserve"><value>Dodaj jedną krzywą: wszystkie wydatki</value></data>
+  <data name="ChartAddAllIncome" xml:space="preserve"><value>Dodaj jedną krzywą: wszystkie przychody</value></data>
   <data name="ChartSplit" xml:space="preserve"><value>Zastąp podkategoriami (każda dostanie własną linię)</value></data>
   <data name="ChartRemove" xml:space="preserve"><value>Usuń z wykresu</value></data>
   <data name="ChartTotalTip" xml:space="preserve"><value>Suma w wybranym zakresie</value></data>

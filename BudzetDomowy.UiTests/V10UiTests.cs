@@ -24,26 +24,60 @@ public class V10UiTests
     [Fact]
     public void Transactions_DayMode_ShowsOneDayWithArrows_AndTheWeekTitleHasNoWeekNumber() => WithApp(app =>
     {
+        foreach (var day in new[] { 10, 12, 20 })
+            app.Core.Transactions.Add(new DateOnly(2020, 3, day), TransactionType.Expense, 5m, null, "zz", null);
         var vm = app.Get<TransactionsViewModel>();
-        vm.Anchor = new DateOnly(2026, 10, 26);                       // a Monday
+        vm.Anchor = new DateOnly(2020, 3, 10);                        // a Tuesday
 
         vm.SetModeCommand.Execute("Day");
         Assert.True(vm.IsDayMode);
         Assert.True(vm.HasArrows);
-        Assert.Equal("Poniedziałek, 26 października 2026", vm.PeriodTitle);
-        Assert.All(vm.Rows, r => Assert.Equal(new DateOnly(2026, 10, 26), r.Model.Date));
+        Assert.Equal("Wtorek, 10 marca 2020", vm.PeriodTitle);
+        Assert.All(vm.Rows, r => Assert.Equal(new DateOnly(2020, 3, 10), r.Model.Date));
 
-        vm.NextPeriod();
-        Assert.Equal(new DateOnly(2026, 10, 27), vm.Anchor);
+        vm.NextPeriod();                                              // the 11th has no entries: the arrow leaps to the 12th
+        Assert.Equal(new DateOnly(2020, 3, 12), vm.Anchor);
         vm.PreviousPeriod();
-        vm.PreviousPeriod();
-        Assert.Equal(new DateOnly(2026, 10, 25), vm.Anchor);
+        Assert.Equal(new DateOnly(2020, 3, 10), vm.Anchor);
+        vm.PreviousPeriod();                                          // nothing earlier at all
+        Assert.Equal(new DateOnly(2020, 3, 10), vm.Anchor);
+        Assert.False(vm.CanGoPrevious);
 
+        vm.Anchor = new DateOnly(2026, 10, 25);
         vm.SetModeCommand.Execute("Week");
         Assert.True(vm.IsWeekMode);
         Assert.False(vm.IsDayMode);
         Assert.Equal("19.10 – 25.10.2026", vm.PeriodTitle);
         Assert.DoesNotContain("ydzie", vm.PeriodTitle);
+    });
+
+    [Fact]
+    public void Transactions_ACategoryFilter_CanLeaveOutItsSubcategories() => WithApp(app =>
+    {
+        var categories = app.Core.Reader.GetCategories();
+        var parent = categories.First(c => c.ParentId is null && categories.Any(k => k.ParentId == c.Id));
+        var child = categories.First(c => c.ParentId == parent.Id);
+        var day = new DateOnly(2026, 10, 14);
+        app.Core.Transactions.Add(day, TransactionType.Expense, 11m, parent.Id, "zzmain", null);
+        app.Core.Transactions.Add(day, TransactionType.Expense, 22m, child.Id, "zzsub", null);
+
+        var vm = app.Get<TransactionsViewModel>();
+        vm.SetModeCommand.Execute("All");
+        Assert.True(vm.IncludeSubcategories);
+        Assert.False(vm.HasCategoryFilter);
+
+        vm.CategoryFilter = parent.Id;
+        Assert.True(vm.HasCategoryFilter);
+        Assert.Contains(vm.Rows, r => r.Model.Note == "zzmain");
+        Assert.Contains(vm.Rows, r => r.Model.Note == "zzsub");                // the default: with the subcategories
+
+        vm.IncludeSubcategories = false;
+        Assert.Contains(vm.Rows, r => r.Model.Note == "zzmain");
+        Assert.DoesNotContain(vm.Rows, r => r.Model.Note == "zzsub");
+        Assert.All(vm.Rows, r => Assert.Equal(parent.Id, r.Model.CategoryId));
+
+        Assert.True(vm.ClearFiltersIfAny());
+        Assert.True(vm.IncludeSubcategories);                                   // cleared filters start from the default again
     });
 
     // ----- the place box: suggestions and their editing in the settings -----
@@ -144,6 +178,76 @@ public class V10UiTests
         vm.Selected = null;
         vm.Selected = vm.Items.First(i => i.Id == saved.Id);
         Assert.Equal("10", vm.EditInterval);
+    });
+
+    [Fact]
+    public void Charts_NeverHaveAnEmptyAxisList_EvenBeforeAnyDataIsThere() => WithApp(app =>
+    {
+        // LiveCharts throws "XAxes and YAxes must contain at least one element" when it measures a chart without axes
+        var reports = app.Get<ReportsViewModel>();
+        Assert.NotEmpty(reports.TrendXAxes);
+        Assert.NotEmpty(reports.TrendYAxes);
+        Assert.NotEmpty(reports.SumXAxes);
+        Assert.NotEmpty(reports.SumYAxes);
+
+        var compare = new CompareViewModel(app.Core);
+        Assert.NotEmpty(compare.XAxes);
+        Assert.NotEmpty(compare.YAxes);
+
+        using var empty = new TestApp(sampleData: false);
+        var charts = new ChartsViewModel(empty.Core) { RebuildDelay = TimeSpan.Zero };
+        charts.Rebuild();
+        Assert.NotEmpty(charts.XAxes);
+        Assert.NotEmpty(charts.YAxes);
+    });
+
+    [Fact]
+    public void Transactions_ASearchThatIsNull_DoesNotBreakTheTable() => WithApp(app =>
+    {
+        var vm = app.Get<TransactionsViewModel>();
+        var before = vm.Rows.Count;
+        vm.Search = null!;                                                    // what a broken binding could write
+        vm.AmountFrom = null!;
+        vm.ClearFiltersCommand.Execute(null);
+        Assert.Equal("", vm.Search);
+        Assert.Equal(before, vm.Rows.Count);
+        Assert.False(vm.HasActiveFilters);
+    });
+
+    [Fact]
+    public void Dashboard_ArrowsLeadOnlyToMonthsWithEntries() => WithApp(app =>
+    {
+        var vm = app.Get<DashboardViewModel>();
+        var thisMonth = vm.Month;
+        Assert.False(vm.CanGoNext);                                           // the sample data ends today and the present month is the last one
+        vm.NextMonthCommand.Execute(null);
+        Assert.Equal(thisMonth, vm.Month);
+
+        Assert.True(vm.CanGoPrevious);
+        vm.PreviousMonthCommand.Execute(null);
+        vm.PreviousMonthCommand.Execute(null);
+        Assert.Equal(thisMonth.AddMonths(-2), vm.Month);                      // the oldest entry of the sample data
+        Assert.False(vm.CanGoPrevious);
+        vm.PreviousMonthCommand.Execute(null);
+        Assert.Equal(thisMonth.AddMonths(-2), vm.Month);
+    });
+
+    [Fact]
+    public void Dashboard_TheDonutKeepsItsSlices_AndOnlyTheirSizesChangeWithTheMonth() => WithApp(app =>
+    {
+        var vm = app.Get<DashboardViewModel>();
+        var series = vm.PieSeries;
+        var groceries = series.OfType<LiveChartsCore.SkiaSharpView.PieSeries<LiveChartsCore.Defaults.ObservableValue>>().Single(s => s.Name == "Spożywcze");
+        var now = groceries.Values!.Single().Value;
+
+        vm.PreviousMonthCommand.Execute(null);                                // last month had 640 in groceries
+        Assert.Same(series, vm.PieSeries);                                    // the same collection: the chart is not given a new one to draw from the centre
+        Assert.Contains(groceries, series);                                   // and the very same series, only with another value
+        Assert.Equal(640d, groceries.Values!.Single().Value);
+        Assert.NotEqual(now, groceries.Values!.Single().Value);
+
+        vm.NextMonthCommand.Execute(null);
+        Assert.Equal(now, groceries.Values!.Single().Value);
     });
 
     // ----- recurring entries: asked as soon as the window is there -----

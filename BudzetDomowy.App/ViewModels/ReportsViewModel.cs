@@ -97,14 +97,14 @@ public sealed partial class ReportsViewModel : ObservableObject, IPeriodNavigabl
     public bool ShowsExpenses => TrendShow == TrendShow.Expense;
     public bool TrendIsColumns => !TrendLines;
     [ObservableProperty] private IEnumerable<ISeries> _trendSeries = [];
-    [ObservableProperty] private IEnumerable<ICartesianAxis> _trendXAxes = [];
-    [ObservableProperty] private IEnumerable<ICartesianAxis> _trendYAxes = [];
+    [ObservableProperty] private IEnumerable<ICartesianAxis> _trendXAxes = ChartFactory.LabelAxes([""]);   // the axes are never empty: LiveCharts cannot measure a chart without them
+    [ObservableProperty] private IEnumerable<ICartesianAxis> _trendYAxes = ChartFactory.MoneyAxes();
     [ObservableProperty] private string _trendTitle = "";
 
     // the sums of everything the trend chart shows
     [ObservableProperty] private IEnumerable<ISeries> _sumSeries = [];
-    [ObservableProperty] private IEnumerable<ICartesianAxis> _sumXAxes = [];
-    [ObservableProperty] private IEnumerable<ICartesianAxis> _sumYAxes = [];
+    [ObservableProperty] private IEnumerable<ICartesianAxis> _sumXAxes = ChartFactory.LabelAxes([""]);
+    [ObservableProperty] private IEnumerable<ICartesianAxis> _sumYAxes = ChartFactory.SignedMoneyAxes();
     [ObservableProperty] private string _sumTitle = "";
 
     [ObservableProperty] private IEnumerable<ISeries> _pieSeries = [];
@@ -204,21 +204,38 @@ public sealed partial class ReportsViewModel : ObservableObject, IPeriodNavigabl
         ReloadAverages();
     }
 
-    public void PreviousPeriod()
+    private static DateOnly Today => DateOnly.FromDateTime(DateTime.Today);
+
+    private PeriodKind Kind => IsYear ? PeriodKind.Year : PeriodKind.Month;
+
+    /// <summary>The arrows lead only to months or years with entries (and to the present one once it has begun).</summary>
+    public bool CanGoPrevious => !IsAll && PeriodNavigation.CanMove(Kind, Anchor, -1, _core.Reader, Today);
+
+    public bool CanGoNext => !IsAll && PeriodNavigation.CanMove(Kind, Anchor, +1, _core.Reader, Today);
+
+    private void Step(int direction)
     {
-        if (!IsAll) Anchor = IsYear ? Anchor.AddYears(-1) : Anchor.AddMonths(-1);
+        if (IsAll) return;
+        if (PeriodNavigation.Target(Kind, Anchor, direction, _core.Reader, Today) is { } date) Anchor = BudgetMath.MonthStart(date);
     }
 
-    public void NextPeriod()
-    {
-        if (!IsAll) Anchor = IsYear ? Anchor.AddYears(1) : Anchor.AddMonths(1);
-    }
+    public void PreviousPeriod() => Step(-1);
 
-    [RelayCommand]
+    public void NextPeriod() => Step(+1);
+
+    [RelayCommand(CanExecute = nameof(CanGoPrevious))]
     private void Previous() => PreviousPeriod();
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanGoNext))]
     private void Next() => NextPeriod();
+
+    private void RefreshArrows()
+    {
+        OnPropertyChanged(nameof(CanGoPrevious));
+        OnPropertyChanged(nameof(CanGoNext));
+        PreviousCommand.NotifyCanExecuteChanged();
+        NextCommand.NotifyCanExecuteChanged();
+    }
 
     [RelayCommand]
     private void Export()
@@ -244,6 +261,7 @@ public sealed partial class ReportsViewModel : ObservableObject, IPeriodNavigabl
     {
         var all = _core.Reader.GetTransactions();
         var cats = _core.Reader.GetCategories();
+        RefreshArrows();
         string Money(decimal v) => v.ToString("C2", CultureInfo.CurrentCulture);
 
         DateOnly from, to;

@@ -55,7 +55,10 @@ public sealed partial class TransactionsViewModel : ObservableObject, IPeriodNav
     [ObservableProperty] private string _periodTitle = "";
     [ObservableProperty] private DateTime? _from;
     [ObservableProperty] private DateTime? _to;
-    [ObservableProperty] private Guid? _categoryFilter;
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(HasCategoryFilter))] private Guid? _categoryFilter;
+
+    /// <summary>The chosen category also shows its subcategories (the default); off: only the entries booked directly under it.</summary>
+    [ObservableProperty] private bool _includeSubcategories = true;
     [ObservableProperty] private Guid _eventFilter = Guid.Empty;
     [ObservableProperty] private TypeFilterOption? _typeFilter;
     [ObservableProperty] private string _search = "";
@@ -109,6 +112,9 @@ public sealed partial class TransactionsViewModel : ObservableObject, IPeriodNav
     partial void OnFromChanged(DateTime? value) => Reload();
     partial void OnToChanged(DateTime? value) => Reload();
     partial void OnCategoryFilterChanged(Guid? value) => Reload();
+    partial void OnIncludeSubcategoriesChanged(bool value) => Reload();
+
+    public bool HasCategoryFilter => CategoryFilter is not null;
     partial void OnEventFilterChanged(Guid value) => Reload();
     partial void OnTypeFilterChanged(TypeFilterOption? value) => Reload();
     partial void OnSearchChanged(string value) => Reload();
@@ -138,7 +144,25 @@ public sealed partial class TransactionsViewModel : ObservableObject, IPeriodNav
         UpdateSummary();
     }
 
+    /// <summary>
+    /// Rebuilds the table. A failure here is written to the log with the state of the filters and never thrown further: it would
+    /// reach the caller (a button, the binding of a filter box, the data hub timer) and leave the table half rebuilt.
+    /// </summary>
     public void Reload()
+    {
+        try
+        {
+            ReloadCore();
+        }
+        catch (Exception ex)
+        {
+            AppLog.Error($"Reloading the transactions failed (mode {Mode}, anchor {Anchor}, category {CategoryFilter}, subcategories {IncludeSubcategories}, "
+                         + $"event {EventFilter}, type {TypeFilter?.Type}, search {(Search is null ? "null" : "'" + Search + "'")}, amount '{AmountFrom}'..'{AmountTo}', rows {Rows.Count}).", ex);
+            IsEmpty = Rows.Count == 0;
+        }
+    }
+
+    private void ReloadCore()
     {
         if (_suspendReload)
         {
@@ -171,7 +195,7 @@ public sealed partial class TransactionsViewModel : ObservableObject, IPeriodNav
 
         if (CategoryFilter is { } cat)
         {
-            var ids = CategoryHelpers.WithDescendants(cat, categories);
+            var ids = IncludeSubcategories ? CategoryHelpers.WithDescendants(cat, categories) : [cat];
             query = query.Where(x => x.CategoryId is { } c && ids.Contains(c));
         }
         if (EventFilter != Guid.Empty) query = query.Where(x => x.EventId == EventFilter);
@@ -185,12 +209,12 @@ public sealed partial class TransactionsViewModel : ObservableObject, IPeriodNav
         if (low is { } min) query = query.Where(x => x.AmountPln >= min);                       // the amount in złoty, as in the totals
         if (high is { } max) query = query.Where(x => x.AmountPln <= max);
 
-        var needle = Search.Trim();
+        var needle = (Search ?? "").Trim();
         if (needle.Length > 0)
         {
             query = query.Where(x =>
-                x.Note.Contains(needle, StringComparison.CurrentCultureIgnoreCase)
-                || x.Place.Contains(needle, StringComparison.CurrentCultureIgnoreCase)
+                x.Note?.Contains(needle, StringComparison.CurrentCultureIgnoreCase) == true
+                || x.Place?.Contains(needle, StringComparison.CurrentCultureIgnoreCase) == true
                 || CategoryPath(x.CategoryId).Contains(needle, StringComparison.CurrentCultureIgnoreCase)
                 || x.Amount.ToString("N2", CultureInfo.CurrentCulture).Contains(needle, StringComparison.CurrentCultureIgnoreCase));
         }
@@ -199,6 +223,7 @@ public sealed partial class TransactionsViewModel : ObservableObject, IPeriodNav
         Reconcile(target);
         IsEmpty = Rows.Count == 0;
         UpdateSummary();
+        RefreshArrows();
     }
 
     /// <summary>Brings the row collection in line with the target list with minimal changes (keeps scroll position and selection).</summary>
@@ -273,15 +298,29 @@ public sealed partial class TransactionsViewModel : ObservableObject, IPeriodNav
     public void PreviousPeriod() => Step(-1);
     public void NextPeriod() => Step(+1);
 
+    private static DateOnly TodayDate => DateOnly.FromDateTime(DateTime.Today);
+
+    /// <summary>The arrows lead only to periods with entries (and to the present one once it has begun); empty ones in between are jumped over.</summary>
+    public bool CanGoPrevious => HasArrows && PeriodNavigation.CanMove(KindOf(Mode), Anchor, -1, _core.Reader, TodayDate);
+
+    public bool CanGoNext => HasArrows && PeriodNavigation.CanMove(KindOf(Mode), Anchor, +1, _core.Reader, TodayDate);
+
     private void Step(int direction)
     {
         if (!HasArrows) return;
-        var kind = KindOf(Mode);
-        Anchor = PeriodRanges.Shift(kind, Anchor, direction);
+        if (PeriodNavigation.Target(KindOf(Mode), Anchor, direction, _core.Reader, TodayDate) is { } date) Anchor = date;
     }
 
-    [RelayCommand] private void Previous() => PreviousPeriod();
-    [RelayCommand] private void Next() => NextPeriod();
+    private void RefreshArrows()
+    {
+        OnPropertyChanged(nameof(CanGoPrevious));
+        OnPropertyChanged(nameof(CanGoNext));
+        PreviousCommand.NotifyCanExecuteChanged();
+        NextCommand.NotifyCanExecuteChanged();
+    }
+
+    [RelayCommand(CanExecute = nameof(CanGoPrevious))] private void Previous() => PreviousPeriod();
+    [RelayCommand(CanExecute = nameof(CanGoNext))] private void Next() => NextPeriod();
     [RelayCommand] private void Today() => Anchor = DateOnly.FromDateTime(DateTime.Today);
 
     [RelayCommand]
@@ -492,6 +531,7 @@ public sealed partial class TransactionsViewModel : ObservableObject, IPeriodNav
     private void ClearFilters()
     {
         CategoryFilter = null;
+        IncludeSubcategories = true;
         EventFilter = Guid.Empty;
         TypeFilter = TypeFilters[0];
         Search = "";
@@ -500,8 +540,8 @@ public sealed partial class TransactionsViewModel : ObservableObject, IPeriodNav
     }
 
     /// <summary>Whether any of the filters under the period is set (Esc then clears them).</summary>
-    public bool HasActiveFilters => CategoryFilter is not null || EventFilter != Guid.Empty || TypeFilter?.Type is not null || Search.Length > 0
-        || AmountFrom.Trim().Length > 0 || AmountTo.Trim().Length > 0;
+    public bool HasActiveFilters => CategoryFilter is not null || EventFilter != Guid.Empty || TypeFilter?.Type is not null || !string.IsNullOrEmpty(Search)
+        || !string.IsNullOrWhiteSpace(AmountFrom) || !string.IsNullOrWhiteSpace(AmountTo);
 
     public bool ClearFiltersIfAny()
     {

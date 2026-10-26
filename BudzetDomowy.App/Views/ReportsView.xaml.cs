@@ -26,4 +26,8 @@ public partial class ReportsView : UserControl
     private void QuickExpenses10_Click(object sender, RoutedEventArgs e) => Charts?.AddTop(10, TransactionType.Expense);
 
     private void QuickIncome_Click(object sender, RoutedEventArgs e) => Charts?.AddTop(5, TransactionType.Income);
+
+    private void QuickAllExpenses_Click(object sender, RoutedEventArgs e) => Charts?.AddTotal(TransactionType.Expense);
+
+    private void QuickAllIncome_Click(object sender, RoutedEventArgs e) => Charts?.AddTotal(TransactionType.Income);
 }

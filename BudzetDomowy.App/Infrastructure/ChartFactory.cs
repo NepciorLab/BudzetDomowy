@@ -129,10 +129,20 @@ public static class ChartFactory
     ];
 
     /// <summary>A line per category over the same points (markers only while the lines are short enough for them to be readable).</summary>
-    public static IReadOnlyList<ISeries> CategoryLines(IReadOnlyList<(string Name, string Color, IReadOnlyList<decimal> Values)> lines)
+    public static IReadOnlyList<ISeries> CategoryLines(IReadOnlyList<(string Name, string Color, IReadOnlyList<decimal> Values)> lines,
+        Func<int, string>? periodOf = null)
     {
         var points = lines.Count == 0 ? 0 : lines.Max(l => l.Values.Count);
         var marker = points <= 48 ? 8 : 0;
+
+        // the tooltip tells the sum and the period it comes from (the point's number is its position on the horizontal axis)
+        Func<LiveChartsCore.Kernel.ChartPoint, string> tip = periodOf is null
+            ? MoneyTip
+            : point =>
+            {
+                var period = periodOf((int)Math.Round(point.Coordinate.SecondaryValue));
+                return period.Length == 0 ? MoneyTip(point) : MoneyTip(point) + "  ·  " + period;
+            };
         return lines.Select(l =>
         {
             var color = ParseColor(l.Color);
@@ -146,10 +156,27 @@ public static class ChartFactory
                 GeometrySize = marker,
                 GeometryFill = new SolidColorPaint(color),
                 GeometryStroke = new SolidColorPaint(color) { StrokeThickness = 2 },
-                YToolTipLabelFormatter = MoneyTip,
+                YToolTipLabelFormatter = tip,
             };
         }).ToList();
     }
+
+    /// <summary>
+    /// An axis that writes exactly the given labels (empty ones stay empty). The step is forced to one: left alone, LiveCharts writes only
+    /// every n-th label of a long axis and skips the ones that were meant to be shown.
+    /// </summary>
+    public static IReadOnlyList<Axis> SparseAxes(IReadOnlyList<string> labels) =>
+    [
+        new Axis
+        {
+            Labels = labels.ToArray(),
+            LabelsPaint = TextPaint(),
+            TextSize = 12,
+            SeparatorsPaint = null,
+            MinStep = 1,
+            ForceStepToMin = true,
+        },
+    ];
 
     /// <summary>The axis of a time line: one position per point, but only about a dozen labels written (the others are left empty so they never overlap).</summary>
     public static IReadOnlyList<Axis> BucketAxes(IReadOnlyList<string> labels)

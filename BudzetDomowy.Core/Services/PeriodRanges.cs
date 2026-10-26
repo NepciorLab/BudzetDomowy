@@ -33,3 +33,25 @@ public static class PeriodRanges
 
     public static int IsoWeek(DateOnly date) => ISOWeek.GetWeekOfYear(date.ToDateTime(TimeOnly.MinValue));
 }
+
+/// <summary>
+/// Where the arrows of a period lead: only to periods that have entries (a period without any in between is jumped over), plus the
+/// current period once it has begun, so the newest month can be looked at before the first entry of it is made.
+/// </summary>
+public static class PeriodNavigation
+{
+    /// <summary>A date inside the period to move to, or null when there is nowhere to go in that direction.</summary>
+    public static DateOnly? Target(PeriodKind kind, DateOnly anchor, int direction, Storage.LocalReader reader, DateOnly today)
+    {
+        var (from, to) = PeriodRanges.Range(kind, anchor);
+        if (direction < 0) return reader.LatestEntryDayBefore(from);
+
+        var next = reader.EarliestEntryDayAfter(to);
+        var current = PeriodRanges.Range(kind, today).From > to ? today : (DateOnly?)null;       // the present period, when it lies ahead
+        if (next is null) return current;
+        return current is { } c && c < next.Value ? c : next;
+    }
+
+    public static bool CanMove(PeriodKind kind, DateOnly anchor, int direction, Storage.LocalReader reader, DateOnly today) =>
+        Target(kind, anchor, direction, reader, today) is not null;
+}

@@ -20,6 +20,7 @@ public sealed record RecentRow(DateTime Date, string Place, string Category, str
 public sealed partial class DashboardViewModel : ObservableObject, IPeriodNavigable
 {
     private readonly BudgetCore _core;
+    private readonly MorphingDonut _donut = new();
     private Guid? _drillRoot;
 
     [ObservableProperty] private DateOnly _month = BudgetMath.MonthStart(DateOnly.FromDateTime(DateTime.Today));
@@ -34,7 +35,7 @@ public sealed partial class DashboardViewModel : ObservableObject, IPeriodNaviga
     [ObservableProperty] private bool _canGoBack;
     [ObservableProperty] private bool _hasSlices;
     [ObservableProperty] private IReadOnlyList<PieSlice> _slices = [];
-    [ObservableProperty] private IEnumerable<ISeries> _pieSeries = [];
+    [ObservableProperty] private IEnumerable<ISeries> _pieSeries;
     [ObservableProperty] private IReadOnlyList<BudgetBar> _budgetBars = [];
     [ObservableProperty] private bool _hasBudgets;
     [ObservableProperty] private IReadOnlyList<RecentRow> _recent = [];
@@ -53,6 +54,7 @@ public sealed partial class DashboardViewModel : ObservableObject, IPeriodNaviga
     public DashboardViewModel(BudgetCore core, DataHub hub)
     {
         _core = core;
+        _pieSeries = _donut.Series;                    // the same collection for good: another month moves the slices instead of drawing the ring again
         UiPreferences.Instance.OnAppearanceChanged(this, self => self.Reload());
         hub.Changed += (_, _) => Reload();
         Reload();
@@ -64,11 +66,29 @@ public sealed partial class DashboardViewModel : ObservableObject, IPeriodNaviga
         Reload();
     }
 
-    public void PreviousPeriod() => Month = Month.AddMonths(-1);
-    public void NextPeriod() => Month = Month.AddMonths(1);
+    private static DateOnly Today => DateOnly.FromDateTime(DateTime.Today);
 
-    [RelayCommand] private void PreviousMonth() => Month = Month.AddMonths(-1);
-    [RelayCommand] private void NextMonth() => Month = Month.AddMonths(1);
+    /// <summary>The arrows lead only to months with entries (and to the present month once it has begun).</summary>
+    public bool CanGoPrevious => PeriodNavigation.CanMove(PeriodKind.Month, Month, -1, _core.Reader, Today);
+
+    public bool CanGoNext => PeriodNavigation.CanMove(PeriodKind.Month, Month, +1, _core.Reader, Today);
+
+    private void Step(int direction)
+    {
+        if (PeriodNavigation.Target(PeriodKind.Month, Month, direction, _core.Reader, Today) is { } date) Month = BudgetMath.MonthStart(date);
+    }
+
+    private void RefreshArrows()
+    {
+        OnPropertyChanged(nameof(CanGoPrevious));
+        OnPropertyChanged(nameof(CanGoNext));
+    }
+
+    public void PreviousPeriod() => Step(-1);
+    public void NextPeriod() => Step(+1);
+
+    [RelayCommand(CanExecute = nameof(CanGoPrevious))] private void PreviousMonth() => Step(-1);
+    [RelayCommand(CanExecute = nameof(CanGoNext))] private void NextMonth() => Step(+1);
     [RelayCommand] private void ThisMonth() => Month = BudgetMath.MonthStart(DateOnly.FromDateTime(DateTime.Today));
 
     [RelayCommand]
@@ -106,6 +126,9 @@ public sealed partial class DashboardViewModel : ObservableObject, IPeriodNaviga
 
         BuildBreakdown(all, cats);
         BuildBudgets(all, cats);
+        RefreshArrows();
+        PreviousMonthCommand.NotifyCanExecuteChanged();
+        NextMonthCommand.NotifyCanExecuteChanged();
 
         Recent = all.OrderByDescending(t => t.Date).ThenByDescending(t => t.CreatedAt).Take(8).Select(t =>
         {
@@ -150,7 +173,7 @@ public sealed partial class DashboardViewModel : ObservableObject, IPeriodNaviga
 
         Slices = items.Select(x => new PieSlice(x.b.CategoryId, x.Name, x.Color, Money(x.b.Amount),
             (x.b.Share * 100m).ToString("0.#", CultureInfo.CurrentCulture) + "%", _drillRoot is null && x.b.Children.Count > 0)).ToList();
-        PieSeries = ChartFactory.Donut(items.Select(x => (x.Name, x.Color, x.b.Amount)));
+        _donut.Update(items.Select(x => ($"{x.b.CategoryId}|{x.Name}", x.Name, x.Color, x.b.Amount)));
         HasSlices = items.Count > 0;
         CanGoBack = drilled is not null;
         ChartTitle = drilled is null ? Res.Get("DashExpensesByCategory") : Res.Format("DashInCategory", drilled.Name);

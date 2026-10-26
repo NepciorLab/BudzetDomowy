@@ -561,6 +561,9 @@
                                         <MenuItem x:Name="QuickExpenses5" Header="{infra:Str ChartQuickExpenses5}" Click="QuickExpenses5_Click" />
                                         <MenuItem x:Name="QuickExpenses10" Header="{infra:Str ChartQuickExpenses10}" Click="QuickExpenses10_Click" />
                                         <MenuItem x:Name="QuickIncome" Header="{infra:Str ChartQuickIncome}" Click="QuickIncome_Click" />
+                                        <Separator />
+                                        <MenuItem x:Name="QuickAllExpenses" Header="{infra:Str ChartAddAllExpenses}" Click="QuickAllExpenses_Click" />
+                                        <MenuItem x:Name="QuickAllIncome" Header="{infra:Str ChartAddAllIncome}" Click="QuickAllIncome_Click" />
                                     </ContextMenu>
                                 </Button.ContextMenu>
                             </Button>

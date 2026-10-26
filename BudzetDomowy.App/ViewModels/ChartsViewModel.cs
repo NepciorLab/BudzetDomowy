@@ -47,6 +47,80 @@ public static class ChartBuckets
         ChartStep.Month => start.ToString("MMM yy", CultureInfo.CurrentCulture),
         _ => start.ToString("yyyy", CultureInfo.CurrentCulture),
     };
+
+    /// <summary>The most labels written on the horizontal axis.</summary>
+    public const int MaxLabels = 20;
+
+    /// <summary>
+    /// The labels of the horizontal axis (empty where nothing is written). They stand at the same moments of the year: every month,
+    /// every quarter (January, April, July, October), every half year (January, July), every year (January) and so on, with the
+    /// finest of these that keeps the number of labels within <paramref name="maxLabels"/>. A week gets the label of the month it starts.
+    /// </summary>
+    public static IReadOnlyList<string> AxisLabels(IReadOnlyList<DateOnly> starts, ChartStep step, int maxLabels = MaxLabels)
+    {
+        var labels = new string[starts.Count];
+        Array.Fill(labels, "");
+        if (starts.Count == 0) return labels;
+
+        // the number a point has on a scale of whole months or years, or -1 when the point does not hold the first day of a month
+        var marks = new int[starts.Count];
+        for (var i = 0; i < starts.Count; i++)
+            marks[i] = step switch
+            {
+                ChartStep.Year => starts[i].Year,
+                ChartStep.Month => starts[i].Year * 12 + starts[i].Month - 1,
+                _ => FirstOfMonthIn(starts[i]) is { } first ? first.Year * 12 + first.Month - 1 : -1,
+            };
+
+        var intervals = step == ChartStep.Year ? new[] { 1, 2, 5, 10, 20, 50, 100 } : new[] { 1, 3, 6, 12, 24, 60, 120 };
+        var interval = intervals[^1];
+        foreach (var candidate in intervals)
+        {
+            if (marks.Count(m => m >= 0 && m % candidate == 0) > maxLabels) continue;
+            interval = candidate;
+            break;
+        }
+
+        var any = false;
+        for (var i = 0; i < starts.Count; i++)
+        {
+            if (marks[i] < 0 || marks[i] % interval != 0) continue;
+            any = true;
+            labels[i] = step == ChartStep.Year ? starts[i].ToString("yyyy", CultureInfo.CurrentCulture)
+                : step == ChartStep.Month ? starts[i].ToString("MMM yy", CultureInfo.CurrentCulture)
+                : FirstOfMonthIn(starts[i])!.Value.ToString("MMM yy", CultureInfo.CurrentCulture);
+        }
+
+        if (!any)                                                              // a few weeks that hold no first of a month: the weeks themselves
+        {
+            var stride = Math.Max(1, (int)Math.Ceiling(starts.Count / (double)maxLabels));
+            for (var i = 0; i < starts.Count; i += stride) labels[i] = Label(starts[i], step);
+        }
+        return labels;
+    }
+
+    /// <summary>The first day of a month that falls in the week beginning on <paramref name="weekStart"/>, if any.</summary>
+    private static DateOnly? FirstOfMonthIn(DateOnly weekStart)
+    {
+        var first = weekStart.Day == 1 ? weekStart : new DateOnly(weekStart.Year, weekStart.Month, 1).AddMonths(1);
+        return first <= weekStart.AddDays(6) ? first : null;
+    }
+
+    /// <summary>
+    /// The period a point stands for, for the tooltip: the month ("wrzesień 2017") or the year, or the dates when a week is meant or the
+    /// point is cut by an end of the chosen range (the first and the last month are often not whole).
+    /// </summary>
+    public static string Period(DateOnly start, ChartStep step, DateOnly from, DateOnly to)
+    {
+        var end = Next(start, step).AddDays(-1);
+        var a = start < from ? from : start;
+        var b = end > to ? to : end;
+        if (a == start && b == end && step != ChartStep.Week)
+            return step == ChartStep.Year ? start.ToString("yyyy", CultureInfo.CurrentCulture) : start.ToString("MMMM yyyy", CultureInfo.CurrentCulture);
+        return a == b
+            ? a.ToString("d", CultureInfo.CurrentCulture)
+            : a.ToString("d", CultureInfo.CurrentCulture) + " – " + b.ToString("d", CultureInfo.CurrentCulture);
+    }
 }
 
 /// <summary>A category (or subcategory) picked for the chart: a small tag with the colour of its line and its total in the range.</summary>
@@ -60,6 +134,31 @@ public sealed partial class CategoryChip : ObservableObject
         CategoryType = category.Type;
         Ids = ids;
     }
+
+    private CategoryChip(Guid id, string name, TransactionType total)
+    {
+        Id = id;
+        Name = name;
+        CategoryType = CategoryType.Both;
+        Ids = [];
+        TotalOf = total;
+    }
+
+    /// <summary>Stands for no category: the line of everything spent (or earned), also what has no category.</summary>
+    public static readonly Guid AllExpensesId = new("00000000-0000-0000-0000-00000000e001");
+
+    public static readonly Guid AllIncomeId = new("00000000-0000-0000-0000-00000000e002");
+
+    public static CategoryChip Total(TransactionType type, string name) =>
+        new(type == TransactionType.Income ? AllIncomeId : AllExpensesId, name, type);
+
+    /// <summary>The kind of entries a line of the whole income or of all expenses sums up; null for a category.</summary>
+    public TransactionType? TotalOf { get; }
+
+    public bool IsTotal => TotalOf is not null;
+
+    internal bool Matches(Transaction t) =>
+        TotalOf is { } type ? t.Type == type : t.CategoryId is { } id && Counts(t) && Ids.Contains(id);
 
     public Guid Id { get; }
 
@@ -272,6 +371,23 @@ public sealed partial class ChartsViewModel : ObservableObject
         Rebuild();
     }
 
+    /// <summary>Adds a single line for everything spent (or earned) in the range, whatever the category.</summary>
+    public bool AddTotal(TransactionType type)
+    {
+        var id = type == TransactionType.Income ? CategoryChip.AllIncomeId : CategoryChip.AllExpensesId;
+        if (Chips.Any(c => c.Id == id)) return false;
+        if (Chips.Count >= MaxChips)
+        {
+            Status = Res.Format("ChartTooMany", MaxChips);
+            return false;
+        }
+        Chips.Add(CategoryChip.Total(type, Res.Get(type == TransactionType.Income ? "ChartAllIncome" : "ChartAllExpenses")));
+        Status = "";
+        AssignColors();
+        Rebuild();
+        return true;
+    }
+
     /// <summary>Replaces a category by its subcategories (each with its own line).</summary>
     [RelayCommand]
     private void SplitChip(CategoryChip? chip)
@@ -336,7 +452,8 @@ public sealed partial class ChartsViewModel : ObservableObject
         var palette = ChartFactory.Palette;
         foreach (var chip in Chips)
         {
-            var own = _byId.TryGetValue(chip.Id, out var c) ? c.Color : "";
+            var own = chip.TotalOf is { } total ? (total == TransactionType.Income ? "#43A047" : "#E53935")
+                : _byId.TryGetValue(chip.Id, out var c) ? c.Color : "";
             string pick;
             if (own.Length > 0 && !used.Contains(own)) pick = own;
             else pick = palette.FirstOrDefault(p => !used.Contains(p)) ?? palette[Chips.IndexOf(chip) % palette.Length];
@@ -348,8 +465,8 @@ public sealed partial class ChartsViewModel : ObservableObject
     // ----- the chart -----
 
     [ObservableProperty] private IEnumerable<ISeries> _series = [];
-    [ObservableProperty] private IEnumerable<ICartesianAxis> _xAxes = [];
-    [ObservableProperty] private IEnumerable<ICartesianAxis> _yAxes = [];
+    [ObservableProperty] private IEnumerable<ICartesianAxis> _xAxes = ChartFactory.LabelAxes([""]);        // never empty: LiveCharts cannot measure a chart without axes
+    [ObservableProperty] private IEnumerable<ICartesianAxis> _yAxes = ChartFactory.MoneyAxes();
     [ObservableProperty] private string _pointsText = "";
     [ObservableProperty] private string _status = "";
 
@@ -365,7 +482,7 @@ public sealed partial class ChartsViewModel : ObservableObject
         Choices = CategoryHelpers.Flatten(_categories, c => !c.IsArchived, alphabetical: true);
 
         // a line of a category that has disappeared is dropped
-        foreach (var gone in Chips.Where(c => !_byId.ContainsKey(c.Id)).ToList()) Chips.Remove(gone);
+        foreach (var gone in Chips.Where(c => !c.IsTotal && !_byId.ContainsKey(c.Id)).ToList()) Chips.Remove(gone);
 
         var firstDay = _all.Count == 0 ? (DateOnly?)null : _all.Min(t => t.Date);
         var lastDay = _all.Count == 0 ? (DateOnly?)null : _all.Max(t => t.Date);
@@ -386,7 +503,7 @@ public sealed partial class ChartsViewModel : ObservableObject
             RangeMin = 0;
             RangeMax = 1;
             Series = [];
-            XAxes = [];
+            XAxes = ChartFactory.LabelAxes([""]);
             return;
         }
 
@@ -403,7 +520,7 @@ public sealed partial class ChartsViewModel : ObservableObject
         if (!_initialized)
         {
             _initialized = true;
-            if (Chips.Count == 0) AddTop(5, TransactionType.Expense);                      // something to look at straight away
+            if (Chips.Count == 0) AddTotal(TransactionType.Expense);                       // something to look at straight away: all the expenses in one line
         }
         else
         {
@@ -443,7 +560,7 @@ public sealed partial class ChartsViewModel : ObservableObject
         if (!HasData || From is not { } from || To is not { } to)
         {
             Series = [];
-            XAxes = [];
+            XAxes = ChartFactory.LabelAxes([""]);
             PointsText = "";
             return;
         }
@@ -455,17 +572,19 @@ public sealed partial class ChartsViewModel : ObservableObject
         var values = Chips.Select(_ => new decimal[starts.Count]).ToList();
         foreach (var t in _all)
         {
-            if (t.Date < from || t.Date > to || t.CategoryId is not { } id) continue;
+            if (t.Date < from || t.Date > to) continue;
             var bucket = index[ChartBuckets.Start(t.Date, Step)];
             for (var c = 0; c < Chips.Count; c++)
-                if (Chips[c].Counts(t) && Chips[c].Ids.Contains(id)) values[c][bucket] += t.AmountPln;
+                if (Chips[c].Matches(t)) values[c][bucket] += t.AmountPln;
         }
 
         for (var c = 0; c < Chips.Count; c++)
             Chips[c].TotalText = values[c].Sum().ToString("C0", CultureInfo.CurrentCulture);
 
-        Series = ChartFactory.CategoryLines(Chips.Select((chip, c) => (chip.Name, chip.Color, (IReadOnlyList<decimal>)values[c])).ToList());
-        XAxes = ChartFactory.BucketAxes(starts.Select(s => ChartBuckets.Label(s, Step)).ToList());
+        var step = Step;
+        Series = ChartFactory.CategoryLines(Chips.Select((chip, c) => (chip.Name, chip.Color, (IReadOnlyList<decimal>)values[c])).ToList(),
+            i => i >= 0 && i < starts.Count ? ChartBuckets.Period(starts[i], step, from, to) : "");
+        XAxes = ChartFactory.SparseAxes(ChartBuckets.AxisLabels(starts, step));
         YAxes = ChartFactory.MoneyAxes();
         PointsText = Res.Format("ChartPointsText", starts.Count, Res.Get(Step switch { ChartStep.Week => "ChartStepWeeks", ChartStep.Month => "ChartStepMonths", _ => "ChartStepYears" }));
     }

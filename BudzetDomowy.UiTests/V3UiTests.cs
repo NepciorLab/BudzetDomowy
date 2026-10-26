@@ -236,17 +236,26 @@ public class V3UiTests
     }));
 
     [Fact]
-    public void Categories_PaletteColoursInUseGetATick() => WithApp(app =>
+    public void Categories_PaletteMarksTheColourOfTheSelectedCategory_AndThoseTakenByOthers() => WithApp(app =>
     {
         var vm = app.Get<CategoriesViewModel>();
         var free = vm.Palette.First(p => !p.IsUsed);
+        Assert.DoesNotContain(vm.Palette, p => p.IsCurrent);                  // nothing selected: nothing ringed
 
         vm.SelectedNode = vm.Roots.First();
         vm.EditColor = free.Hex;
+        Assert.Equal([free.Hex], vm.Palette.Where(p => p.IsCurrent).Select(p => p.Hex));      // follows the box at once
         vm.SaveCommand.Execute(null);
 
+        Assert.Equal([free.Hex], vm.Palette.Where(p => p.IsCurrent).Select(p => p.Hex));
+        Assert.False(vm.Palette.First(p => p.Hex == free.Hex).IsUsed);        // it is this category's own colour, not "taken"
+
+        vm.SelectedNode = vm.Roots.Skip(1).First();                           // another category: the first one's colour is now taken
         Assert.True(vm.Palette.First(p => p.Hex == free.Hex).IsUsed);
-        Assert.True(vm.Palette.Count(p => p.IsUsed) >= 1);
+        Assert.NotEqual(free.Hex, vm.Palette.FirstOrDefault(p => p.IsCurrent)?.Hex);
+
+        vm.EditColor = free.Hex.ToLowerInvariant();                           // typed in lower case
+        Assert.True(vm.Palette.First(p => p.Hex == free.Hex).IsCurrent);
     });
 
     [Fact]

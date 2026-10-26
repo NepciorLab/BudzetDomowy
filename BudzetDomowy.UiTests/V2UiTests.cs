@@ -5,6 +5,7 @@ using BudzetDomowy.App.Infrastructure;
 using BudzetDomowy.App.ViewModels;
 using BudzetDomowy.App.Views;
 using BudzetDomowy.Core.Domain;
+using BudzetDomowy.Core.Services;
 
 namespace BudzetDomowy.UiTests;
 
@@ -42,9 +43,12 @@ public class V2UiTests
         Assert.All(vm.Rows, r => Assert.InRange(r.Model.Date, today.AddDays(-6), today));
         var week = vm.Rows.Count;
         vm.NextPeriod();
-        Assert.Empty(vm.Rows);                           // nothing is booked in the future
+        Assert.Equal(week, vm.Rows.Count);               // nothing is booked later, and this is the present week: the arrow does not move
+        Assert.False(vm.CanGoNext);
         vm.PreviousPeriod();
-        Assert.Equal(week, vm.Rows.Count);
+        var monday = PeriodRanges.WeekOf(today).From;
+        Assert.NotEmpty(vm.Rows);                        // the nearest earlier week that has entries
+        Assert.All(vm.Rows, r => Assert.True(r.Model.Date < monday));
 
         vm.SetModeCommand.Execute("Year");
         Assert.All(vm.Rows, r => Assert.Equal(today.Year, r.Model.Date.Year));

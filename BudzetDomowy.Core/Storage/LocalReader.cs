@@ -13,6 +13,21 @@ public sealed class LocalReader
 
     public LocalReader(LocalDatabase db) => _db = db;
 
+    /// <summary>The latest day before <paramref name="date"/> that has an entry (null when there is none).</summary>
+    public DateOnly? LatestEntryDayBefore(DateOnly date) => NearestEntryDay("SELECT MAX(date) FROM transactions WHERE date < $d", date);
+
+    /// <summary>The earliest day after <paramref name="date"/> that has an entry (null when there is none).</summary>
+    public DateOnly? EarliestEntryDayAfter(DateOnly date) => NearestEntryDay("SELECT MIN(date) FROM transactions WHERE date > $d", date);
+
+    private DateOnly? NearestEntryDay(string sql, DateOnly date)
+    {
+        using var conn = _db.Open();
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = sql;
+        cmd.Parameters.AddWithValue("$d", Materializer.Day(date));
+        return cmd.ExecuteScalar() is string text ? ParseDay(text) : null;
+    }
+
     public IReadOnlyList<Transaction> GetTransactions(DateOnly? from = null, DateOnly? to = null)
     {
         using var conn = _db.Open();
