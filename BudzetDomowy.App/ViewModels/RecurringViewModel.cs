@@ -39,6 +39,7 @@ public sealed partial class RecurringViewModel : ObservableObject
         new(RecurrenceFrequency.Weekly, Res.Get("RecurWeekly")),
         new(RecurrenceFrequency.Monthly, Res.Get("RecurMonthly")),
         new(RecurrenceFrequency.Yearly, Res.Get("RecurYearly")),
+        new(RecurrenceFrequency.EveryDays, Res.Get("RecurEveryDays")),
     ];
 
     public IReadOnlyList<WeekdayOption> Weekdays { get; } = Enumerable.Range(1, 7)
@@ -48,6 +49,7 @@ public sealed partial class RecurringViewModel : ObservableObject
     public IReadOnlyList<CurrencyOption> Currencies { get; } = CurrencyCatalog.Ordered([]);
 
     [ObservableProperty] private IReadOnlyList<CategoryOption> _categories = [];
+    [ObservableProperty] private IReadOnlyList<PlaceSuggestion> _placeSuggestions = [];
     [ObservableProperty, NotifyPropertyChangedFor(nameof(HasSelection)), NotifyPropertyChangedFor(nameof(ShowEditor)), NotifyPropertyChangedFor(nameof(CanEdit))] private RecurringItem? _selected;
 
     /// <summary>The details of a chosen entry are only shown; they can be changed after "Change" was pressed.</summary>
@@ -61,7 +63,8 @@ public sealed partial class RecurringViewModel : ObservableObject
     [ObservableProperty] private Guid? _editCategoryId;
     [ObservableProperty] private string _editPlace = "";
     [ObservableProperty] private string _editNote = "";
-    [ObservableProperty, NotifyPropertyChangedFor(nameof(IsWeekly))] private FrequencyOption? _editFrequency;
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(IsWeekly)), NotifyPropertyChangedFor(nameof(IsEveryDays)), NotifyPropertyChangedFor(nameof(IsDayOfMonth))] private FrequencyOption? _editFrequency;
+    [ObservableProperty] private string _editInterval = "7";
     [ObservableProperty] private int _editWeekday = 1;
     [ObservableProperty] private int _editMonthDay = 1;
     [ObservableProperty] private DateTime? _editStart = DateTime.Today;
@@ -77,6 +80,8 @@ public sealed partial class RecurringViewModel : ObservableObject
     public bool IsReadOnly => !IsEditing;
     public bool IsExpense => !EditIsIncome;
     public bool IsWeekly => EditFrequency?.Frequency == RecurrenceFrequency.Weekly;
+    public bool IsEveryDays => EditFrequency?.Frequency == RecurrenceFrequency.EveryDays;
+    public bool IsDayOfMonth => EditFrequency?.Frequency is RecurrenceFrequency.Monthly or RecurrenceFrequency.Yearly;
 
     public RecurringViewModel(BudgetCore core, DataHub hub, ToastService toast, RecurringRunner runner)
     {
@@ -111,6 +116,7 @@ public sealed partial class RecurringViewModel : ObservableObject
         try
         {
             ReloadCategories();
+            PlaceSuggestions = _core.PlaceSuggestions.All();
             var cats = _core.Reader.GetCategories().ToDictionary(c => c.Id);
             Items.Clear();
             foreach (var t in _core.Reader.GetRecurringTransactions())
@@ -136,6 +142,7 @@ public sealed partial class RecurringViewModel : ObservableObject
         {
             RecurrenceFrequency.Weekly => Res.Format("RecurEveryWeek", Weekdays.First(w => w.Day == Math.Clamp(t.Day, 1, 7)).Label, from) + until,
             RecurrenceFrequency.Monthly => Res.Format("RecurEveryMonth", t.Day, from) + until,
+            RecurrenceFrequency.EveryDays => (t.Day <= 1 ? Res.Format("RecurEveryDay", from) : Res.Format("RecurEveryNDays", t.Day, from)) + until,
             _ => Res.Format("RecurEveryYear", t.Day, CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(t.StartDate.Month), from) + until,
         };
     }
@@ -153,7 +160,9 @@ public sealed partial class RecurringViewModel : ObservableObject
         EditPlace = t.Place;
         EditNote = t.Note;
         EditFrequency = Frequencies.First(f => f.Frequency == t.Frequency);
-        if (t.Frequency == RecurrenceFrequency.Weekly) EditWeekday = Math.Clamp(t.Day, 1, 7); else EditMonthDay = Math.Clamp(t.Day, 1, 31);
+        if (t.Frequency == RecurrenceFrequency.Weekly) EditWeekday = Math.Clamp(t.Day, 1, 7);
+        else if (t.Frequency == RecurrenceFrequency.EveryDays) EditInterval = Math.Max(1, t.Day).ToString(CultureInfo.CurrentCulture);
+        else EditMonthDay = Math.Clamp(t.Day, 1, 31);
         EditStart = t.StartDate.ToDateTime(TimeOnly.MinValue);
         EditEnd = t.EndDate?.ToDateTime(TimeOnly.MinValue);
         EditConfirm = t.ConfirmEach;
@@ -175,6 +184,7 @@ public sealed partial class RecurringViewModel : ObservableObject
         EditNote = "";
         EditFrequency = Frequencies[1];
         EditMonthDay = DateTime.Today.Day;
+        EditInterval = "7";
         EditStart = DateTime.Today;
         EditEnd = null;
         EditConfirm = false;
@@ -220,6 +230,13 @@ public sealed partial class RecurringViewModel : ObservableObject
         }
 
         var frequency = EditFrequency?.Frequency ?? RecurrenceFrequency.Monthly;
+        var interval = 0;
+        if (frequency == RecurrenceFrequency.EveryDays
+            && (!int.TryParse(EditInterval.Trim(), System.Globalization.NumberStyles.Integer, CultureInfo.CurrentCulture, out interval) || interval is < 1 or > 3650))
+        {
+            Message = Res.Get("RecurBadInterval");
+            return;
+        }
         var template = (Selected?.Model ?? new RecurringTransaction()) with
         {
             Name = EditName.Trim(),
@@ -230,7 +247,7 @@ public sealed partial class RecurringViewModel : ObservableObject
             Place = EditPlace,
             Note = EditNote,
             Frequency = frequency,
-            Day = frequency == RecurrenceFrequency.Weekly ? EditWeekday : EditMonthDay,
+            Day = frequency switch { RecurrenceFrequency.Weekly => EditWeekday, RecurrenceFrequency.EveryDays => interval, _ => EditMonthDay },
             StartDate = DateOnly.FromDateTime(start),
             EndDate = EditEnd is { } e ? DateOnly.FromDateTime(e) : null,
             ConfirmEach = EditConfirm,

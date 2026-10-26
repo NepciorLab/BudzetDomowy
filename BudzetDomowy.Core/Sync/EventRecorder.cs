@@ -30,7 +30,7 @@ public sealed class EventRecorder
     }
 
     public JournalEvent Upsert<T>(string entityType, Guid id, T entity) where T : notnull =>
-        Record(entityType, id, EventOperation.Upsert, JournalJson.ToPayload(entity));
+        Record(entityType, id, EventOperation.Upsert, JournalJson.ToPayload(entity), entity);
 
     public JournalEvent Delete(string entityType, Guid id) => Record(entityType, id, EventOperation.Delete, null);
 
@@ -42,8 +42,9 @@ public sealed class EventRecorder
     public JournalEvent Save(CategoryRule r) => Upsert(EntityTypes.CategoryRule, r.Id, r);
     public JournalEvent Save(Payee p) => Upsert(EntityTypes.Payee, p.Id, p);
     public JournalEvent Save(PlannedPayment p) => Upsert(EntityTypes.PlannedPayment, p.Id, p);
+    public JournalEvent Save(PlaceHint h) => Upsert(EntityTypes.PlaceHint, h.Id, h);
 
-    private JournalEvent Record(string entityType, Guid id, EventOperation op, JsonNode? payload)
+    private JournalEvent Record(string entityType, Guid id, EventOperation op, JsonNode? payload, object? entity = null)
     {
         if (!EntityTypes.IsKnown(entityType)) throw new ArgumentException($"Unknown entity type '{entityType}'.", nameof(entityType));
         if (id == Guid.Empty) throw new ArgumentException("Entity id must not be empty.", nameof(id));
@@ -61,7 +62,7 @@ public sealed class EventRecorder
                 EntityId = id,
                 Operation = op,
                 Payload = payload,
-                SchemaVersion = EntityTypes.NeedsNewerSchema(entityType) ? JournalEvent.CurrentSchemaVersion : JournalEvent.BaseSchemaVersion,
+                SchemaVersion = EntityTypes.SchemaOf(entityType, entity),
             };
 
             var (start, end) = _writer.Append(ev);

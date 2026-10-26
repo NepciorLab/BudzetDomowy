@@ -35,6 +35,7 @@ public partial class MainWindow : Window
         PreviewKeyDown += OnEntryKey;
         ShortcutMap.Instance.Changed += OnShortcutChanged;
         Closed += (_, _) => ShortcutMap.Instance.Changed -= OnShortcutChanged;
+        Activated += async (_, _) => await vm.CheckRecurringOnActivationAsync();
         vm.SyncDetailsRequested += ShowSyncDetails;
     }
 

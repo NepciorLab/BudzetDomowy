@@ -1,10 +1,12 @@
+using BudzetDomowy.Core.Journal;
+
 namespace BudzetDomowy.Core.Domain;
 
 public enum TransactionType { Expense, Income }
 
 public enum CategoryType { Expense, Income, Both }
 
-public enum RecurrenceFrequency { Weekly, Monthly, Yearly }
+public enum RecurrenceFrequency { Weekly, Monthly, Yearly, EveryDays }
 
 /// <summary>Names of synchronised entity kinds as they appear in journal events.</summary>
 public static class EntityTypes
@@ -17,14 +19,25 @@ public static class EntityTypes
     public const string CategoryRule = "CategoryRule";
     public const string Payee = "Payee";
     public const string PlannedPayment = "PlannedPayment";
+    public const string PlaceHint = "PlaceHint";
 
     public static readonly IReadOnlyList<string> All =
     [
-        Transaction, Category, SpecialEvent, Budget, RecurringTransaction, CategoryRule, Payee, PlannedPayment,
+        Transaction, Category, SpecialEvent, Budget, RecurringTransaction, CategoryRule, Payee, PlannedPayment, PlaceHint,
     ];
 
     /// <summary>Kinds that older versions of the program do not know: their events carry a newer schema number, so an older program offers the update instead of failing.</summary>
-    public static bool NeedsNewerSchema(string entityType) => entityType is Payee or PlannedPayment;
+    public static bool NeedsNewerSchema(string entityType) => entityType is Payee or PlannedPayment or PlaceHint;
+
+    /// <summary>The schema number events of this kind are written with (place hints exist since schema 3).</summary>
+    public static int SchemaOf(string entityType, object? entity = null) => entityType switch
+    {
+        PlaceHint => JournalEvent.PlaceHintSchemaVersion,
+        Payee or PlannedPayment => 2,
+        // "every N days" is unknown to older programs (they could not read the value), so such an entry asks them to update
+        RecurringTransaction when entity is RecurringTransaction { Frequency: RecurrenceFrequency.EveryDays } => JournalEvent.PlaceHintSchemaVersion,
+        _ => JournalEvent.BaseSchemaVersion,
+    };
 
     public static bool IsKnown(string entityType) => All.Contains(entityType);
 }
@@ -111,7 +124,7 @@ public sealed record RecurringTransaction
     public string Note { get; init; } = "";
     public Guid? EventId { get; init; }
     public RecurrenceFrequency Frequency { get; init; } = RecurrenceFrequency.Monthly;
-    /// <summary>Weekly: ISO day of week 1-7. Monthly: day of month 1-31 (clamped to month length). Yearly: day of month (month taken from <see cref="StartDate"/>).</summary>
+    /// <summary>Weekly: ISO day of week 1-7. Monthly: day of month 1-31 (clamped to month length). Yearly: day of month (month taken from <see cref="StartDate"/>). EveryDays: the number of days between two terms (the first is <see cref="StartDate"/>).</summary>
     public int Day { get; init; } = 1;
     public DateOnly StartDate { get; init; }
     public DateOnly? EndDate { get; init; }
@@ -156,6 +169,23 @@ public sealed record PlannedPayment
 
     /// <summary>The payments typed together (one bill with several dates) are edited together; null for a payment typed alone in an older version.</summary>
     public Guid? SeriesId { get; init; }
+}
+
+/// <summary>
+/// The user's correction of one suggested place (shop, service) of the "Place" box: a changed weight or a removal. Its id comes from the
+/// normalised name, so the same place edited on two computers is one entity. Places typed earlier are suggested by their number of
+/// uses; a hint overrides that number (<see cref="Weight"/>), hides the place (<see cref="Hidden"/>) or adds a place never typed yet.
+/// </summary>
+public sealed record PlaceHint
+{
+    public Guid Id { get; init; }
+    public string Name { get; init; } = "";
+
+    /// <summary>The weight that replaces the number of uses (higher is suggested earlier); null keeps the number of uses.</summary>
+    public int? Weight { get; init; }
+
+    /// <summary>The place is not suggested (removed by the user).</summary>
+    public bool Hidden { get; init; }
 }
 
 /// <summary>Learned mapping from a note pattern to a category (and optionally an event).</summary>

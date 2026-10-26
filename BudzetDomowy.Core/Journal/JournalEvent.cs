@@ -10,7 +10,10 @@ public enum EventOperation { Upsert, Delete }
 public sealed record JournalEvent
 {
     /// <summary>The newest event schema this program reads. Kinds that exist since schema 2 (payees, planned payments) are written with it.</summary>
-    public const int CurrentSchemaVersion = 2;
+    public const int CurrentSchemaVersion = 3;
+
+    /// <summary>Place hints (corrections of the suggested places) are written with this schema, so an older program offers the update.</summary>
+    public const int PlaceHintSchemaVersion = 3;
 
     /// <summary>What every event of the older kinds is written with, so older programs keep reading them.</summary>
     public const int BaseSchemaVersion = 1;

@@ -35,8 +35,8 @@
             </Grid.ColumnDefinitions>
             <DatePicker x:Name="DateBox" SelectedDate="{Binding Date, Mode=TwoWay}" Margin="0,0,10,0" HorizontalAlignment="Stretch"
                         ui:ControlHelper.Header="{infra:Str QuickDate}" />
-            <TextBox x:Name="PlaceBox" Grid.Column="1" Text="{Binding Place, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,10,0"
-                     ui:ControlHelper.Header="{infra:Str QuickPlace}" ui:ControlHelper.PlaceholderText="{infra:Str QuickPlaceHint}" />
+            <controls:PlaceBox x:Name="PlaceBox" Grid.Column="1" Text="{Binding Place, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,10,0"
+                               Suggestions="{Binding PlaceSuggestions}" ui:ControlHelper.Header="{infra:Str QuickPlace}" />
             <controls:ExpressionBox x:Name="TotalBox" Grid.Column="2" Expression="{Binding TotalText, Mode=TwoWay}" DisplayText="{Binding TotalDisplay}"
                                     Margin="0,0,10,0" TextAlignment="Right" ToolTip="{infra:Str EntryAmountTip}"
                                     ui:ControlHelper.Header="{infra:Str EntryTotal}" ui:ControlHelper.PlaceholderText="0,00" />

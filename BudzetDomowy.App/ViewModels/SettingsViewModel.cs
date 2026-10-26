@@ -65,6 +65,7 @@ public sealed partial class SettingsViewModel : ObservableObject
     public const int AppearanceTab = 1;
     public const int BackupTab = 5;
     public const int ShortcutsTab = 6;
+    public const int PlacesTab = 7;
 
     private readonly BudgetCore _core;
     private readonly SettingsStore _store;
@@ -79,8 +80,14 @@ public sealed partial class SettingsViewModel : ObservableObject
     public CategoriesViewModel Categories { get; }
     public DiagnosticsViewModel Diagnostics { get; }
     public BackupViewModel Backup { get; }
+    public PlaceHintsViewModel PlaceHints { get; }
 
     [ObservableProperty] private int _selectedTab;
+
+    partial void OnSelectedTabChanged(int value)
+    {
+        if (value == PlacesTab) PlaceHints.Reload();      // the places typed since the tab was last shown
+    }
 
     /// <summary>Display preferences (tables sized to their content).</summary>
     public UiPreferences Preferences => UiPreferences.Instance;
@@ -258,6 +265,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         _restarter = restarter;
         _updates = updates;
         Backup = backup;
+        PlaceHints = new PlaceHintsViewModel(core);
         _autoUpdate = store.Current.AutoUpdate;
         Diagnostics = diagnostics;
         _selectedTheme = Themes.First(t => t.Choice == store.Current.Theme);

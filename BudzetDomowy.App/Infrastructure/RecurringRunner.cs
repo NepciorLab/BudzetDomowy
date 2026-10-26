@@ -103,6 +103,7 @@ public sealed class RecurringRunner
         {
             RecurrenceFrequency.Weekly => Res.Get("RecurWeekly"),
             RecurrenceFrequency.Yearly => Res.Get("RecurYearly"),
+            RecurrenceFrequency.EveryDays => t.Day <= 1 ? Res.Get("RecurDaily") : Res.Format("RecurEveryNDaysShort", t.Day),
             _ => Res.Get("RecurMonthly"),
         };
         return new RecurringQuestion(title, p.Date.ToString("D", culture), amount, category, schedule);

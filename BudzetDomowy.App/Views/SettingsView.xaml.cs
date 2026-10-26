@@ -32,6 +32,44 @@ public partial class SettingsView : UserControl
         if (e.NewValue is true && sender is UIElement box) box.Dispatcher.BeginInvoke(() => box.Focus(), System.Windows.Threading.DispatcherPriority.Input);
     }
 
+    private PlaceHintsViewModel? Places => PlacesGrid.DataContext as PlaceHintsViewModel;
+
+    private void PlacesRemoveSelected_Click(object sender, RoutedEventArgs e) =>
+        Places?.RemoveMany(PlacesGrid.SelectedItems.OfType<PlaceHintRow>().ToList());
+
+    /// <summary>Delete removes the chosen places, Home and End go to the top and the bottom of the list (Shift extends the choice); typing a weight is left alone.</summary>
+    private void PlacesGrid_PreviewKeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.OriginalSource is TextBox || PlacesGrid.Items.Count == 0) return;
+        var shift = (Keyboard.Modifiers & ModifierKeys.Shift) != 0;
+        var other = (Keyboard.Modifiers & ~ModifierKeys.Shift & ~ModifierKeys.Control) != 0;
+        if (other) return;
+
+        switch (e.Key)
+        {
+            case Key.Delete when Keyboard.Modifiers == ModifierKeys.None:
+                Places?.RemoveMany(PlacesGrid.SelectedItems.OfType<PlaceHintRow>().ToList());
+                e.Handled = true;
+                break;
+            case Key.Home or Key.End:
+                var last = e.Key == Key.End ? PlacesGrid.Items.Count - 1 : 0;
+                var anchor = PlacesGrid.SelectedItem is { } current ? PlacesGrid.Items.IndexOf(current) : last;
+                if (shift)
+                {
+                    PlacesGrid.SelectedItems.Clear();
+                    for (var i = Math.Min(anchor, last); i <= Math.Max(anchor, last); i++) PlacesGrid.SelectedItems.Add(PlacesGrid.Items[i]);
+                }
+                else
+                {
+                    PlacesGrid.SelectedItems.Clear();
+                    PlacesGrid.SelectedIndex = last;
+                }
+                PlacesGrid.ScrollIntoView(PlacesGrid.Items[last]);
+                e.Handled = true;
+                break;
+        }
+    }
+
     public SettingsView()
     {
         InitializeComponent();

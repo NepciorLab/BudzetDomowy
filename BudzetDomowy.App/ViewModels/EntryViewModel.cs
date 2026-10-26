@@ -111,6 +111,9 @@ public sealed partial class EntryViewModel : ObservableObject
     private readonly BudgetCore _core;
     private readonly ToastService _toast;
     private readonly PlaceCategoryDictionary _dictionary;
+
+    /// <summary>The places typed before, best first: offered while the place is typed.</summary>
+    public IReadOnlyList<PlaceSuggestion> PlaceSuggestions { get; }
     private IReadOnlyList<CategoryRule> _rules = [];
     private IReadOnlyList<SpecialEvent> _specialEvents = [];
     private bool _applying;
@@ -184,6 +187,7 @@ public sealed partial class EntryViewModel : ObservableObject
         Categories = CategoryHelpers.ForEntry(core.Reader.GetCategories(), type);
         Currencies = CurrencyCatalog.Ordered(core.Reader.GetRecentCurrencies());
         _dictionary = PlaceCategoryDictionary.Build(core.Reader.GetTransactions(), type, core.Reader.GetCategories());
+        PlaceSuggestions = core.PlaceSuggestions.All(type);
 
         var options = new List<EventOption> { new(Guid.Empty, Res.Get("NoEvent")) };
         options.AddRange(_specialEvents.OrderByDescending(e => e.DateFrom).Select(e => new EventOption(e.Id, e.Name)));
@@ -531,6 +535,7 @@ public sealed partial class EntryViewModel : ObservableObject
                 if (line.CategoryId is { } category && !string.IsNullOrWhiteSpace(Place))
                     _core.Rules.Learn(Place, category, _eventSource is EventSource.Manual or EventSource.Rule ? eventId : null);
             }
+            if (!IsIncome) _core.PlaceSuggestions.Learn(Place);
         }
         catch (UpdateRequiredException)
         {

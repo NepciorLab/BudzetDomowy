@@ -71,7 +71,6 @@
   <data name="QuickAdd" xml:space="preserve"><value>Dodaj</value></data>
   <data name="QuickCategoryHint" xml:space="preserve"><value>wpisz, aby filtrować</value></data>
   <data name="QuickPlace" xml:space="preserve"><value>Miejsce</value></data>
-  <data name="QuickPlaceHint" xml:space="preserve"><value>np. Lewiatan</value></data>
   <data name="QuickNoteHint" xml:space="preserve"><value>dowolna uwaga</value></data>
   <data name="QuickTypeTip" xml:space="preserve"><value>Wydatek / Przychód (F2)</value></data>
   <data name="QuickAddTip" xml:space="preserve"><value>Zapisz wpis (Enter)</value></data>
@@ -449,13 +448,48 @@ Del – usuń zaznaczone transakcje</value></data>
   <data name="NavRecurring" xml:space="preserve"><value>Wydatki cykliczne</value></data>
   <data name="SummaryAll" xml:space="preserve"><value>Wszystkie pasujące: {0}</value></data>
   <data name="SummarySelectedLabel" xml:space="preserve"><value>Zaznaczone: {0}</value></data>
+  <data name="SettingsPlaces" xml:space="preserve"><value>Podpowiedzi miejsc</value></data>
+  <data name="PlacesNewName" xml:space="preserve"><value>Nowe miejsce</value></data>
+  <data name="PlacesColWeight" xml:space="preserve"><value>Waga</value></data>
+  <data name="PlacesColPlace" xml:space="preserve"><value>Miejsce</value></data>
+  <data name="PlacesColSource" xml:space="preserve"><value>Skąd</value></data>
+  <data name="PlacesAdd" xml:space="preserve"><value>Dodaj</value></data>
+  <data name="PlacesFromHistory" xml:space="preserve"><value>z wpisanych wydatków</value></data>
+  <data name="PlacesAddedByHand" xml:space="preserve"><value>dodane ręcznie</value></data>
+  <data name="PlacesResetTip" xml:space="preserve"><value>Przywróć wagę wynikającą z liczby wpisów</value></data>
+  <data name="PlacesRemoveTip" xml:space="preserve"><value>Usuń z podpowiedzi (wróci dopiero po ręcznym dodaniu)</value></data>
+  <data name="PlacesCount" xml:space="preserve"><value>Pokazane miejsca: {0} z {1}</value></data>
+  <data name="PlacesNameRequired" xml:space="preserve"><value>Wpisz nazwę miejsca.</value></data>
+  <data name="PlacesBadWeight" xml:space="preserve"><value>Waga musi być liczbą całkowitą, 0 lub więcej.</value></data>
+  <data name="PlacesAdded" xml:space="preserve"><value>Dodano: {0}.</value></data>
+  <data name="PlacesRemoved" xml:space="preserve"><value>Usunięto: {0}.</value></data>
+  <data name="PlacesInfo" xml:space="preserve"><value>Pole „Miejsce” podpowiada miejsca z tej listy, już od pierwszej litery. Lista uzupełnia się sama o miejsca wpisane w nowych wydatkach; można też zaimportować miejsca z dotychczasowych wpisów albo dodać je ręcznie. Waga to domyślnie liczba wpisów z danym miejscem; najpopularniejsze pasujące miejsce pojawia się w polu od razu. Wagę zmienisz, klikając ją dwa razy. Zaznacz kilka miejsc (Ctrl, Shift, Ctrl+A) i naciśnij Delete, żeby je usunąć; Home i End idą na początek i koniec listy.</value></data>
+  <data name="PlacesMinEntries" xml:space="preserve"><value>Minimum wpisów</value></data>
+  <data name="PlacesMinEntriesTip" xml:space="preserve"><value>Import doda tylko miejsca wpisane w wydatkach co najmniej tyle razy.</value></data>
+  <data name="PlacesImport" xml:space="preserve"><value>Importuj z wpisów</value></data>
+  <data name="PlacesImportTip" xml:space="preserve"><value>Dodaje do listy miejsca z dotychczasowych wydatków (te usunięte wcześniej nie wracają).</value></data>
+  <data name="PlacesRemoveSelected" xml:space="preserve"><value>Usuń zaznaczone</value></data>
+  <data name="PlacesRemoveSelectedTip" xml:space="preserve"><value>Usuwa zaznaczone miejsca (Delete)</value></data>
+  <data name="PlacesBadMin" xml:space="preserve"><value>Minimum wpisów musi być liczbą całkowitą, 1 lub więcej.</value></data>
+  <data name="PlacesNothingToImport" xml:space="preserve"><value>Nie ma nowych miejsc do zaimportowania.</value></data>
+  <data name="PlacesImported" xml:space="preserve"><value>Zaimportowano miejsc: {0}.</value></data>
+  <data name="PlacesRemovedMany" xml:space="preserve"><value>Usunięto miejsc: {0}.</value></data>
+  <data name="RecurEveryDays" xml:space="preserve"><value>co określoną liczbę dni</value></data>
+  <data name="RecurIntervalDays" xml:space="preserve"><value>Co ile dni</value></data>
+  <data name="RecurIntervalDaysTip" xml:space="preserve"><value>Pierwszy raz w dniu początku, potem co tyle dni.</value></data>
+  <data name="RecurBadInterval" xml:space="preserve"><value>Liczba dni musi być całkowita, od 1 do 3650.</value></data>
+  <data name="RecurEveryDay" xml:space="preserve"><value>codziennie, od {0}</value></data>
+  <data name="RecurEveryNDays" xml:space="preserve"><value>co {0} dni, od {1}</value></data>
+  <data name="RecurEveryNDaysShort" xml:space="preserve"><value>co {0} dni</value></data>
+  <data name="RecurDaily" xml:space="preserve"><value>codziennie</value></data>
+  <data name="PeriodDay" xml:space="preserve"><value>Dzień</value></data>
   <data name="PeriodWeek" xml:space="preserve"><value>Tydzień</value></data>
   <data name="PeriodMonth" xml:space="preserve"><value>Miesiąc</value></data>
   <data name="PeriodYear" xml:space="preserve"><value>Rok</value></data>
   <data name="PeriodRange" xml:space="preserve"><value>Zakres</value></data>
   <data name="PeriodPrevious" xml:space="preserve"><value>Poprzedni okres (Alt + ←)</value></data>
   <data name="PeriodNext" xml:space="preserve"><value>Następny okres (Alt + →)</value></data>
-  <data name="PeriodWeekTitle" xml:space="preserve"><value>Tydzień {0} · {1} – {2}</value></data>
+  <data name="PeriodWeekTitle" xml:space="preserve"><value>{0} – {1}</value></data>
   <data name="PeriodRangeTitle" xml:space="preserve"><value>{0} – {1}</value></data>
   <data name="KeyCtrlK" xml:space="preserve"><value>Zmień kategorię zaznaczonych transakcji</value></data>
   <data name="KeyEscTable" xml:space="preserve"><value>Ekran Transakcje: odznacz zaznaczone wpisy, a potem wyczyść filtry</value></data>

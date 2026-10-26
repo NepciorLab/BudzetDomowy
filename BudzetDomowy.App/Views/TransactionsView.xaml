@@ -26,8 +26,10 @@
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
             <StackPanel Orientation="Horizontal">
+                <RadioButton Content="{infra:Str PeriodDay}" GroupName="mode" IsChecked="{Binding IsDayMode, Mode=OneWay}"
+                             Command="{Binding SetModeCommand}" CommandParameter="Day" MinWidth="0" />
                 <RadioButton Content="{infra:Str PeriodWeek}" GroupName="mode" IsChecked="{Binding IsWeekMode, Mode=OneWay}"
-                             Command="{Binding SetModeCommand}" CommandParameter="Week" MinWidth="0" />
+                             Command="{Binding SetModeCommand}" CommandParameter="Week" MinWidth="0" Margin="6,0,0,0" />
                 <RadioButton Content="{infra:Str PeriodMonth}" GroupName="mode" IsChecked="{Binding IsMonthMode, Mode=OneWay}"
                              Command="{Binding SetModeCommand}" CommandParameter="Month" MinWidth="0" Margin="6,0,0,0" />
                 <RadioButton Content="{infra:Str PeriodYear}" GroupName="mode" IsChecked="{Binding IsYearMode, Mode=OneWay}"

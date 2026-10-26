@@ -74,7 +74,8 @@
                         <ColumnDefinition Width="10" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <TextBox Text="{Binding EditPlace, UpdateSourceTrigger=PropertyChanged}" ui:ControlHelper.Header="{infra:Str QuickPlace}" />
+                    <controls:PlaceBox Text="{Binding EditPlace, UpdateSourceTrigger=PropertyChanged}" Suggestions="{Binding PlaceSuggestions}"
+                                       ui:ControlHelper.Header="{infra:Str QuickPlace}" />
                     <TextBox Grid.Column="2" Text="{Binding EditNote, UpdateSourceTrigger=PropertyChanged}" ui:ControlHelper.Header="{infra:Str QuickNote}" />
                 </Grid>
                 <Grid Margin="0,10,0,0">
@@ -89,7 +90,10 @@
                               SelectedValue="{Binding EditWeekday, Mode=TwoWay}" HorizontalAlignment="Stretch"
                               ui:ControlHelper.Header="{infra:Str RecurWeekday}" Visibility="{Binding IsWeekly, Converter={StaticResource BoolToVis}}" />
                     <ComboBox Grid.Column="2" ItemsSource="{Binding MonthDays}" SelectedItem="{Binding EditMonthDay, Mode=TwoWay}" HorizontalAlignment="Stretch"
-                              ui:ControlHelper.Header="{infra:Str RecurDayOfMonth}" Visibility="{Binding IsWeekly, Converter={StaticResource NotVis}}" />
+                              ui:ControlHelper.Header="{infra:Str RecurDayOfMonth}" Visibility="{Binding IsDayOfMonth, Converter={StaticResource BoolToVis}}" />
+                    <TextBox Grid.Column="2" Text="{Binding EditInterval, UpdateSourceTrigger=PropertyChanged}" TextAlignment="Right" MaxLength="4"
+                             ui:ControlHelper.Header="{infra:Str RecurIntervalDays}" ToolTip="{infra:Str RecurIntervalDaysTip}"
+                             Visibility="{Binding IsEveryDays, Converter={StaticResource BoolToVis}}" />
                 </Grid>
                 <Grid Margin="0,10,0,0">
                     <Grid.ColumnDefinitions>

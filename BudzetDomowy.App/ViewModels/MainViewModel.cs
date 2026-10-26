@@ -108,11 +108,28 @@ public sealed partial class MainViewModel : ObservableObject
         ShowStatus(core.Sync.Status);
         core.Sync.Start();
 
-        // recurring entries that fell due while the program was closed (and again every few hours if it stays open)
-        _recurringTimer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromHours(4) };
-        _recurringTimer.Tick += async (_, _) => await GenerateRecurringAsync();
+        // Recurring entries that fell due while the program was closed: checked shortly after the start, when the window is already
+        // on screen (the questions can only be asked in it), then every quarter of an hour and whenever the window is activated,
+        // so a program left open over midnight asks the next day too.
+        _recurringTimer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
+        _recurringTimer.Tick += async (_, _) =>
+        {
+            _recurringTimer.Interval = TimeSpan.FromMinutes(15);
+            await GenerateRecurringAsync();
+        };
         _recurringTimer.Start();
-        _ = GenerateRecurringAsync();
+    }
+
+    private DateTime _lastRecurringCheck = DateTime.MinValue;
+
+    /// <summary>For tests: the next activation checks at once, whatever the last check was.</summary>
+    public void ForgetLastRecurringCheck() => _lastRecurringCheck = DateTime.MinValue;
+
+    /// <summary>Checks the recurring entries again when the program window comes back to the front (at most once a minute).</summary>
+    public async Task CheckRecurringOnActivationAsync()
+    {
+        if (DateTime.Now - _lastRecurringCheck < TimeSpan.FromMinutes(1)) return;
+        await GenerateRecurringAsync();
     }
 
     private readonly System.Windows.Threading.DispatcherTimer _recurringTimer;
@@ -122,6 +139,7 @@ public sealed partial class MainViewModel : ObservableObject
 
     private async Task GenerateRecurringAsync()
     {
+        _lastRecurringCheck = DateTime.Now;
         try
         {
             var run = await _runner.RunAsync(DateOnly.FromDateTime(DateTime.Today));

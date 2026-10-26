@@ -363,5 +363,78 @@
                 </StackPanel>
             </ScrollViewer>
         </TabItem>
+
+        <!-- Suggestions of the "Place" box -->
+        <TabItem Header="{infra:Str SettingsPlaces}" DataContext="{Binding PlaceHints}">
+            <Grid Margin="0,16,0,0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <TextBlock Text="{infra:Str PlacesInfo}" TextWrapping="Wrap" Opacity="0.85" Margin="0,0,0,12" />
+                <Grid Grid.Row="1" Margin="0,0,0,10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" MinWidth="200" />
+                        <ColumnDefinition Width="90" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="24" />
+                        <ColumnDefinition Width="*" MinWidth="160" />
+                    </Grid.ColumnDefinitions>
+                    <TextBox Text="{Binding NewName, UpdateSourceTrigger=PropertyChanged}" ui:ControlHelper.Header="{infra:Str PlacesNewName}" Margin="0,0,8,0" />
+                    <TextBox Grid.Column="1" Text="{Binding NewWeight, UpdateSourceTrigger=PropertyChanged}" ui:ControlHelper.Header="{infra:Str PlacesColWeight}"
+                             ui:ControlHelper.PlaceholderText="1" TextAlignment="Right" Margin="0,0,8,0" />
+                    <Button Grid.Column="2" Content="{infra:Str PlacesAdd}" Command="{Binding AddCommand}" VerticalAlignment="Bottom" Style="{StaticResource AccentButtonStyle}" />
+                    <TextBox Grid.Column="4" Text="{Binding Search, UpdateSourceTrigger=PropertyChanged}" ui:ControlHelper.Header="{infra:Str PlacesSearch}" />
+                </Grid>
+                <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,0,0,10">
+                    <TextBox Text="{Binding MinEntries, UpdateSourceTrigger=PropertyChanged}" Width="150" TextAlignment="Right" Margin="0,0,8,0"
+                             ui:ControlHelper.Header="{infra:Str PlacesMinEntries}" ToolTip="{infra:Str PlacesMinEntriesTip}" />
+                    <Button Content="{infra:Str PlacesImport}" Command="{Binding ImportCommand}" VerticalAlignment="Bottom" Margin="0,0,24,0" ToolTip="{infra:Str PlacesImportTip}" />
+                    <Button Content="{infra:Str PlacesRemoveSelected}" Click="PlacesRemoveSelected_Click" VerticalAlignment="Bottom" ToolTip="{infra:Str PlacesRemoveSelectedTip}" />
+                </StackPanel>
+                <DataGrid x:Name="PlacesGrid" Grid.Row="3" ItemsSource="{Binding Rows}" AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False"
+                          HeadersVisibility="Column" GridLinesVisibility="All" SelectionMode="Extended" AlternationCount="2" PreviewKeyDown="PlacesGrid_PreviewKeyDown"
+                          AlternatingRowBackground="{DynamicResource SystemControlBackgroundListLowBrush}">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="{infra:Str PlacesColPlace}" Binding="{Binding Name, Mode=OneWay}" IsReadOnly="True" Width="*" />
+                        <DataGridTextColumn Header="{infra:Str PlacesColWeight}" Binding="{Binding Weight, UpdateSourceTrigger=LostFocus}" Width="100">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="TextAlignment" Value="Right" />
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                            <DataGridTextColumn.EditingElementStyle>
+                                <Style TargetType="TextBox">
+                                    <Setter Property="TextAlignment" Value="Right" />
+                                </Style>
+                            </DataGridTextColumn.EditingElementStyle>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Header="{infra:Str PlacesColSource}" Binding="{Binding Source, Mode=OneWay}" IsReadOnly="True" Width="160" />
+                        <DataGridTemplateColumn Width="Auto">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Button Content="↺" Padding="8,2" MinWidth="0" Margin="0,0,4,0" ToolTip="{infra:Str PlacesResetTip}"
+                                                Command="{Binding DataContext.ResetWeightCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                CommandParameter="{Binding}"
+                                                Visibility="{Binding CanReset, Converter={StaticResource BoolToVis}}" />
+                                        <Button Content="✕" Padding="8,2" MinWidth="0" ToolTip="{infra:Str PlacesRemoveTip}"
+                                                Command="{Binding DataContext.RemoveCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                CommandParameter="{Binding}" />
+                                    </StackPanel>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+                <StackPanel Grid.Row="4" Orientation="Horizontal" Margin="0,8,0,0">
+                    <TextBlock Text="{Binding Summary}" Opacity="0.85" />
+                    <TextBlock Text="{Binding Message}" Margin="16,0,0,0" Opacity="0.85" />
+                </StackPanel>
+            </Grid>
+        </TabItem>
     </TabControl>
 </UserControl>

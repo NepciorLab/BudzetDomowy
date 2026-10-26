@@ -15,7 +15,7 @@ public sealed record TypeFilterOption(TransactionType? Type, string Label)
     public override string ToString() => Label;
 }
 
-public enum ViewMode { Week, Month, Year, All, Range }
+public enum ViewMode { Week, Month, Year, All, Range, Day }
 
 public sealed partial class TransactionsViewModel : ObservableObject, IPeriodNavigable
 {
@@ -48,7 +48,7 @@ public sealed partial class TransactionsViewModel : ObservableObject, IPeriodNav
     [ObservableProperty] private IReadOnlyList<EventOption> _eventChoices = [];
 
     // what period the table shows: a week, month or year around the anchor date, or a free range
-    [ObservableProperty, NotifyPropertyChangedFor(nameof(IsWeekMode)), NotifyPropertyChangedFor(nameof(IsMonthMode)),
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(IsDayMode)), NotifyPropertyChangedFor(nameof(IsWeekMode)), NotifyPropertyChangedFor(nameof(IsMonthMode)),
         NotifyPropertyChangedFor(nameof(IsYearMode)), NotifyPropertyChangedFor(nameof(IsRangeMode)), NotifyPropertyChangedFor(nameof(IsAllMode)),
         NotifyPropertyChangedFor(nameof(HasArrows))] private ViewMode _mode = ViewMode.Month;
     [ObservableProperty] private DateOnly _anchor = DateOnly.FromDateTime(DateTime.Today);
@@ -79,6 +79,7 @@ public sealed partial class TransactionsViewModel : ObservableObject, IPeriodNav
 
     public int ChoicesVersion { get; private set; }
 
+    public bool IsDayMode => Mode == ViewMode.Day;
     public bool IsWeekMode => Mode == ViewMode.Week;
     public bool IsMonthMode => Mode == ViewMode.Month;
     public bool IsYearMode => Mode == ViewMode.Year;
@@ -86,7 +87,7 @@ public sealed partial class TransactionsViewModel : ObservableObject, IPeriodNav
     public bool IsAllMode => Mode == ViewMode.All;
 
     /// <summary>Week, month and year have a previous and a next period; "all" and a free range do not.</summary>
-    public bool HasArrows => Mode is ViewMode.Week or ViewMode.Month or ViewMode.Year;
+    public bool HasArrows => Mode is ViewMode.Day or ViewMode.Week or ViewMode.Month or ViewMode.Year;
 
     public TransactionsViewModel(BudgetCore core, DataHub hub, ToastService toast, ExportActions exports)
     {
@@ -232,18 +233,29 @@ public sealed partial class TransactionsViewModel : ObservableObject, IPeriodNav
         if (Mode == ViewMode.All) return (null, null);
         if (Mode == ViewMode.Range)
             return (From is { } f ? DateOnly.FromDateTime(f) : null, To is { } t ? DateOnly.FromDateTime(t) : null);
-        var kind = Mode switch { ViewMode.Week => PeriodKind.Week, ViewMode.Year => PeriodKind.Year, _ => PeriodKind.Month };
+        var kind = KindOf(Mode);
         var (a, b) = PeriodRanges.Range(kind, Anchor);
         return (a, b);
     }
+
+    private static PeriodKind KindOf(ViewMode mode) => mode switch
+    {
+        ViewMode.Day => PeriodKind.Day,
+        ViewMode.Week => PeriodKind.Week,
+        ViewMode.Year => PeriodKind.Year,
+        _ => PeriodKind.Month,
+    };
 
     private string TitleOf()
     {
         switch (Mode)
         {
+            case ViewMode.Day:
+                var day = Anchor.ToString("dddd, d MMMM yyyy", CultureInfo.CurrentCulture);
+                return char.ToUpper(day[0], CultureInfo.CurrentCulture) + day[1..];
             case ViewMode.Week:
                 var (a, b) = PeriodRanges.WeekOf(Anchor);
-                return Res.Format("PeriodWeekTitle", a.ToString("d.MM", CultureInfo.CurrentCulture), b.ToString("d.MM.yyyy", CultureInfo.CurrentCulture), PeriodRanges.IsoWeek(Anchor));
+                return Res.Format("PeriodWeekTitle", a.ToString("d.MM", CultureInfo.CurrentCulture), b.ToString("d.MM.yyyy", CultureInfo.CurrentCulture));
             case ViewMode.Year:
                 return Anchor.Year.ToString(CultureInfo.CurrentCulture);
             case ViewMode.All:
@@ -264,7 +276,7 @@ public sealed partial class TransactionsViewModel : ObservableObject, IPeriodNav
     private void Step(int direction)
     {
         if (!HasArrows) return;
-        var kind = Mode switch { ViewMode.Week => PeriodKind.Week, ViewMode.Year => PeriodKind.Year, _ => PeriodKind.Month };
+        var kind = KindOf(Mode);
         Anchor = PeriodRanges.Shift(kind, Anchor, direction);
     }
 

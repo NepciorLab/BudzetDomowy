@@ -173,6 +173,15 @@ public sealed class LocalDatabase
         """
         ALTER TABLE planned_payments ADD COLUMN series_id TEXT;
         """,
+        // v8: corrections of the suggested places
+        """
+        CREATE TABLE place_hints (
+            id     TEXT PRIMARY KEY,
+            name   TEXT NOT NULL,
+            weight INTEGER,
+            hidden INTEGER NOT NULL DEFAULT 0
+        );
+        """,
     ];
 
     public static int CurrentVersion => Migrations.Length;
@@ -231,7 +240,7 @@ public sealed class LocalDatabase
         foreach (var table in new[]
                  {
                      "entity_state", "journal_offsets", "transactions", "transaction_lines", "categories",
-                     "special_events", "budgets", "recurring_transactions", "category_rules", "payees", "planned_payments",
+                     "special_events", "budgets", "recurring_transactions", "category_rules", "payees", "planned_payments", "place_hints",
                  })
         {
             using var cmd = conn.CreateCommand();

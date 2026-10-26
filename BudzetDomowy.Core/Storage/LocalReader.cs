@@ -120,6 +120,15 @@ public sealed class LocalReader
             CategoryId = Guid_(r, 3),
         });
 
+    public IReadOnlyList<PlaceHint> GetPlaceHints() => Query("SELECT id, name, weight, hidden FROM place_hints ORDER BY name COLLATE NOCASE, id",
+        r => new PlaceHint
+        {
+            Id = Guid.Parse(r.GetString(0)),
+            Name = r.GetString(1),
+            Weight = r.IsDBNull(2) ? null : (int)r.GetInt64(2),
+            Hidden = r.GetInt64(3) != 0,
+        });
+
     public IReadOnlyList<PlannedPayment> GetPlannedPayments() => Query(
         "SELECT id, payee_id, due_date, title, amount_cents, status, series_id FROM planned_payments ORDER BY due_date, title, id",
         r => new PlannedPayment

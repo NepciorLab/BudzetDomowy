@@ -54,6 +54,7 @@ public partial class EntryWindow : Window
         if (e.Key == Key.Escape)
         {
             if (e.OriginalSource is DependencyObject origin && FindAncestor<ComboBox>(origin) is { IsDropDownOpen: true }) return;   // the list closes first
+            if (e.OriginalSource is DependencyObject place && FindAncestor<PlaceBox>(place) is { IsSuggesting: true }) return;
             e.Handled = true;
             DialogResult = false;
             return;
@@ -63,6 +64,7 @@ public partial class EntryWindow : Window
         var save = (Keyboard.Modifiers & ModifierKeys.Control) != 0;
         if (e.OriginalSource is not DependencyObject source) return;
         if (FindAncestor<System.Windows.Controls.Primitives.ButtonBase>(source) is not null && !save) return;      // Enter on a button presses it
+        if (FindAncestor<PlaceBox>(source) is { } placeBox) placeBox.Accept();                                        // Enter takes the completion shown in the place box
         if (!save && FindAncestor<ComboBox>(source) is { IsDropDownOpen: true } open && open is not FilterComboBox) return;
 
         e.Handled = true;

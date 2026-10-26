@@ -14,6 +14,7 @@ public static class RecurrenceEngine
     /// Dates the template falls on within [from, to], never before its start or after its end.
     /// Weekly: the ISO weekday in <see cref="RecurringTransaction.Day"/>. Monthly: that day of the month, shortened to the
     /// month's last day (31 in February is the 28th/29th). Yearly: the month of the start date, same day rule.
+    /// Every N days: the start date and every N-th day after it.
     /// </summary>
     public static IEnumerable<DateOnly> Occurrences(RecurringTransaction t, DateOnly from, DateOnly to)
     {
@@ -29,6 +30,13 @@ public static class RecurrenceEngine
                 var d = start;
                 while (IsoWeekday(d) != weekday) d = d.AddDays(1);
                 for (; d <= end; d = d.AddDays(7)) yield return d;
+                break;
+            }
+            case RecurrenceFrequency.EveryDays:
+            {
+                var step = Math.Max(1, t.Day);
+                var skip = start > t.StartDate ? (start.DayNumber - t.StartDate.DayNumber + step - 1) / step : 0;
+                for (var d = t.StartDate.AddDays(skip * step); d <= end; d = d.AddDays(step)) yield return d;
                 break;
             }
             case RecurrenceFrequency.Monthly:
