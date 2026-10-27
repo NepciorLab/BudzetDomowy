@@ -267,20 +267,21 @@ public class V10UiTests
     });
 
     [Fact]
-    public void Dashboard_View_HasRecentEntriesAndBudgetsAboveTheCategoriesWhichTakeTheWholeWidth() => WithApp(app =>
+    public void Dashboard_View_HasTheCategoriesOnTheWholeWidth_AndBelowThemTheRecentEntriesBesideTheBudgets() => WithApp(app =>
     {
         var vm = app.Get<DashboardViewModel>();
         var view = new BudzetDomowy.App.Views.DashboardView { DataContext = vm };
         UiHost.Layout(view, 1500, 1100);
         UiHost.Render(view, 1500, 1100, "dashboard-layout");
 
-        var heading = (string key) => UiHost.Descendants<System.Windows.Controls.TextBlock>(view).First(t => t.Text == key);
-        var recent = heading("Ostatnie wpisy");
-        var budgets = heading("Budżety");
-        var categories = heading(vm.ChartTitle);
-        Assert.True(recent.TranslatePoint(new System.Windows.Point(), view).Y < categories.TranslatePoint(new System.Windows.Point(), view).Y);
-        Assert.True(budgets.TranslatePoint(new System.Windows.Point(), view).Y < categories.TranslatePoint(new System.Windows.Point(), view).Y);
-        Assert.True(budgets.TranslatePoint(new System.Windows.Point(), view).X > recent.TranslatePoint(new System.Windows.Point(), view).X + 300);   // budgets beside the recent entries
+        System.Windows.Point At(string text) => UiHost.Descendants<System.Windows.Controls.TextBlock>(view).First(t => t.Text == text).TranslatePoint(new System.Windows.Point(), view);
+        var recent = At("Ostatnie wpisy");
+        var budgets = At("Budżety");
+        var categories = At(vm.ChartTitle);
+        Assert.True(categories.Y < recent.Y);                                  // the categories first, the recent entries below them
+        Assert.True(categories.Y < budgets.Y);
+        Assert.True(Math.Abs(budgets.Y - recent.Y) < 5);                       // the budgets on the same level as the recent entries
+        Assert.True(budgets.X > recent.X + 300);                               // and beside them
         var bars = Assert.IsType<LiveChartsCore.SkiaSharpView.WPF.CartesianChart>(view.FindName("CategoryBars"));
         Assert.True(bars.ActualWidth > 250);
     });
