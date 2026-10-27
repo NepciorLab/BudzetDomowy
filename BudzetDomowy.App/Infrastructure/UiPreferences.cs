@@ -19,6 +19,7 @@ public sealed partial class UiPreferences : ObservableObject
     [ObservableProperty] private bool _showMinus = true;
     [ObservableProperty] private bool _colorAmounts = true;
     [ObservableProperty] private bool _showClock = true;
+    [ObservableProperty] private bool _subcategoriesInheritColor;
 
     /// <summary>Raised when scale, symbol or amount style changed (screens that format text refresh themselves).</summary>
     public event EventHandler? AppearanceChanged;
@@ -66,6 +67,7 @@ public sealed partial class UiPreferences : ObservableObject
             ShowMinus = s.ShowMinus;
             ColorAmounts = s.ColorAmounts;
             ShowClock = s.ShowClock;
+            SubcategoriesInheritColor = s.SubcategoriesInheritColor;
         }
         finally
         {
@@ -106,6 +108,8 @@ public sealed partial class UiPreferences : ObservableObject
     }
 
     partial void OnShowClockChanged(bool value) => Save(x => x with { ShowClock = value });
+
+    partial void OnSubcategoriesInheritColorChanged(bool value) => Save(x => x with { SubcategoriesInheritColor = value });
 
     partial void OnColorAmountsChanged(bool value)
     {

@@ -87,12 +87,27 @@ public sealed partial class CategoriesViewModel : ObservableObject
 
     public bool HasSelection => SelectedNode is not null;
 
+    /// <summary>The colour of a subcategory follows its main category when that is switched on in the settings; then it is not edited by hand.</summary>
+    public bool CanEditColor => !UiPreferences.Instance.SubcategoriesInheritColor || EditParentKey == Guid.Empty;
+
     public CategoriesViewModel(BudgetCore core, DataHub hub, ToastService toast)
     {
         _core = core;
         _toast = toast;
         hub.Changed += (_, _) => Reload();
+        UiPreferences.Instance.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(UiPreferences.SubcategoriesInheritColor)) OnPropertyChanged(nameof(CanEditColor));
+        };
         Reload();
+    }
+
+    partial void OnEditParentKeyChanged(Guid value)
+    {
+        OnPropertyChanged(nameof(CanEditColor));
+        // moved under another category: it takes the colour of the new main category
+        if (!UiPreferences.Instance.SubcategoriesInheritColor || value == Guid.Empty || SelectedNode is not { } node || node.Model.ParentId == value) return;
+        if (_categories.FirstOrDefault(c => c.Id == value) is { Color.Length: > 0 } parent) EditColor = parent.Color;
     }
 
     partial void OnSelectedNodeChanged(CategoryNode? value)
@@ -230,6 +245,10 @@ public sealed partial class CategoriesViewModel : ObservableObject
         }
 
         var parent = EditParentKey == Guid.Empty ? (Guid?)null : EditParentKey;
+        var all = _core.Reader.GetCategories();
+        if (UiPreferences.Instance.SubcategoriesInheritColor && parent is { } parentId
+            && all.FirstOrDefault(c => c.Id == parentId) is { Color.Length: > 0 } main)
+            color = main.Color;                                                         // a subcategory has the colour of the main category
         var moved = parent != node.Model.ParentId;
         var updated = node.Model with
         {
@@ -249,6 +268,13 @@ public sealed partial class CategoriesViewModel : ObservableObject
         Run(() =>
         {
             _core.Categories.Save(updated);
+            if (UiPreferences.Instance.SubcategoriesInheritColor && color.Length > 0 && !string.Equals(color, node.Model.Color, StringComparison.OrdinalIgnoreCase))
+            {
+                // the main category changed its colour: everything below it follows
+                var below = CategoryHelpers.WithDescendants(updated.Id, all);
+                foreach (var child in all.Where(c => c.Id != updated.Id && below.Contains(c.Id) && !string.Equals(c.Color, color, StringComparison.OrdinalIgnoreCase)))
+                    _core.Categories.Save(child with { Color = color });
+            }
             Select(updated.Id);
             Message = Res.Get("CategorySaved");
         });

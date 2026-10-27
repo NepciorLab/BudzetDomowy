@@ -1,4 +1,6 @@
 using System.Globalization;
+using System.Collections.ObjectModel;
+using BudzetDomowy.App.Controls;
 using BudzetDomowy.App.Infrastructure;
 using BudzetDomowy.Core;
 using BudzetDomowy.Core.Domain;
@@ -6,7 +8,6 @@ using BudzetDomowy.Core.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using LiveChartsCore;
-using LiveChartsCore.Kernel.Sketches;
 
 namespace BudzetDomowy.App.ViewModels;
 
@@ -15,6 +16,10 @@ public sealed record PieSlice(Guid? Id, string Name, string Color, string Amount
 
 /// <param name="Status">Ok, Warning or Over (drives the colour of the bar).</param>
 public sealed record BudgetBar(string Path, string Text, double Fraction, string PercentText, string Status);
+
+/// <param name="HasData">There are entries in that month.</param>
+/// <param name="IsFuture">A month that has not begun (it cannot be chosen).</param>
+public sealed record PickerMonth(int Number, string Name, bool IsCurrent, bool HasData, bool IsFuture);
 
 public sealed record RecentRow(DateTime Date, string Place, string Category, string CategoryColor, string AmountText, bool IsIncome);
 
@@ -32,14 +37,13 @@ public sealed partial class DashboardViewModel : ObservableObject, IPeriodNaviga
     [ObservableProperty] private bool _balanceNegative;
     [ObservableProperty] private string _incomeChange = "";
     [ObservableProperty] private string _expenseChange = "";
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(HasChangeTip))] private string _changeTip = "";
     [ObservableProperty] private string _chartTitle = "";
     [ObservableProperty] private bool _canGoBack;
     [ObservableProperty] private bool _hasSlices;
     [ObservableProperty] private IReadOnlyList<PieSlice> _slices = [];
     [ObservableProperty] private IEnumerable<ISeries> _pieSeries;
-    [ObservableProperty] private IEnumerable<ISeries> _barSeries;
-    [ObservableProperty] private IEnumerable<ICartesianAxis> _barXAxes = ChartFactory.LabelAxes([""]);
-    [ObservableProperty] private IEnumerable<ICartesianAxis> _barYAxes = ChartFactory.MoneyAxes();
+    [ObservableProperty] private ObservableCollection<BarItem> _barItems;
     [ObservableProperty] private IReadOnlyList<BudgetBar> _budgetBars = [];
     [ObservableProperty] private bool _hasBudgets;
     [ObservableProperty] private IReadOnlyList<RecentRow> _recent = [];
@@ -59,13 +63,8 @@ public sealed partial class DashboardViewModel : ObservableObject, IPeriodNaviga
     {
         _core = core;
         _pieSeries = _breakdown.Donut;                 // the same collections for good: another month moves the slices and the bars instead of drawing them again
-        _barSeries = _breakdown.Bars;
-        UiPreferences.Instance.OnAppearanceChanged(this, self =>
-        {
-            self.BarXAxes = ChartFactory.LabelAxes([""]);                  // the axes carry the colours of the theme
-            self.BarYAxes = ChartFactory.MoneyAxes();
-            self.Reload();
-        });
+        _barItems = _breakdown.Bars;
+        UiPreferences.Instance.OnAppearanceChanged(this, self => self.Reload());
         hub.Changed += (_, _) => Reload();
         Reload();
     }
@@ -74,6 +73,75 @@ public sealed partial class DashboardViewModel : ObservableObject, IPeriodNaviga
     {
         _drillRoot = null;
         Reload();
+    }
+
+    // ----- choosing the month and the year -----
+
+    private const int FirstPickerYear = 2000;
+    private HashSet<(int Year, int Month)> _monthsWithData = [];
+    private DateTime _pickerClosedAt = DateTime.MinValue;
+
+    [ObservableProperty] private bool _isPickerOpen;
+    [ObservableProperty] private int _pickerYear = DateTime.Today.Year;
+    [ObservableProperty] private IReadOnlyList<PickerMonth> _pickerMonths = [];
+
+    public bool HasChangeTip => ChangeTip.Length > 0;
+
+    public bool CanPickerGoForward => PickerYear < Today.Year;
+
+    public bool CanPickerGoBack => PickerYear > FirstPickerYear;
+
+    partial void OnIsPickerOpenChanged(bool value)
+    {
+        if (value) PickerYear = Month.Year;
+        else _pickerClosedAt = DateTime.UtcNow;
+        BuildPickerMonths();
+    }
+
+    partial void OnPickerYearChanged(int value)
+    {
+        OnPropertyChanged(nameof(CanPickerGoForward));
+        OnPropertyChanged(nameof(CanPickerGoBack));
+        BuildPickerMonths();
+    }
+
+    private void BuildPickerMonths()
+    {
+        var culture = CultureInfo.CurrentCulture;
+        var today = Today;
+        PickerMonths = Enumerable.Range(1, 12).Select(n =>
+        {
+            var name = culture.DateTimeFormat.GetAbbreviatedMonthName(n).TrimEnd('.');
+            var future = PickerYear > today.Year || (PickerYear == today.Year && n > today.Month);
+            return new PickerMonth(n, char.ToUpper(name[0], culture) + name[1..], PickerYear == Month.Year && n == Month.Month,
+                _monthsWithData.Contains((PickerYear, n)), future);
+        }).ToList();
+    }
+
+    /// <summary>Opens or closes the list of months. A click on the title closes it by itself (the popup loses the focus), so the same click must not open it again.</summary>
+    [RelayCommand]
+    private void TogglePicker()
+    {
+        if (IsPickerOpen) IsPickerOpen = false;
+        else if ((DateTime.UtcNow - _pickerClosedAt).TotalMilliseconds > 250) IsPickerOpen = true;
+    }
+
+    /// <param name="years">Number of years to move by (negative = back), as text because it comes from XAML.</param>
+    [RelayCommand]
+    private void ShiftPickerYear(string? years)
+    {
+        if (!int.TryParse(years, NumberStyles.Integer, CultureInfo.InvariantCulture, out var by)) return;
+        PickerYear = Math.Clamp(PickerYear + by, FirstPickerYear, Today.Year);
+    }
+
+    [RelayCommand]
+    private void PickMonth(int number)
+    {
+        if (number is < 1 or > 12) return;
+        var month = new DateOnly(PickerYear, number, 1);
+        if (month > BudgetMath.MonthStart(Today)) return;
+        IsPickerOpen = false;
+        Month = month;
     }
 
     private static DateOnly Today => DateOnly.FromDateTime(DateTime.Today);
@@ -131,8 +199,16 @@ public sealed partial class DashboardViewModel : ObservableObject, IPeriodNaviga
         ExpenseText = Money(cmp.Current.Expense);
         BalanceText = Money(cmp.Current.Balance);
         BalanceNegative = cmp.Current.Balance < 0;
-        IncomeChange = ChangeText(cmp.Income);
-        ExpenseChange = ChangeText(cmp.Expense);
+
+        // a month that is still running is compared with the same days of the month before, not with all of it
+        var running = Month == BudgetMath.MonthStart(today);
+        var tip = "";
+        var compared = running ? SamePeriod(all, today, out tip) : cmp;
+        ChangeTip = tip;
+        IncomeChange = ChangeText(compared.Income, running);
+        ExpenseChange = ChangeText(compared.Expense, running);
+        _monthsWithData = all.Select(t => (t.Date.Year, t.Date.Month)).ToHashSet();
+        BuildPickerMonths();
 
         BuildBreakdown(all, cats);
         BuildBudgets(all, cats);
@@ -151,12 +227,23 @@ public sealed partial class DashboardViewModel : ObservableObject, IPeriodNaviga
         BuildEvent(all, cats, today);
     }
 
-    private static string ChangeText(Change c)
+    /// <summary>The days of the running month so far against the same days of the previous month (all of it when that was shorter).</summary>
+    private static PeriodComparison SamePeriod(IReadOnlyList<Transaction> all, DateOnly today, out string tip)
     {
-        if (c.Percent is not { } p) return c.Current == 0 ? "" : Res.Get("DashNoPrevious");
-        if (Math.Round(p * 100m) == 0) return Res.Get("DashNoChange");
+        var start = BudgetMath.MonthStart(today);
+        var previous = start.AddMonths(-1);
+        var previousEnd = new DateOnly(previous.Year, previous.Month, Math.Min(today.Day, DateTime.DaysInMonth(previous.Year, previous.Month)));
+        var names = CultureInfo.CurrentCulture.DateTimeFormat.MonthGenitiveNames;
+        tip = Res.Format("DashChangeTip", $"1–{today.Day} {names[start.Month - 1]}", $"1–{previousEnd.Day} {names[previous.Month - 1]}");
+        return new PeriodComparison(PeriodReports.Summary(all, start, today), PeriodReports.Summary(all, previous, previousEnd));
+    }
+
+    private static string ChangeText(Change c, bool period)
+    {
+        if (c.Percent is not { } p) return c.Current == 0 ? "" : Res.Get(period ? "DashNoPreviousPeriod" : "DashNoPrevious");
+        if (Math.Round(p * 100m) == 0) return Res.Get(period ? "DashNoChangePeriod" : "DashNoChange");
         var arrow = p >= 0 ? "▲" : "▼";
-        return Res.Format("DashChange", arrow, Math.Abs(p * 100m).ToString("0", CultureInfo.CurrentCulture));
+        return Res.Format(period ? "DashChangePeriod" : "DashChange", arrow, Math.Abs(p * 100m).ToString("0", CultureInfo.CurrentCulture));
     }
 
     private void BuildBreakdown(IReadOnlyList<Transaction> all, IReadOnlyList<Category> cats)
@@ -174,11 +261,12 @@ public sealed partial class DashboardViewModel : ObservableObject, IPeriodNaviga
 
         var uncategorized = Res.Get("NoCategory");
         string Money(decimal v) => v.ToString("C2", CultureInfo.CurrentCulture);
+        var colors = ChartFactory.Distinguish(level.Select((b, i) => ChartFactory.ColorOrDefault(b.Color, i)).ToList());
         var items = level.Select((b, i) => new
         {
             b,
             Name = b.IsOwn ? Res.Format("DashOwnPart", b.Name) : b.Name.Length == 0 ? uncategorized : b.Name,
-            Color = ChartFactory.ColorOrDefault(b.Color, i),
+            Color = colors[i],
         }).ToList();
 
         Slices = items.Select(x => new PieSlice(x.b.CategoryId, x.Name, x.Color, Money(x.b.Amount),

@@ -47,6 +47,9 @@ public sealed record AppSettings
     /// <summary>Expenses in red and income in green.</summary>
     public bool ColorAmounts { get; init; } = true;
 
+    /// <summary>A subcategory gets the colour of its main category (when it is added or moved, and when the main one changes colour).</summary>
+    public bool SubcategoriesInheritColor { get; init; }
+
     /// <summary>Check GitHub for a newer version at startup.</summary>
     public bool AutoUpdate { get; init; } = true;
 

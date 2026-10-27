@@ -1,3 +1,5 @@
+using System.Windows;
+using BudzetDomowy.App.Controls;
 using BudzetDomowy.App.Infrastructure;
 using BudzetDomowy.App.ViewModels;
 using BudzetDomowy.Core.Domain;
@@ -254,16 +256,14 @@ public class V10UiTests
     public void Dashboard_TheBars_ShareTheSlicesOfTheDonut_AndAreNotReplacedByAnotherMonth() => WithApp(app =>
     {
         var vm = app.Get<DashboardViewModel>();
-        var bars = vm.BarSeries;
-        var groceries = bars.OfType<LiveChartsCore.SkiaSharpView.ColumnSeries<LiveChartsCore.Defaults.ObservableValue>>().Single(s => s.Name == "Spożywcze");
-        Assert.Equal(vm.PieSeries.Count(), bars.Count());                      // one bar for every slice of the ring
+        var bars = vm.BarItems;
+        var groceries = bars.Single(b => b.Name == "Spożywcze");
+        Assert.Equal(vm.PieSeries.Count(), bars.Count);                        // one bar for every slice of the ring
 
         vm.PreviousMonthCommand.Execute(null);
-        Assert.Same(bars, vm.BarSeries);                                       // not given a new collection: the chart does not start again from the bottom
+        Assert.Same(bars, vm.BarItems);                                        // not given a new collection: the chart does not start again from the bottom
         Assert.Contains(groceries, bars);
-        Assert.Equal(640d, groceries.Values!.Single().Value);                  // the same figure as the ring: they share the value
-        Assert.NotEmpty(vm.BarXAxes);
-        Assert.NotEmpty(vm.BarYAxes);
+        Assert.Equal(640d, groceries.Amount);                                  // the same figure as the ring
     });
 
     [Fact]
@@ -282,8 +282,198 @@ public class V10UiTests
         Assert.True(categories.Y < budgets.Y);
         Assert.True(Math.Abs(budgets.Y - recent.Y) < 5);                       // the budgets on the same level as the recent entries
         Assert.True(budgets.X > recent.X + 300);                               // and beside them
-        var bars = Assert.IsType<LiveChartsCore.SkiaSharpView.WPF.CartesianChart>(view.FindName("CategoryBars"));
-        Assert.True(bars.ActualWidth > 250);
+        var bars = Assert.IsType<BarBreakdownChart>(view.FindName("CategoryBars"));
+        Assert.True(bars.ActualWidth > 150);
+    });
+
+    [Fact]
+    public void Dashboard_Bars_StandAtTheLeft_TheGridReachesHalfABarBeyondThem_AndTheTipTellsTheAmountOfTheBar() => WithApp(app =>
+    {
+        var vm = app.Get<DashboardViewModel>();
+        var view = new BudzetDomowy.App.Views.DashboardView { DataContext = vm };
+        UiHost.Layout(view, 1500, 1100);
+        var chart = Assert.IsType<BarBreakdownChart>(view.FindName("CategoryBars"));
+        chart.CompleteAnimation();
+        UiHost.Layout(view, 1500, 1100);
+        UiHost.Render(view, 1500, 1100, "dashboard-bars");
+
+        var column = (System.Windows.Controls.Grid)chart.Parent;
+        Assert.Equal(HorizontalAlignment.Left, chart.HorizontalAlignment);
+        Assert.True(chart.ActualWidth < column.ColumnDefinitions[2].ActualWidth - 20);          // not spread over the whole column
+        Assert.Equal(chart.PlotRight, chart.ActualWidth, 0.5);                                  // nothing beyond the grid: it ends half a bar after the last bar
+        Assert.Equal(chart.BarWidth * 2, chart.SlotWidth, 0.001);                               // slot = bar + half a bar on each side
+
+        var first = vm.BarItems[0];
+        var inFirstBar = new Point(chart.PlotLeft + chart.SlotWidth / 2, BarBreakdownChart.PlotHeight + 9);
+        Assert.Same(first, chart.ItemAt(inFirstBar));                                           // the bottom of the bar, or the name below it, belongs to the bar
+        Assert.Null(chart.ItemAt(new Point(chart.PlotLeft - 3, BarBreakdownChart.PlotHeight)));
+        Assert.Null(chart.ItemAt(new Point(chart.PlotRight + 3, BarBreakdownChart.PlotHeight)));
+        Assert.Same(vm.BarItems[1], chart.ItemAt(new Point(chart.PlotLeft + chart.SlotWidth * 1.5, BarBreakdownChart.PlotHeight + 9)));
+
+        var tip = chart.TipOf(first);                                                           // one bar: its amount, not a list for the amount
+        Assert.StartsWith(first.Name + ":", tip);
+        Assert.Contains("zł", tip);
+        Assert.EndsWith("%)", tip);
+        Assert.DoesNotContain("\n", tip);
+    });
+
+    [Fact]
+    public void Dashboard_BarScale_IsRoundedUpToNiceSteps() => WithApp(app =>
+    {
+        Assert.Equal(1000, BarBreakdownChart.NiceMax(900));                    // four divisions of 250
+        Assert.Equal(1000, BarBreakdownChart.NiceMax(1000));
+        Assert.Equal(2000, BarBreakdownChart.NiceMax(1100));                   // divisions of 500
+        Assert.Equal(4000, BarBreakdownChart.NiceMax(2300));
+        Assert.Equal(1, BarBreakdownChart.NiceMax(0));
+    });
+
+    [Fact]
+    public void Dashboard_AfterDrillingIn_TheSlicesThatAreGone_LeaveTheRing_SoNobodyListsThemInATooltip() => WithAppAsync(async app =>
+    {
+        var categories = app.Core.Reader.GetCategories();
+        var parent = categories.First(c => c.ParentId is null && categories.Any(k => k.ParentId == c.Id));
+        var children = categories.Where(c => c.ParentId == parent.Id).Take(2).ToList();
+        var today = DateOnly.FromDateTime(DateTime.Today);
+        foreach (var child in children) app.Core.Transactions.Add(today, TransactionType.Expense, 33m, child.Id, "zz", null);
+        app.Core.Transactions.Add(today, TransactionType.Expense, 20m, parent.Id, "zz", null);
+
+        var vm = app.Get<DashboardViewModel>();
+        var slice = vm.Slices.First(s => s.Id == parent.Id);
+        Assert.True(slice.CanDrill);
+        vm.DrillIntoCommand.Execute(slice);
+        Assert.True(vm.PieSeries.Count() > vm.Slices.Count);                   // the main categories are still shrinking away
+        await Task.Delay(1500);
+        Assert.Equal(vm.Slices.Count, vm.PieSeries.Count());                   // and then they are gone, with their bars
+        Assert.Equal(vm.Slices.Count, vm.BarItems.Count);
+
+        vm.BackCommand.Execute(null);
+        await Task.Delay(1500);
+        Assert.Equal(vm.Slices.Count, vm.PieSeries.Count());
+        Assert.Equal(vm.Slices.Count, vm.BarItems.Count);
+    });
+
+    [Fact]
+    public void Dashboard_SlicesOfTheSameColour_GetShadesOfIt() => WithApp(_ =>
+    {
+        var colors = ChartFactory.Distinguish(["#1E88E5", "#1E88E5", "#43A047", "#1e88e5"]);
+        Assert.Equal("#43A047", colors[2]);                                    // a colour that is alone stays as it is
+        Assert.Equal(4, colors.Distinct(StringComparer.OrdinalIgnoreCase).Count());
+        Assert.All(new[] { 0, 1, 3 }, i => Assert.Matches("^#[0-9A-F]{6}$", colors[i]));
+        Assert.True(Lightness(colors[0]) < Lightness(colors[1]) && Lightness(colors[1]) < Lightness(colors[3]));   // from darker to lighter
+        Assert.Equal(["#1E88E5", "#43A047"], ChartFactory.Distinguish(["#1E88E5", "#43A047"]));
+    });
+
+    private static int Lightness(string hex) => Convert.ToInt32(hex[1..3], 16) + Convert.ToInt32(hex[3..5], 16) + Convert.ToInt32(hex[5..7], 16);
+
+    [Fact]
+    public void Dashboard_TheMonthTitle_OpensAListOfMonthsAndYears() => WithApp(app =>
+    {
+        var vm = app.Get<DashboardViewModel>();
+        var thisMonth = vm.Month;
+        Assert.False(vm.IsPickerOpen);
+        vm.TogglePickerCommand.Execute(null);
+        Assert.True(vm.IsPickerOpen);
+        Assert.Equal(thisMonth.Year, vm.PickerYear);
+        Assert.Equal(12, vm.PickerMonths.Count);
+        Assert.Single(vm.PickerMonths, m => m.IsCurrent);
+        Assert.Equal(thisMonth.Month, vm.PickerMonths.Single(m => m.IsCurrent).Number);
+        Assert.All(vm.PickerMonths.Where(m => m.Number > thisMonth.Month), m => Assert.True(m.IsFuture));
+        Assert.True(vm.PickerMonths.Single(m => m.IsCurrent).HasData);
+
+        Assert.False(vm.CanPickerGoForward);
+        vm.ShiftPickerYearCommand.Execute("10");                              // there is no later year
+        Assert.Equal(thisMonth.Year, vm.PickerYear);
+        vm.ShiftPickerYearCommand.Execute("-10");                             // ten years at once
+        Assert.Equal(thisMonth.Year - 10, vm.PickerYear);
+        Assert.True(vm.CanPickerGoForward);
+        Assert.All(vm.PickerMonths, m => { Assert.False(m.IsFuture); Assert.False(m.HasData); });
+        vm.ShiftPickerYearCommand.Execute("-1");
+        Assert.Equal(thisMonth.Year - 11, vm.PickerYear);
+        vm.ShiftPickerYearCommand.Execute("2");
+        Assert.Equal(thisMonth.Year - 9, vm.PickerYear);
+
+        vm.PickMonthCommand.Execute(3);
+        Assert.False(vm.IsPickerOpen);
+        Assert.Equal(new DateOnly(thisMonth.Year - 9, 3, 1), vm.Month);
+        Assert.Equal("Marzec " + (thisMonth.Year - 9), vm.MonthTitle);
+    });
+
+    [Fact]
+    public void Dashboard_AMonthThatHasNotBegun_CannotBePicked() => WithApp(app =>
+    {
+        var vm = app.Get<DashboardViewModel>();
+        var today = DateOnly.FromDateTime(DateTime.Today);
+        if (today.Month == 12) return;                                        // no later month in this year
+        var before = vm.Month;
+        vm.TogglePickerCommand.Execute(null);
+        vm.PickMonthCommand.Execute(today.Month + 1);
+        Assert.Equal(before, vm.Month);
+    });
+
+    [Fact]
+    public void Dashboard_TheRunningMonth_IsComparedWithTheSameDaysOfThePreviousMonth_AndSaysSo() => WithApp(app =>
+    {
+        var vm = app.Get<DashboardViewModel>();
+        var today = DateOnly.FromDateTime(DateTime.Today);
+        var start = new DateOnly(today.Year, today.Month, 1);
+        var previous = start.AddMonths(-1);
+        var previousEnd = new DateOnly(previous.Year, previous.Month, Math.Min(today.Day, DateTime.DaysInMonth(previous.Year, previous.Month)));
+        var all = app.Core.Reader.GetTransactions();
+        var now = BudzetDomowy.Core.Services.PeriodReports.Summary(all, start, today).Expense;
+        var then = BudzetDomowy.Core.Services.PeriodReports.Summary(all, previous, previousEnd).Expense;
+        Assert.True(then > 0);
+
+        Assert.Contains("poprzedniego okresu", vm.ExpenseChange);
+        Assert.DoesNotContain("miesiąca", vm.ExpenseChange);
+        var percent = Math.Abs((now - then) / then * 100m).ToString("0", System.Globalization.CultureInfo.CurrentCulture);
+        Assert.Contains(percent + "%", vm.ExpenseChange);
+        Assert.True(vm.HasChangeTip);
+        Assert.Contains($"1\u2013{today.Day} ", vm.ChangeTip);
+        Assert.Contains($"1\u2013{previousEnd.Day} ", vm.ChangeTip);
+
+        vm.PreviousMonthCommand.Execute(null);                                // a finished month: the whole month against the whole one before
+        Assert.False(vm.HasChangeTip);
+        if (vm.ExpenseChange.Length > 0) Assert.Contains("miesiąca", vm.ExpenseChange);
+        Assert.DoesNotContain("okresu", vm.IncomeChange + vm.ExpenseChange);
+    });
+
+    // ----- the colour of the subcategories -----
+
+    [Fact]
+    public void Categories_WhenSubcategoriesTakeTheColourOfTheMainOne_TheyFollowItAndAreNotPickedByHand() => WithApp(app =>
+    {
+        var prefs = UiPreferences.Instance;
+        prefs.SubcategoriesInheritColor = true;
+        try
+        {
+            var vm = app.Get<CategoriesViewModel>();
+            vm.SelectedNode = vm.Roots.First(r => r.Children.Count > 0);
+            var rootId = vm.SelectedNode.Model.Id;
+            Assert.True(vm.CanEditColor);                                     // a main category keeps its colour box
+
+            vm.EditColor = "#112233";
+            vm.SaveCommand.Execute(null);
+            var below = app.Core.Reader.GetCategories().Where(c => c.ParentId == rootId).ToList();
+            Assert.NotEmpty(below);
+            Assert.All(below, c => Assert.Equal("#112233", c.Color));         // the subcategories followed
+
+            var child = vm.Roots.First(r => r.Model.Id == rootId).Children.First();
+            vm.SelectedNode = child;
+            Assert.False(vm.CanEditColor);                                    // and cannot be given another colour
+            vm.EditColor = "#445566";
+            vm.SaveCommand.Execute(null);
+            Assert.Equal("#112233", app.Core.Reader.GetCategories().First(c => c.Id == child.Model.Id).Color);
+
+            prefs.SubcategoriesInheritColor = false;
+            Assert.True(vm.CanEditColor);
+            vm.EditColor = "#445566";
+            vm.SaveCommand.Execute(null);
+            Assert.Equal("#445566", app.Core.Reader.GetCategories().First(c => c.Id == child.Model.Id).Color);
+        }
+        finally
+        {
+            prefs.SubcategoriesInheritColor = false;
+        }
     });
 
     // ----- recurring entries: asked as soon as the window is there -----

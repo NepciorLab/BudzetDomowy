@@ -237,6 +237,16 @@ Del – usuń zaznaczone transakcje</value></data>
   <data name="DashChange" xml:space="preserve"><value>{0} {1}% względem poprzedniego miesiąca</value></data>
   <data name="DashNoChange" xml:space="preserve"><value>bez zmian względem poprzedniego miesiąca</value></data>
   <data name="DashNoPrevious" xml:space="preserve"><value>brak danych z poprzedniego miesiąca</value></data>
+  <data name="DashChangePeriod" xml:space="preserve"><value>{0} {1}% względem poprzedniego okresu</value></data>
+  <data name="DashNoChangePeriod" xml:space="preserve"><value>bez zmian względem poprzedniego okresu</value></data>
+  <data name="DashNoPreviousPeriod" xml:space="preserve"><value>brak danych z poprzedniego okresu</value></data>
+  <data name="DashChangeTip" xml:space="preserve"><value>Porównanie: {0} z {1}</value></data>
+  <data name="DashPickMonth" xml:space="preserve"><value>Kliknij, aby wybrać miesiąc i rok</value></data>
+  <data name="DashYearBack10" xml:space="preserve"><value>10 lat wstecz</value></data>
+  <data name="DashYearBack1" xml:space="preserve"><value>Rok wstecz</value></data>
+  <data name="DashYearForward1" xml:space="preserve"><value>Rok do przodu</value></data>
+  <data name="DashYearForward10" xml:space="preserve"><value>10 lat do przodu</value></data>
+  <data name="DashBarTip" xml:space="preserve"><value>{0}: {1} ({2})</value></data>
   <data name="DashExpensesByCategory" xml:space="preserve"><value>Wydatki według kategorii</value></data>
   <data name="DashInCategory" xml:space="preserve"><value>Kategoria: {0}</value></data>
   <data name="DashBack" xml:space="preserve"><value>Wróć do wszystkich kategorii</value></data>
@@ -538,6 +548,8 @@ Del – usuń zaznaczone transakcje</value></data>
   <data name="MarkerBar" xml:space="preserve"><value>Pionowa kreska</value></data>
   <data name="SettingsAmounts" xml:space="preserve"><value>Kwoty</value></data>
   <data name="SettingsShowMinus" xml:space="preserve"><value>Pokazuj znaki „+” i „−” przy kwotach</value></data>
+  <data name="SettingsSubcategoryColor" xml:space="preserve"><value>Podkategorie mają kolor kategorii głównej</value></data>
+  <data name="SettingsSubcategoryColorTip" xml:space="preserve"><value>Nowa podkategoria, przeniesiona pod inną kategorię i podkategorie kategorii, której zmieniasz kolor, dostają kolor kategorii głównej. Kolor podkategorii nie jest wtedy wybierany ręcznie. Wykresy na pulpicie rozróżniają takie podkategorie odcieniami.</value></data>
   <data name="SettingsColorAmounts" xml:space="preserve"><value>Koloruj kwoty (wydatki na czerwono, przychody na zielono)</value></data>
   <data name="KeyGoTo" xml:space="preserve"><value>Przejdź do ekranu: {0}</value></data>
   <data name="KeyPrevPeriod" xml:space="preserve"><value>Poprzedni tydzień, miesiąc lub rok na ekranie, który to pokazuje</value></data>

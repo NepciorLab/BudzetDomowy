@@ -137,6 +137,7 @@
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
@@ -148,7 +149,9 @@
                         <Button Content="▼" Command="{Binding MoveDownCommand}" IsEnabled="{Binding HasSelection}"
                                 ToolTip="{infra:Str CategoryMoveDown}" />
                     </StackPanel>
-                    <TreeView x:Name="Tree" Grid.Row="1" ItemsSource="{Binding Roots}" SelectedItemChanged="Tree_SelectedItemChanged"
+                    <CheckBox Grid.Row="1" x:Name="InheritColorBox" Content="{infra:Str SettingsSubcategoryColor}" ToolTip="{infra:Str SettingsSubcategoryColorTip}"
+                              IsChecked="{Binding SubcategoriesInheritColor, Source={x:Static infra:UiPreferences.Instance}, Mode=TwoWay}" Margin="0,0,0,8" />
+                    <TreeView x:Name="Tree" Grid.Row="2" ItemsSource="{Binding Roots}" SelectedItemChanged="Tree_SelectedItemChanged"
                               BorderThickness="1" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
                         <TreeView.ItemContainerStyle>
                             <Style TargetType="TreeViewItem" BasedOn="{StaticResource DefaultTreeViewItemStyle}">
@@ -195,7 +198,7 @@
                             <TextBox Text="{Binding EditIcon, UpdateSourceTrigger=PropertyChanged}" MaxLength="8"
                                      ui:ControlHelper.Header="{infra:Str CategoryIcon}"
                                      ui:ControlHelper.PlaceholderText="{infra:Str CategoryIconHint}" />
-                            <TextBox Grid.Column="2" Text="{Binding EditColor, UpdateSourceTrigger=PropertyChanged}" MaxLength="7"
+                            <TextBox Grid.Column="2" Text="{Binding EditColor, UpdateSourceTrigger=PropertyChanged}" MaxLength="7" IsEnabled="{Binding CanEditColor}"
                                      ui:ControlHelper.Header="{infra:Str CategoryColor}" ui:ControlHelper.PlaceholderText="#RRGGBB" />
                         </Grid>
                         <TextBlock Text="{infra:Str CategoryPickIcon}" Opacity="0.7" Margin="0,12,0,4" />
@@ -215,7 +218,7 @@
                         </ItemsControl>
                         <Button Content="{infra:Str CategoryNoIcon}" Command="{Binding PickIconCommand}" CommandParameter="" Margin="0,2,0,0" />
 
-                        <ItemsControl ItemsSource="{Binding Palette}" Margin="0,10,0,0">
+                        <ItemsControl ItemsSource="{Binding Palette}" Margin="0,10,0,0" IsEnabled="{Binding CanEditColor}">
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
                                     <WrapPanel />

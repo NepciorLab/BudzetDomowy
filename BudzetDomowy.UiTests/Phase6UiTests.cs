@@ -25,7 +25,7 @@ public class Phase6UiTests
         Assert.True(device.EventCount > 10);
         Assert.Contains("TEST-PC", device.Name);
         Assert.Matches(@"\d", device.JournalSize);
-        Assert.Contains("0.7.4", vm.Version);
+        Assert.Contains("0.7.5", vm.Version);
 
         var before = app.Core.Reader.GetTransactions().Count;
         UiHost.RunAsync(async () =>

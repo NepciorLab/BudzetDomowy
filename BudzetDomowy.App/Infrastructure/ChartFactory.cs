@@ -16,6 +16,35 @@ public static class ChartFactory
 
     public static string ColorOrDefault(string color, int index) => color.Length > 0 ? color : Palette[index % Palette.Length];
 
+    /// <summary>
+    /// Slices that have the same colour (subcategories usually take the one of their main category) get shades of it, from a little
+    /// darker to much lighter, so they can be told apart in the ring, the bars and the legend; colours that are alone stay as they are.
+    /// </summary>
+    public static IReadOnlyList<string> Distinguish(IReadOnlyList<string> colors)
+    {
+        var result = colors.ToArray();
+        var groups = colors.Select((c, i) => (Color: c, Index: i)).Where(x => x.Color.Length > 0)
+                           .GroupBy(x => x.Color, StringComparer.OrdinalIgnoreCase).Where(g => g.Count() > 1);
+        foreach (var group in groups)
+        {
+            var members = group.ToList();
+            var baseColor = ParseColor(group.Key);
+            for (var j = 0; j < members.Count; j++)
+            {
+                var factor = -0.25 + 0.8 * j / (members.Count - 1);
+                result[members[j].Index] = Shade(baseColor, factor);
+            }
+        }
+        return result;
+    }
+
+    /// <summary>The colour made lighter (factor above 0, towards white) or darker (below 0, towards black).</summary>
+    public static string Shade(SKColor color, double factor)
+    {
+        byte Mix(byte c) => (byte)Math.Clamp(Math.Round(factor >= 0 ? c + (255 - c) * factor : c * (1 + factor)), 0, 255);
+        return $"#{Mix(color.Red):X2}{Mix(color.Green):X2}{Mix(color.Blue):X2}";
+    }
+
     public static SKColor ParseColor(string hex) => SKColor.TryParse(hex, out var c) ? c : SKColors.Gray;
 
     private static bool Dark => ThemeManager.Current.ActualApplicationTheme == ApplicationTheme.Dark;

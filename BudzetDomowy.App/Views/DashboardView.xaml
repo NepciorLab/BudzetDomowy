@@ -35,7 +35,77 @@
             <!-- Month switch -->
             <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
                 <Button Content="◀" Command="{Binding PreviousMonthCommand}" Width="40" ToolTip="{infra:Str DashPrevMonth}" />
-                <TextBlock Text="{Binding MonthTitle}" FontSize="24" FontWeight="SemiBold" Width="260" TextAlignment="Center" VerticalAlignment="Center" />
+                <!-- the title opens a list of months and years, to get far back at once -->
+                <Grid Width="260">
+                    <Button x:Name="MonthPickerButton" Command="{Binding TogglePickerCommand}" Background="Transparent" BorderThickness="0"
+                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Padding="0,2" ToolTip="{infra:Str DashPickMonth}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="{Binding MonthTitle}" FontSize="24" FontWeight="SemiBold" />
+                            <TextBlock Text="▾" FontSize="14" Opacity="0.6" VerticalAlignment="Center" Margin="8,4,0,0" />
+                        </StackPanel>
+                    </Button>
+                    <Popup x:Name="MonthPicker" IsOpen="{Binding IsPickerOpen, Mode=TwoWay}" StaysOpen="False" Placement="Bottom" AllowsTransparency="True">
+                        <Border Margin="8" Padding="10" CornerRadius="8" BorderThickness="1"
+                                Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                                BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
+                            <Border.Effect>
+                                <DropShadowEffect ShadowDepth="2" BlurRadius="10" Opacity="0.35" />
+                            </Border.Effect>
+                            <StackPanel Width="236">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <Button Content="«" Command="{Binding ShiftPickerYearCommand}" CommandParameter="-10" IsEnabled="{Binding CanPickerGoBack}"
+                                            Width="40" ToolTip="{infra:Str DashYearBack10}" />
+                                    <Button Grid.Column="1" Content="‹" Command="{Binding ShiftPickerYearCommand}" CommandParameter="-1" IsEnabled="{Binding CanPickerGoBack}"
+                                            Width="36" Margin="4,0,0,0" ToolTip="{infra:Str DashYearBack1}" />
+                                    <TextBlock Grid.Column="2" Text="{Binding PickerYear}" FontSize="18" FontWeight="SemiBold" TextAlignment="Center" VerticalAlignment="Center" />
+                                    <Button Grid.Column="3" Content="›" Command="{Binding ShiftPickerYearCommand}" CommandParameter="1" IsEnabled="{Binding CanPickerGoForward}"
+                                            Width="36" Margin="0,0,4,0" ToolTip="{infra:Str DashYearForward1}" />
+                                    <Button Grid.Column="4" Content="»" Command="{Binding ShiftPickerYearCommand}" CommandParameter="10" IsEnabled="{Binding CanPickerGoForward}"
+                                            Width="40" ToolTip="{infra:Str DashYearForward10}" />
+                                </Grid>
+                                <ItemsControl ItemsSource="{Binding PickerMonths}" Margin="0,8,0,0">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <UniformGrid Columns="4" />
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Button Content="{Binding Name}" Margin="2" HorizontalAlignment="Stretch" Padding="0,6"
+                                                    Command="{Binding DataContext.PickMonthCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                    CommandParameter="{Binding Number}">
+                                                <Button.Style>
+                                                    <Style TargetType="Button" BasedOn="{StaticResource DefaultButtonStyle}">
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding HasData}" Value="False">
+                                                                <Setter Property="Opacity" Value="0.55" />
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding IsFuture}" Value="True">
+                                                                <Setter Property="IsEnabled" Value="False" />
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding IsCurrent}" Value="True">
+                                                                <Setter Property="FontWeight" Value="Bold" />
+                                                                <Setter Property="BorderBrush" Value="{DynamicResource SystemControlHighlightAccentBrush}" />
+                                                                <Setter Property="BorderThickness" Value="2" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Button.Style>
+                                            </Button>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </Border>
+                    </Popup>
+                </Grid>
                 <Button Content="▶" Command="{Binding NextMonthCommand}" Width="40" ToolTip="{infra:Str DashNextMonth}" />
                 <Button Content="{infra:Str DashToday}" Command="{Binding ThisMonthCommand}" Margin="12,0,0,0" />
             </StackPanel>
@@ -46,14 +116,14 @@
                     <StackPanel>
                         <TextBlock Text="{infra:Str DashIncome}" Opacity="0.7" />
                         <TextBlock Text="{Binding IncomeText}" FontSize="26" FontWeight="Bold" Foreground="{StaticResource IncomeBrush}" />
-                        <TextBlock Text="{Binding IncomeChange}" Opacity="0.7" />
+                        <TextBlock Text="{Binding IncomeChange}" Opacity="0.7" ToolTip="{Binding ChangeTip}" ToolTipService.IsEnabled="{Binding HasChangeTip}" />
                     </StackPanel>
                 </Border>
                 <Border Style="{StaticResource Card}" MinWidth="220">
                     <StackPanel>
                         <TextBlock Text="{infra:Str DashExpenses}" Opacity="0.7" />
                         <TextBlock Text="{Binding ExpenseText}" FontSize="26" FontWeight="Bold" Foreground="{StaticResource ExpenseBrush}" />
-                        <TextBlock Text="{Binding ExpenseChange}" Opacity="0.7" />
+                        <TextBlock Text="{Binding ExpenseChange}" Opacity="0.7" ToolTip="{Binding ChangeTip}" ToolTipService.IsEnabled="{Binding HasChangeTip}" />
                     </StackPanel>
                 </Border>
                 <Border Style="{StaticResource Card}" MinWidth="220">
@@ -128,9 +198,8 @@
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
-                        <!-- the same expenses as bars: they grow and shrink in place when another month is shown -->
-                        <lvc:CartesianChart x:Name="CategoryBars" Grid.Column="2" Series="{Binding BarSeries}" XAxes="{Binding BarXAxes}" YAxes="{Binding BarYAxes}"
-                                            LegendPosition="Hidden" Height="220" TooltipFindingStrategy="CompareAll" />
+                        <!-- the same expenses as bars, at the left edge: they grow and shrink in place when another month is shown -->
+                        <controls:BarBreakdownChart x:Name="CategoryBars" Grid.Column="2" Items="{Binding BarItems}" HorizontalAlignment="Left" VerticalAlignment="Center" />
                     </Grid>
                 </StackPanel>
             </Border>
