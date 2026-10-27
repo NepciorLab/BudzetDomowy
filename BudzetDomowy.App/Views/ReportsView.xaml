@@ -543,6 +543,17 @@
                                 </StackPanel>
                                 <TextBlock x:Name="ChartMaxText" Grid.Column="2" Text="{Binding MaxText}" Opacity="0.7" FontSize="12" HorizontalAlignment="Right" ToolTip="{infra:Str ChartLastEntry}" />
                             </Grid>
+                            <!-- smoothing: one line at a time, either as it is or averaged over 3, 6 or 12 points -->
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,6,0,0" ToolTip="{infra:Str ChartSmoothTip}">
+                                <TextBlock Text="{infra:Str ChartSmooth}" VerticalAlignment="Center" Opacity="0.75" Margin="0,0,10,0" />
+                                <Slider x:Name="ChartSmoothSlider" Minimum="0" Maximum="3" Value="{Binding SmoothIndex, Mode=TwoWay}" TickFrequency="1"
+                                        IsSnapToTickEnabled="True" TickPlacement="BottomRight" SmallChange="1" LargeChange="1" Width="150" VerticalAlignment="Center" />
+                                <TextBlock x:Name="ChartSmoothText" Text="{Binding SmoothText}" Width="50" VerticalAlignment="Center" Margin="10,0,0,0" />
+                                <RadioButton x:Name="ChartSmoothAverage" Content="{infra:Str ChartSmoothAverage}" GroupName="chartsmooth" IsChecked="{Binding IsAverage, Mode=OneWay}"
+                                             Command="{Binding SetSmoothMethodCommand}" CommandParameter="Average" IsEnabled="{Binding IsSmoothed}" MinWidth="0" />
+                                <RadioButton x:Name="ChartSmoothMedian" Content="{infra:Str ChartSmoothMedian}" GroupName="chartsmooth" IsChecked="{Binding IsMedian, Mode=OneWay}"
+                                             Command="{Binding SetSmoothMethodCommand}" CommandParameter="Median" IsEnabled="{Binding IsSmoothed}" MinWidth="0" Margin="8,0,0,0" />
+                            </StackPanel>
                         </StackPanel>
                     </StackPanel>
                 </Border>

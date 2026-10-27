@@ -145,11 +145,12 @@ public class ChartsTabTests
     [Fact]
     public void TheFirstTimeTheBiggestMainCategoriesAreThere_ForTheWholeRange() => WithApp(app =>
     {
-        var vm = Setup(app, topFive: false);                                                 // what the program shows the first time: all the expenses in one line
+        var vm = Setup(app, topFive: false);                                                 // what the program shows the first time: the sum of the expenses and of the income
 
-        Assert.Equal(["Wszystkie wydatki"], vm.Chips.Select(c => c.Name));
-        Assert.Equal(["Wszystkie wydatki"], vm.Series.Select(s => s.Name));
-        Assert.Equal(830d, Values(vm.Series.Single()).Sum());                                // 80 + 350 + 400
+        Assert.Equal(["Wszystkie wydatki", "Wszystkie przychody"], vm.Chips.Select(c => c.Name));
+        Assert.Equal(["Wszystkie wydatki", "Wszystkie przychody"], vm.Series.Select(s => s.Name));
+        Assert.Equal(830d, Values(vm.Series.First()).Sum());                                 // 80 + 350 + 400
+        Assert.Equal(1000d, Values(vm.Series.Last()).Sum());
         Assert.False(vm.ShowHint);
 
         vm.AddTop(5, TransactionType.Expense);                                               // the quick choice still gives the biggest categories
@@ -253,11 +254,12 @@ public class ChartsTabTests
         app.Core.Transactions.Add(D("2025-02-02"), TransactionType.Expense, 20m, null, "bez kategorii", null);
         vm.Reload();
 
-        Assert.Equal(850d, Values(vm.Series.Single()).Sum());                                // the 20 without a category is on the line too
-        Assert.Equal("#E53935", vm.Chips.Single().Color);
+        Assert.Equal(850d, Values(vm.Series.First()).Sum());                                 // the 20 without a category is on the line too
+        Assert.Equal(("#E53935", "#43A047"), (vm.Chips[0].Color, vm.Chips[1].Color));        // red for the expenses, green for the income
 
+        Assert.False(vm.AddTotal(TransactionType.Income));                                   // already there: not twice
+        vm.RemoveChipCommand.Execute(vm.Chips[1]);
         Assert.True(vm.AddTotal(TransactionType.Income));
-        Assert.False(vm.AddTotal(TransactionType.Income));                                   // not twice
         Assert.Equal(["Wszystkie wydatki", "Wszystkie przychody"], vm.Chips.Select(c => c.Name));
         Assert.Equal(1000d, Values(vm.Series.Last()).Sum());
 
@@ -322,11 +324,63 @@ public class ChartsTabTests
         var vm = Setup(app);
         var line = (LineSeries<double>)vm.Series.First();
         var money = typeof(ChartFactory).GetMethod(nameof(ChartFactory.MoneyTip))!;
-        Assert.NotEqual(money, line.YToolTipLabelFormatter!.Method);                         // more than the sum alone
+        Assert.Equal(money, line.YToolTipLabelFormatter!.Method);                            // the rows tell the sums; the period is written once, as the heading of the tooltip
+        Assert.NotNull(line.XToolTipLabelFormatter);
 
         var axis = (Axis)vm.XAxes.First();
         Assert.Equal(1, axis.MinStep);                                                       // without it LiveCharts writes every n-th label and skips the chosen ones
         Assert.True(axis.ForceStepToMin);
+    });
+
+    // ----- the smoothing -----
+
+    [Fact]
+    public void Smoothing_AveragesOrTakesTheMedianOfAWindowAroundEachPoint()
+    {
+        decimal[] spike = [0, 0, 9, 0, 0, 0];
+        Assert.Equal(spike, ChartSmoothing.Apply(spike, 0, SmoothMethod.Average));                       // none: untouched
+        Assert.Equal([0m, 3m, 3m, 3m, 0m, 0m], ChartSmoothing.Apply(spike, 3, SmoothMethod.Average));
+        Assert.Equal([0m, 0m, 0m, 0m, 0m, 0m], ChartSmoothing.Apply(spike, 3, SmoothMethod.Median));    // a lone spike is not a trend
+
+        var ramp = Enumerable.Range(1, 12).Select(i => (decimal)i).ToArray();
+        var six = ChartSmoothing.Apply(ramp, 6, SmoothMethod.Average);
+        Assert.Equal(2.5m, six[0]);                                                                      // the window is cut at the ends: points 1..4
+        Assert.Equal(6.5m, six[5]);                                                                      // points 4..9, centred
+        Assert.Equal(11m, six[11]);                                                                      // points 10..12: only the three there are
+        Assert.Equal(6.5m, ChartSmoothing.Apply(ramp, 12, SmoothMethod.Median)[5]);
+        Assert.Equal(ramp.Length, ChartSmoothing.Apply(ramp, 12, SmoothMethod.Average).Length);
+        Assert.Equal([5m], ChartSmoothing.Apply([5m], 6, SmoothMethod.Average));
+    }
+
+    [Fact]
+    public void TheSlider_GivesNoSmoothing_Or3_6_12_AndTheChartKeepsOneLinePerCategory() => WithApp(app =>
+    {
+        var vm = Setup(app, topFive: false);
+        vm.ClearChipsCommand.Execute(null);
+        vm.AddCategory(Cat(app, "Auto"));                                                    // 100 in January 2025 and 300 in March 2025
+        var raw = Values(vm.Series.Single());
+        Assert.Equal((0, "brak", false), (vm.SmoothWindow, vm.SmoothText, vm.IsSmoothed));
+
+        vm.SmoothIndex = 1;
+        Assert.Equal((3, "3", true), (vm.SmoothWindow, vm.SmoothText, vm.IsSmoothed));
+        var smooth = Values(vm.Series.Single());                                             // still one line: the smoothed one replaces the raw one
+        Assert.Equal(raw.Length, smooth.Length);
+        Assert.NotEqual(raw, smooth);
+        Assert.Equal(400d, raw.Sum());
+        Assert.Equal("400 zł", vm.Chips.Single().TotalText.Replace(' ', ' '));               // the total is the real one, not the smoothed one
+
+        vm.SmoothIndex = 2;
+        Assert.Equal(6, vm.SmoothWindow);
+        vm.SmoothIndex = 3;
+        Assert.Equal((12, "12"), (vm.SmoothWindow, vm.SmoothText));
+
+        vm.SetSmoothMethodCommand.Execute("Median");
+        Assert.True(vm.IsMedian);
+        Assert.False(vm.IsAverage);
+        Assert.Single(vm.Series);
+
+        vm.SmoothIndex = 0;
+        Assert.Equal(raw, Values(vm.Series.Single()));                                       // back to the data as it is
     });
 
     // ----- the tags -----
@@ -441,7 +495,7 @@ public class ChartsTabTests
         Assert.False(reports.ShowPeriod);                                                    // the charts have a range of their own
         Assert.False(reports.Charts.Stale);
         Assert.True(reports.Charts.HasData);
-        Assert.Equal(["Wszystkie wydatki"], reports.Charts.Chips.Select(c => c.Name));
+        Assert.Equal(["Wszystkie wydatki", "Wszystkie przychody"], reports.Charts.Chips.Select(c => c.Name));
 
         reports.TabIndex = (int)ReportTab.Overview;
         Assert.True(reports.ShowPeriod);
@@ -544,7 +598,7 @@ public class ChartsTabTests
         reports.TabIndex = (int)ReportTab.Charts;
         UiHost.Layout(view, 1250, 1100);
 
-        Assert.Equal(["Wszystkie wydatki"], reports.Charts.Chips.Select(c => c.Name));
+        Assert.Equal(["Wszystkie wydatki", "Wszystkie przychody"], reports.Charts.Chips.Select(c => c.Name));
         reports.Charts.AddTop(5, TransactionType.Expense);                                   // the biggest categories of the whole range instead
         UiHost.Layout(view, 1250, 1100);
         var tabs = UiHost.Descendants<TabControl>(view).First();

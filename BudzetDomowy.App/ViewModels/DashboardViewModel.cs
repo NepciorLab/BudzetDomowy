@@ -6,6 +6,7 @@ using BudzetDomowy.Core.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using LiveChartsCore;
+using LiveChartsCore.Kernel.Sketches;
 
 namespace BudzetDomowy.App.ViewModels;
 
@@ -20,7 +21,7 @@ public sealed record RecentRow(DateTime Date, string Place, string Category, str
 public sealed partial class DashboardViewModel : ObservableObject, IPeriodNavigable
 {
     private readonly BudgetCore _core;
-    private readonly MorphingDonut _donut = new();
+    private readonly MorphingBreakdown _breakdown = new();
     private Guid? _drillRoot;
 
     [ObservableProperty] private DateOnly _month = BudgetMath.MonthStart(DateOnly.FromDateTime(DateTime.Today));
@@ -36,6 +37,9 @@ public sealed partial class DashboardViewModel : ObservableObject, IPeriodNaviga
     [ObservableProperty] private bool _hasSlices;
     [ObservableProperty] private IReadOnlyList<PieSlice> _slices = [];
     [ObservableProperty] private IEnumerable<ISeries> _pieSeries;
+    [ObservableProperty] private IEnumerable<ISeries> _barSeries;
+    [ObservableProperty] private IEnumerable<ICartesianAxis> _barXAxes = ChartFactory.LabelAxes([""]);
+    [ObservableProperty] private IEnumerable<ICartesianAxis> _barYAxes = ChartFactory.MoneyAxes();
     [ObservableProperty] private IReadOnlyList<BudgetBar> _budgetBars = [];
     [ObservableProperty] private bool _hasBudgets;
     [ObservableProperty] private IReadOnlyList<RecentRow> _recent = [];
@@ -54,8 +58,14 @@ public sealed partial class DashboardViewModel : ObservableObject, IPeriodNaviga
     public DashboardViewModel(BudgetCore core, DataHub hub)
     {
         _core = core;
-        _pieSeries = _donut.Series;                    // the same collection for good: another month moves the slices instead of drawing the ring again
-        UiPreferences.Instance.OnAppearanceChanged(this, self => self.Reload());
+        _pieSeries = _breakdown.Donut;                 // the same collections for good: another month moves the slices and the bars instead of drawing them again
+        _barSeries = _breakdown.Bars;
+        UiPreferences.Instance.OnAppearanceChanged(this, self =>
+        {
+            self.BarXAxes = ChartFactory.LabelAxes([""]);                  // the axes carry the colours of the theme
+            self.BarYAxes = ChartFactory.MoneyAxes();
+            self.Reload();
+        });
         hub.Changed += (_, _) => Reload();
         Reload();
     }
@@ -173,7 +183,7 @@ public sealed partial class DashboardViewModel : ObservableObject, IPeriodNaviga
 
         Slices = items.Select(x => new PieSlice(x.b.CategoryId, x.Name, x.Color, Money(x.b.Amount),
             (x.b.Share * 100m).ToString("0.#", CultureInfo.CurrentCulture) + "%", _drillRoot is null && x.b.Children.Count > 0)).ToList();
-        _donut.Update(items.Select(x => ($"{x.b.CategoryId}|{x.Name}", x.Name, x.Color, x.b.Amount)));
+        _breakdown.Update(items.Select(x => ($"{x.b.CategoryId}|{x.Name}", x.Name, x.Color, x.b.Amount)));
         HasSlices = items.Count > 0;
         CanGoBack = drilled is not null;
         ChartTitle = drilled is null ? Res.Get("DashExpensesByCategory") : Res.Format("DashInCategory", drilled.Name);

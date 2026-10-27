@@ -256,6 +256,8 @@ public class V3UiTests
 
         vm.EditColor = free.Hex.ToLowerInvariant();                           // typed in lower case
         Assert.True(vm.Palette.First(p => p.Hex == free.Hex).IsCurrent);
+        Assert.DoesNotContain(vm.Palette, p => p.IsCurrent && p.IsUsed);     // the tick and the dot never lie on each other, even if another category has the same colour
+        Assert.True(vm.Palette.First(p => p.Hex == free.Hex).IsCurrent);
     });
 
     [Fact]

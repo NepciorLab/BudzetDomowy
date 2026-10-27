@@ -793,6 +793,11 @@ Dodaj rachunki przyciskiem „Zaplanuj płatności”.</value></data>
   <data name="ChartQuickExpenses10" xml:space="preserve"><value>10 największych kategorii wydatków</value></data>
   <data name="ChartQuickIncome" xml:space="preserve"><value>Największe kategorie przychodów</value></data>
   <data name="ChartClear" xml:space="preserve"><value>Wyczyść</value></data>
+  <data name="ChartSmooth" xml:space="preserve"><value>Wygładzanie</value></data>
+  <data name="ChartSmoothTip" xml:space="preserve"><value>Wygładza linie: każdy punkt jest średnią (albo medianą) z tylu sąsiednich punktów (miesięcy, tygodni lub lat). Suwak: brak, 3, 6 albo 12.</value></data>
+  <data name="ChartSmoothNone" xml:space="preserve"><value>brak</value></data>
+  <data name="ChartSmoothAverage" xml:space="preserve"><value>średnia</value></data>
+  <data name="ChartSmoothMedian" xml:space="preserve"><value>mediana</value></data>
   <data name="ChartAllExpenses" xml:space="preserve"><value>Wszystkie wydatki</value></data>
   <data name="ChartAllIncome" xml:space="preserve"><value>Wszystkie przychody</value></data>
   <data name="ChartAddAllExpenses" xml:space="preserve"><value>Dodaj jedną krzywą: wszystkie wydatki</value></data>

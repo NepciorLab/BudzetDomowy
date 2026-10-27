@@ -123,6 +123,42 @@ public static class ChartBuckets
     }
 }
 
+/// <summary>How the points of a line are smoothed: the average or the median of the neighbours.</summary>
+public enum SmoothMethod { Average, Median }
+
+/// <summary>Smoothing of a line: every point becomes the average (or the median) of a window of points around it.</summary>
+public static class ChartSmoothing
+{
+    /// <summary>The windows of the slider: none, then this many points (months, weeks or years, as the step is).</summary>
+    public static readonly int[] Windows = [0, 3, 6, 12];
+
+    /// <summary>
+    /// The window is centred on the point (an even one has one point more behind than ahead); at the ends it is cut to the points there are,
+    /// so the line keeps its first and last point and does not lag behind the data.
+    /// </summary>
+    public static decimal[] Apply(decimal[] values, int window, SmoothMethod method)
+    {
+        if (window <= 1 || values.Length < 2) return values;
+        var result = new decimal[values.Length];
+        for (var i = 0; i < values.Length; i++)
+        {
+            var first = i - (window - 1) / 2;
+            var from = Math.Max(0, first);
+            var to = Math.Min(values.Length - 1, first + window - 1);
+            var slice = values[from..(to + 1)];
+            if (method == SmoothMethod.Average)
+            {
+                result[i] = slice.Sum() / slice.Length;
+                continue;
+            }
+
+            Array.Sort(slice);
+            result[i] = slice.Length % 2 == 1 ? slice[slice.Length / 2] : (slice[slice.Length / 2 - 1] + slice[slice.Length / 2]) / 2;
+        }
+        return result;
+    }
+}
+
 /// <summary>A category (or subcategory) picked for the chart: a small tag with the colour of its line and its total in the range.</summary>
 public sealed partial class CategoryChip : ObservableObject
 {
@@ -319,6 +355,38 @@ public sealed partial class ChartsViewModel : ObservableObject
     public bool IsYearStep => Step == ChartStep.Year;
 
     partial void OnStepChanged(ChartStep value) => Rebuild();
+
+    // ----- the smoothing -----
+
+    /// <summary>The position of the slider: 0 is no smoothing, then 1, 2 and 3 stand for the windows of 3, 6 and 12 points.</summary>
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(SmoothWindow)), NotifyPropertyChangedFor(nameof(SmoothText)), NotifyPropertyChangedFor(nameof(IsSmoothed))]
+    private double _smoothIndex;
+
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(IsAverage)), NotifyPropertyChangedFor(nameof(IsMedian))]
+    private SmoothMethod _smoothMethod = SmoothMethod.Average;
+
+    public int SmoothWindow => ChartSmoothing.Windows[Math.Clamp((int)Math.Round(SmoothIndex), 0, ChartSmoothing.Windows.Length - 1)];
+
+    public bool IsSmoothed => SmoothWindow > 1;
+
+    public string SmoothText => IsSmoothed ? SmoothWindow.ToString(CultureInfo.CurrentCulture) : Res.Get("ChartSmoothNone");
+
+    public bool IsAverage => SmoothMethod == SmoothMethod.Average;
+
+    public bool IsMedian => SmoothMethod == SmoothMethod.Median;
+
+    partial void OnSmoothIndexChanged(double value) => ScheduleRebuild();
+
+    partial void OnSmoothMethodChanged(SmoothMethod value)
+    {
+        if (IsSmoothed) Rebuild();
+    }
+
+    [RelayCommand]
+    private void SetSmoothMethod(string? key)
+    {
+        if (Enum.TryParse<SmoothMethod>(key, out var method)) SmoothMethod = method;
+    }
 
     [RelayCommand]
     private void SetStep(string? key)
@@ -520,7 +588,11 @@ public sealed partial class ChartsViewModel : ObservableObject
         if (!_initialized)
         {
             _initialized = true;
-            if (Chips.Count == 0) AddTotal(TransactionType.Expense);                       // something to look at straight away: all the expenses in one line
+            if (Chips.Count == 0)                                                          // something to look at straight away: the sum of the expenses and of the income
+            {
+                AddTotal(TransactionType.Expense);
+                AddTotal(TransactionType.Income);
+            }
         }
         else
         {
@@ -582,7 +654,9 @@ public sealed partial class ChartsViewModel : ObservableObject
             Chips[c].TotalText = values[c].Sum().ToString("C0", CultureInfo.CurrentCulture);
 
         var step = Step;
-        Series = ChartFactory.CategoryLines(Chips.Select((chip, c) => (chip.Name, chip.Color, (IReadOnlyList<decimal>)values[c])).ToList(),
+        var window = SmoothWindow;
+        var method = SmoothMethod;
+        Series = ChartFactory.CategoryLines(Chips.Select((chip, c) => (chip.Name, chip.Color, (IReadOnlyList<decimal>)ChartSmoothing.Apply(values[c], window, method))).ToList(),
             i => i >= 0 && i < starts.Count ? ChartBuckets.Period(starts[i], step, from, to) : "");
         XAxes = ChartFactory.SparseAxes(ChartBuckets.AxisLabels(starts, step));
         YAxes = ChartFactory.MoneyAxes();

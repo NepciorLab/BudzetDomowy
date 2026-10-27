@@ -81,62 +81,36 @@
                     <ColumnDefinition Width="*" MinWidth="360" />
                 </Grid.ColumnDefinitions>
 
-                <!-- Categories chart -->
-                <Border Style="{StaticResource Card}" VerticalAlignment="Top">
+                <!-- Recent entries -->
+                <Border Style="{StaticResource Card}">
                     <StackPanel>
-                        <StackPanel Orientation="Horizontal">
-                            <Button Content="←" Command="{Binding BackCommand}" Margin="0,0,10,0"
-                                    Visibility="{Binding CanGoBack, Converter={StaticResource BoolToVis}}" ToolTip="{infra:Str DashBack}" />
-                            <TextBlock Text="{Binding ChartTitle}" FontWeight="SemiBold" FontSize="15" VerticalAlignment="Center" />
-                        </StackPanel>
-                        <TextBlock Text="{infra:Str DashNoExpenses}" Opacity="0.6" Margin="0,16" HorizontalAlignment="Center">
-                            <TextBlock.Style>
-                                <Style TargetType="TextBlock">
-                                    <Setter Property="Visibility" Value="Collapsed" />
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding HasSlices}" Value="False">
-                                            <Setter Property="Visibility" Value="Visible" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </TextBlock.Style>
-                        </TextBlock>
-                        <Grid Margin="0,8,0,0" Visibility="{Binding HasSlices, Converter={StaticResource BoolToVis}}">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="230" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-                            <lvc:PieChart Series="{Binding PieSeries}" LegendPosition="Hidden" Height="220" />
-                            <ItemsControl Grid.Column="1" ItemsSource="{Binding Slices}" VerticalAlignment="Center" Margin="8,0,0,0">
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate>
-                                        <Button Command="{Binding DataContext.DrillIntoCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                                                CommandParameter="{Binding}" HorizontalContentAlignment="Stretch" Background="Transparent"
-                                                BorderThickness="0" Padding="4,4" HorizontalAlignment="Stretch" ToolTip="{infra:Str DashDrillTip}">
-                                            <Grid>
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="20" />
-                                                    <ColumnDefinition Width="*" />
-                                                    <ColumnDefinition Width="Auto" />
-                                                    <ColumnDefinition Width="54" />
-                                                    <ColumnDefinition Width="14" />
-                                                </Grid.ColumnDefinitions>
-                                                <controls:CategoryMarker Size="12" Color="{Binding Color}" HorizontalAlignment="Left" />
-                                                <TextBlock Grid.Column="1" Text="{Binding Name}" TextTrimming="CharacterEllipsis" />
-                                                <TextBlock Grid.Column="2" Text="{Binding AmountText}" FontWeight="SemiBold" Margin="8,0" />
-                                                <TextBlock Grid.Column="3" Text="{Binding ShareText}" TextAlignment="Right" Opacity="0.7" />
-                                                <TextBlock Grid.Column="4" Text="›" Opacity="0.7" HorizontalAlignment="Right"
-                                                           Visibility="{Binding CanDrill, Converter={StaticResource BoolToVis}}" />
-                                            </Grid>
-                                        </Button>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
-                        </Grid>
+                        <TextBlock Text="{infra:Str DashRecent}" FontWeight="SemiBold" FontSize="15" Margin="0,0,0,6" />
+                        <ItemsControl ItemsSource="{Binding Recent}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Margin="0,4">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="110" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="130" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="{Binding Date, StringFormat='dd.MM.yyyy'}" Opacity="0.7" />
+                                        <TextBlock Grid.Column="1" Text="{Binding Place}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                                        <StackPanel Grid.Column="2" Orientation="Horizontal">
+                                            <controls:CategoryMarker Size="10" Color="{Binding CategoryColor}" Margin="0,0,8,0" />
+                                            <TextBlock Text="{Binding Category}" TextTrimming="CharacterEllipsis" />
+                                        </StackPanel>
+                                        <TextBlock Grid.Column="3" Text="{Binding AmountText}" TextAlignment="Right" FontWeight="SemiBold"
+                                                   Style="{StaticResource AmountText}" />
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
                     </StackPanel>
                 </Border>
 
-                <!-- Budgets and active event -->
+                <!-- Budgets and the active event -->
                 <StackPanel Grid.Column="1">
                     <Border Style="{StaticResource Card}">
                         <StackPanel>
@@ -198,32 +172,63 @@
                 </StackPanel>
             </Grid>
 
-            <!-- Recent -->
+        <!-- Expenses by category: the whole width -->
             <Border Style="{StaticResource Card}">
                 <StackPanel>
-                    <TextBlock Text="{infra:Str DashRecent}" FontWeight="SemiBold" FontSize="15" Margin="0,0,0,6" />
-                    <ItemsControl ItemsSource="{Binding Recent}">
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <Grid Margin="0,4">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="110" />
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="130" />
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Text="{Binding Date, StringFormat='dd.MM.yyyy'}" Opacity="0.7" />
-                                    <TextBlock Grid.Column="1" Text="{Binding Place}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
-                                    <StackPanel Grid.Column="2" Orientation="Horizontal">
-                                        <controls:CategoryMarker Size="10" Color="{Binding CategoryColor}" Margin="0,0,8,0" />
-                                        <TextBlock Text="{Binding Category}" TextTrimming="CharacterEllipsis" />
-                                    </StackPanel>
-                                    <TextBlock Grid.Column="3" Text="{Binding AmountText}" TextAlignment="Right" FontWeight="SemiBold"
-                                               Style="{StaticResource AmountText}" />
-                                </Grid>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
+                    <StackPanel Orientation="Horizontal">
+                        <Button Content="←" Command="{Binding BackCommand}" Margin="0,0,10,0"
+                                Visibility="{Binding CanGoBack, Converter={StaticResource BoolToVis}}" ToolTip="{infra:Str DashBack}" />
+                        <TextBlock Text="{Binding ChartTitle}" FontWeight="SemiBold" FontSize="15" VerticalAlignment="Center" />
+                    </StackPanel>
+                    <TextBlock Text="{infra:Str DashNoExpenses}" Opacity="0.6" Margin="0,16" HorizontalAlignment="Center">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding HasSlices}" Value="False">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                    <Grid Margin="0,8,0,0" Visibility="{Binding HasSlices, Converter={StaticResource BoolToVis}}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="230" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" MinWidth="260" />
+                        </Grid.ColumnDefinitions>
+                        <lvc:PieChart Series="{Binding PieSeries}" LegendPosition="Hidden" Height="220" />
+                        <!-- the legend takes only what the names and the figures need, so the figures stand next to the names -->
+                        <ItemsControl Grid.Column="1" ItemsSource="{Binding Slices}" VerticalAlignment="Center" Margin="8,0,24,0" Grid.IsSharedSizeScope="True">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Button Command="{Binding DataContext.DrillIntoCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                            CommandParameter="{Binding}" HorizontalContentAlignment="Stretch" Background="Transparent"
+                                            BorderThickness="0" Padding="4,4" HorizontalAlignment="Stretch" ToolTip="{infra:Str DashDrillTip}">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="20" />
+                                                <ColumnDefinition Width="Auto" SharedSizeGroup="LegendName" />
+                                                <ColumnDefinition Width="Auto" SharedSizeGroup="LegendAmount" />
+                                                <ColumnDefinition Width="Auto" SharedSizeGroup="LegendShare" />
+                                                <ColumnDefinition Width="14" />
+                                            </Grid.ColumnDefinitions>
+                                            <controls:CategoryMarker Size="12" Color="{Binding Color}" HorizontalAlignment="Left" />
+                                            <TextBlock Grid.Column="1" Text="{Binding Name}" MaxWidth="260" TextTrimming="CharacterEllipsis" />
+                                            <TextBlock Grid.Column="2" Text="{Binding AmountText}" FontWeight="SemiBold" TextAlignment="Right" Margin="14,0,0,0" />
+                                            <TextBlock Grid.Column="3" Text="{Binding ShareText}" TextAlignment="Right" Opacity="0.7" Margin="10,0,0,0" />
+                                            <TextBlock Grid.Column="4" Text="›" Opacity="0.7" HorizontalAlignment="Right"
+                                                       Visibility="{Binding CanDrill, Converter={StaticResource BoolToVis}}" />
+                                        </Grid>
+                                    </Button>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <!-- the same expenses as bars: they grow and shrink in place when another month is shown -->
+                        <lvc:CartesianChart x:Name="CategoryBars" Grid.Column="2" Series="{Binding BarSeries}" XAxes="{Binding BarXAxes}" YAxes="{Binding BarYAxes}"
+                                            LegendPosition="Hidden" Height="220" TooltipFindingStrategy="CompareAll" />
+                    </Grid>
                 </StackPanel>
             </Border>
         </StackPanel>

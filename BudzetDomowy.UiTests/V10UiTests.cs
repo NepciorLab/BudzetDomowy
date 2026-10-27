@@ -250,6 +250,41 @@ public class V10UiTests
         Assert.Equal(now, groceries.Values!.Single().Value);
     });
 
+    [Fact]
+    public void Dashboard_TheBars_ShareTheSlicesOfTheDonut_AndAreNotReplacedByAnotherMonth() => WithApp(app =>
+    {
+        var vm = app.Get<DashboardViewModel>();
+        var bars = vm.BarSeries;
+        var groceries = bars.OfType<LiveChartsCore.SkiaSharpView.ColumnSeries<LiveChartsCore.Defaults.ObservableValue>>().Single(s => s.Name == "Spożywcze");
+        Assert.Equal(vm.PieSeries.Count(), bars.Count());                      // one bar for every slice of the ring
+
+        vm.PreviousMonthCommand.Execute(null);
+        Assert.Same(bars, vm.BarSeries);                                       // not given a new collection: the chart does not start again from the bottom
+        Assert.Contains(groceries, bars);
+        Assert.Equal(640d, groceries.Values!.Single().Value);                  // the same figure as the ring: they share the value
+        Assert.NotEmpty(vm.BarXAxes);
+        Assert.NotEmpty(vm.BarYAxes);
+    });
+
+    [Fact]
+    public void Dashboard_View_HasRecentEntriesAndBudgetsAboveTheCategoriesWhichTakeTheWholeWidth() => WithApp(app =>
+    {
+        var vm = app.Get<DashboardViewModel>();
+        var view = new BudzetDomowy.App.Views.DashboardView { DataContext = vm };
+        UiHost.Layout(view, 1500, 1100);
+        UiHost.Render(view, 1500, 1100, "dashboard-layout");
+
+        var heading = (string key) => UiHost.Descendants<System.Windows.Controls.TextBlock>(view).First(t => t.Text == key);
+        var recent = heading("Ostatnie wpisy");
+        var budgets = heading("Budżety");
+        var categories = heading(vm.ChartTitle);
+        Assert.True(recent.TranslatePoint(new System.Windows.Point(), view).Y < categories.TranslatePoint(new System.Windows.Point(), view).Y);
+        Assert.True(budgets.TranslatePoint(new System.Windows.Point(), view).Y < categories.TranslatePoint(new System.Windows.Point(), view).Y);
+        Assert.True(budgets.TranslatePoint(new System.Windows.Point(), view).X > recent.TranslatePoint(new System.Windows.Point(), view).X + 300);   // budgets beside the recent entries
+        var bars = Assert.IsType<LiveChartsCore.SkiaSharpView.WPF.CartesianChart>(view.FindName("CategoryBars"));
+        Assert.True(bars.ActualWidth > 250);
+    });
+
     // ----- recurring entries: asked as soon as the window is there -----
 
     [Fact]

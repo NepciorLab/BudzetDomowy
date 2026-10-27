@@ -135,14 +135,10 @@ public static class ChartFactory
         var points = lines.Count == 0 ? 0 : lines.Max(l => l.Values.Count);
         var marker = points <= 48 ? 8 : 0;
 
-        // the tooltip tells the sum and the period it comes from (the point's number is its position on the horizontal axis)
-        Func<LiveChartsCore.Kernel.ChartPoint, string> tip = periodOf is null
-            ? MoneyTip
-            : point =>
-            {
-                var period = periodOf((int)Math.Round(point.Coordinate.SecondaryValue));
-                return period.Length == 0 ? MoneyTip(point) : MoneyTip(point) + "  ·  " + period;
-            };
+        // the tooltip has a heading made once from the horizontal label of the point: it tells the period, the rows below tell the sums
+        Func<LiveChartsCore.Kernel.ChartPoint, string>? heading = periodOf is null
+            ? null
+            : point => periodOf((int)Math.Round(point.Coordinate.SecondaryValue));
         return lines.Select(l =>
         {
             var color = ParseColor(l.Color);
@@ -156,7 +152,8 @@ public static class ChartFactory
                 GeometrySize = marker,
                 GeometryFill = new SolidColorPaint(color),
                 GeometryStroke = new SolidColorPaint(color) { StrokeThickness = 2 },
-                YToolTipLabelFormatter = tip,
+                YToolTipLabelFormatter = MoneyTip,
+                XToolTipLabelFormatter = heading ?? (_ => LiveChartsCore.LiveCharts.IgnoreToolTipLabel),
             };
         }).ToList();
     }

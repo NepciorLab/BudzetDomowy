@@ -27,7 +27,7 @@ public sealed partial class CategoryNode : ObservableObject
 
 public sealed record ParentOption(Guid Key, string Name);
 
-/// <param name="IsUsed">Another category already has this colour (it gets a small dot).</param>
+/// <param name="IsUsed">Another category already has this colour (it gets a small dot, unless it is the ticked one).</param>
 /// <param name="IsCurrent">The colour of the selected category (it gets a tick).</param>
 public sealed record PaletteColor(string Hex, bool IsUsed, bool IsCurrent);
 
@@ -110,7 +110,11 @@ public sealed partial class CategoriesViewModel : ObservableObject
         var others = _categories.Where(c => c.Id != selected).Select(c => c.Color).Where(c => c.Length > 0)
                                 .ToHashSet(StringComparer.OrdinalIgnoreCase);
         var current = EditColor.Trim();
-        Palette = PaletteHexes.Select(h => new PaletteColor(h, others.Contains(h), SelectedNode is not null && string.Equals(h, current, StringComparison.OrdinalIgnoreCase))).ToList();
+        Palette = PaletteHexes.Select(h =>
+        {
+            var isCurrent = SelectedNode is not null && string.Equals(h, current, StringComparison.OrdinalIgnoreCase);
+            return new PaletteColor(h, others.Contains(h) && !isCurrent, isCurrent);               // the tick and the dot would lie on each other
+        }).ToList();
     }
 
     private void LoadEditor(CategoryNode? node)
