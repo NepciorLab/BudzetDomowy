@@ -548,6 +548,12 @@ Del – usuń zaznaczone transakcje</value></data>
   <data name="MarkerBar" xml:space="preserve"><value>Pionowa kreska</value></data>
   <data name="SettingsAmounts" xml:space="preserve"><value>Kwoty</value></data>
   <data name="SettingsShowMinus" xml:space="preserve"><value>Pokazuj znaki „+” i „−” przy kwotach</value></data>
+  <data name="SettingsCharts" xml:space="preserve"><value>Wykresy na pulpicie</value></data>
+  <data name="SettingsChartBarWidth" xml:space="preserve"><value>Szerokość słupka</value></data>
+  <data name="SettingsChartBarGap" xml:space="preserve"><value>Odstęp między słupkami (w procentach szerokości słupka)</value></data>
+  <data name="SettingsChartRing" xml:space="preserve"><value>Grubość kółka</value></data>
+  <data name="SettingsChartRows" xml:space="preserve"><value>Liczba kategorii bez przewijania</value></data>
+  <data name="SettingsChartRowsHint" xml:space="preserve"><value>Obszar wykresów ma stałą wysokość dla tylu kategorii; gdy jest ich więcej, legenda i słupki mają suwak, a wykresy nie zmieniają rozmiaru przy zmianie miesiąca.</value></data>
   <data name="SettingsSubcategoryColor" xml:space="preserve"><value>Podkategorie mają kolor kategorii głównej</value></data>
   <data name="SettingsSubcategoryColorTip" xml:space="preserve"><value>Nowa podkategoria, przeniesiona pod inną kategorię i podkategorie kategorii, której zmieniasz kolor, dostają kolor kategorii głównej. Kolor podkategorii nie jest wtedy wybierany ręcznie. Wykresy na pulpicie rozróżniają takie podkategorie odcieniami.</value></data>
   <data name="SettingsColorAmounts" xml:space="preserve"><value>Koloruj kwoty (wydatki na czerwono, przychody na zielono)</value></data>

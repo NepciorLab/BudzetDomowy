@@ -87,6 +87,16 @@ public sealed partial class DashboardViewModel : ObservableObject, IPeriodNaviga
 
     public bool HasChangeTip => ChangeTip.Length > 0;
 
+    // ----- the area of the charts: its size does not depend on the month, so nothing jumps while the charts move -----
+
+    public const double LegendRowHeight = 27;
+    private const double MinChartAreaHeight = 296;                          // what the bars need: the plot, the names and room for a scroll bar
+
+    /// <summary>The legend has room for this many categories; with more of them it scrolls.</summary>
+    public double LegendHeight => Math.Round(UiPreferences.Instance.ChartRows) * LegendRowHeight;
+
+    public double ChartAreaHeight => Math.Max(LegendHeight, MinChartAreaHeight);
+
     public bool CanPickerGoForward => PickerYear < Today.Year;
 
     public bool CanPickerGoBack => PickerYear > FirstPickerYear;
@@ -246,6 +256,9 @@ public sealed partial class DashboardViewModel : ObservableObject, IPeriodNaviga
         return Res.Format(period ? "DashChangePeriod" : "DashChange", arrow, Math.Abs(p * 100m).ToString("0", CultureInfo.CurrentCulture));
     }
 
+    /// <summary>The ring is about 100 pixels in radius, so the inner radius is what is left after the thickness chosen in the settings.</summary>
+    private static double RingInnerRadius => 100 - Math.Clamp(UiPreferences.Instance.ChartRingThickness, 8, 70);
+
     private void BuildBreakdown(IReadOnlyList<Transaction> all, IReadOnlyList<Category> cats)
     {
         var from = Month;
@@ -271,7 +284,9 @@ public sealed partial class DashboardViewModel : ObservableObject, IPeriodNaviga
 
         Slices = items.Select(x => new PieSlice(x.b.CategoryId, x.Name, x.Color, Money(x.b.Amount),
             (x.b.Share * 100m).ToString("0.#", CultureInfo.CurrentCulture) + "%", _drillRoot is null && x.b.Children.Count > 0)).ToList();
-        _breakdown.Update(items.Select(x => ($"{x.b.CategoryId}|{x.Name}", x.Name, x.Color, x.b.Amount)));
+        _breakdown.Update(items.Select(x => ($"{x.b.CategoryId}|{x.Name}", x.Name, x.Color, x.b.Amount)), RingInnerRadius);
+        OnPropertyChanged(nameof(LegendHeight));
+        OnPropertyChanged(nameof(ChartAreaHeight));
         HasSlices = items.Count > 0;
         CanGoBack = drilled is not null;
         ChartTitle = drilled is null ? Res.Get("DashExpensesByCategory") : Res.Format("DashInCategory", drilled.Name);

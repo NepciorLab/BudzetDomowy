@@ -165,20 +165,23 @@
                             </Style>
                         </TextBlock.Style>
                     </TextBlock>
-                    <Grid Margin="0,8,0,0" Visibility="{Binding HasSlices, Converter={StaticResource BoolToVis}}">
+                    <!-- the height and the width of the three parts do not depend on the month, so the charts do not move sideways or jump while they change -->
+                    <Grid Margin="0,8,0,0" Height="{Binding ChartAreaHeight}" Visibility="{Binding HasSlices, Converter={StaticResource BoolToVis}}">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="230" />
-                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="400" />
                             <ColumnDefinition Width="*" MinWidth="260" />
                         </Grid.ColumnDefinitions>
-                        <lvc:PieChart Series="{Binding PieSeries}" LegendPosition="Hidden" Height="220" />
-                        <!-- the legend takes only what the names and the figures need, so the figures stand next to the names -->
-                        <ItemsControl Grid.Column="1" ItemsSource="{Binding Slices}" VerticalAlignment="Center" Margin="8,0,24,0" Grid.IsSharedSizeScope="True">
+                        <lvc:PieChart Series="{Binding PieSeries}" LegendPosition="Hidden" Height="220" VerticalAlignment="Center" />
+                        <!-- the legend: the figures stand next to the names; room for the chosen number of categories, then it scrolls -->
+                        <ScrollViewer Grid.Column="1" VerticalAlignment="Center" Height="{Binding LegendHeight}" VerticalScrollBarVisibility="Auto"
+                                      HorizontalScrollBarVisibility="Disabled" Margin="8,0,16,0">
+                        <ItemsControl ItemsSource="{Binding Slices}" VerticalAlignment="Center" Grid.IsSharedSizeScope="True">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
                                     <Button Command="{Binding DataContext.DrillIntoCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                                            CommandParameter="{Binding}" HorizontalContentAlignment="Stretch" Background="Transparent"
-                                            BorderThickness="0" Padding="4,4" HorizontalAlignment="Stretch" ToolTip="{infra:Str DashDrillTip}">
+                                            CommandParameter="{Binding}" HorizontalContentAlignment="Stretch" Background="Transparent" Height="27" MinHeight="0"
+                                            BorderThickness="0" Padding="4,0" HorizontalAlignment="Stretch" VerticalContentAlignment="Center" ToolTip="{infra:Str DashDrillTip}">
                                         <Grid>
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="20" />
@@ -188,7 +191,7 @@
                                                 <ColumnDefinition Width="14" />
                                             </Grid.ColumnDefinitions>
                                             <controls:CategoryMarker Size="12" Color="{Binding Color}" HorizontalAlignment="Left" />
-                                            <TextBlock Grid.Column="1" Text="{Binding Name}" MaxWidth="260" TextTrimming="CharacterEllipsis" />
+                                            <TextBlock Grid.Column="1" Text="{Binding Name}" MaxWidth="190" TextTrimming="CharacterEllipsis" />
                                             <TextBlock Grid.Column="2" Text="{Binding AmountText}" FontWeight="SemiBold" TextAlignment="Right" Margin="14,0,0,0" />
                                             <TextBlock Grid.Column="3" Text="{Binding ShareText}" TextAlignment="Right" Opacity="0.7" Margin="10,0,0,0" />
                                             <TextBlock Grid.Column="4" Text="›" Opacity="0.7" HorizontalAlignment="Right"
@@ -198,8 +201,13 @@
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
-                        <!-- the same expenses as bars, at the left edge: they grow and shrink in place when another month is shown -->
-                        <controls:BarBreakdownChart x:Name="CategoryBars" Grid.Column="2" Items="{Binding BarItems}" HorizontalAlignment="Left" VerticalAlignment="Center" />
+                        </ScrollViewer>
+                        <!-- the same expenses as bars, at the left edge: they grow and shrink in place when another month is shown; too many of them scroll -->
+                        <ScrollViewer Grid.Column="2" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" VerticalAlignment="Center" HorizontalAlignment="Left">
+                            <controls:BarBreakdownChart x:Name="CategoryBars" Items="{Binding BarItems}" Margin="0,0,0,14"
+                                                        BarWidth="{Binding ChartBarWidth, Source={x:Static infra:UiPreferences.Instance}}"
+                                                        GapPercent="{Binding ChartBarGap, Source={x:Static infra:UiPreferences.Instance}}" />
+                        </ScrollViewer>
                     </Grid>
                 </StackPanel>
             </Border>

@@ -161,6 +161,14 @@ public static class UiHost
         }
     }
 
+    /// <summary>The nearest ancestor of the type in the visual tree.</summary>
+    public static T Ancestor<T>(DependencyObject element) where T : DependencyObject
+    {
+        for (var parent = VisualTreeHelper.GetParent(element); parent is not null; parent = VisualTreeHelper.GetParent(parent))
+            if (parent is T t) return t;
+        throw new InvalidOperationException("No ancestor of type " + typeof(T).Name);
+    }
+
     /// <summary>All text the element shows (TextBlocks and TextBoxes), for assertions.</summary>
     public static List<string> Texts(DependencyObject root) =>
         Descendants<TextBlock>(root).Where(IsShown).Select(t => t.Text)

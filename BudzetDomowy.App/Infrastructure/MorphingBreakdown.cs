@@ -96,6 +96,7 @@ public sealed class MorphingBreakdown
             slice.Value.Value = (double)amount;
             slice.Bar.Amount = (double)amount;
             slice.Ring.Name = name;
+            slice.Ring.InnerRadius = innerRadius;
             slice.Bar.Name = name;
             if (!string.Equals(slice.Color, color, StringComparison.OrdinalIgnoreCase))
             {

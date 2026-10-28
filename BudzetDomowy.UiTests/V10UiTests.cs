@@ -297,24 +297,92 @@ public class V10UiTests
         UiHost.Layout(view, 1500, 1100);
         UiHost.Render(view, 1500, 1100, "dashboard-bars");
 
-        var column = (System.Windows.Controls.Grid)chart.Parent;
-        Assert.Equal(HorizontalAlignment.Left, chart.HorizontalAlignment);
-        Assert.True(chart.ActualWidth < column.ColumnDefinitions[2].ActualWidth - 20);          // not spread over the whole column
-        Assert.Equal(chart.PlotRight, chart.ActualWidth, 0.5);                                  // nothing beyond the grid: it ends half a bar after the last bar
-        Assert.Equal(chart.BarWidth * 2, chart.SlotWidth, 0.001);                               // slot = bar + half a bar on each side
+        var scroll = UiHost.Ancestor<System.Windows.Controls.ScrollViewer>(chart);
+        var column = (System.Windows.Controls.Grid)scroll.Parent;
+        Assert.Equal(HorizontalAlignment.Left, scroll.HorizontalAlignment);
+        Assert.True(scroll.ActualWidth < column.ColumnDefinitions[2].ActualWidth - 20);        // not spread over the whole column
+        Assert.Equal(chart.PlotRight, chart.ActualWidth, 0.5);                                  // nothing beyond the grid
+        Assert.Equal(30, chart.BarWidth, 0.001);
+        Assert.Equal(chart.BarWidth / 4, chart.Gap, 0.001);                                     // the space between the bars: a quarter of a bar
+        Assert.Equal(chart.BarWidth / 2, chart.Overhang, 0.001);                                // the grid goes half a bar beyond the first and the last one
+        Assert.Equal(chart.PlotLeft + 2 * chart.Overhang + vm.BarItems.Count * chart.BarWidth + (vm.BarItems.Count - 1) * chart.Gap, chart.PlotRight, 0.001);
+
+        var bottom = BarBreakdownChart.PlotHeight + BarBreakdownChart.TopPadding;
+        var firstCentre = chart.PlotLeft + chart.Overhang + chart.BarWidth / 2;
+        Assert.Same(vm.BarItems[0], chart.ItemAt(new Point(firstCentre, bottom + 9)));         // the bottom of the bar, or the name below it, belongs to the bar
+        Assert.Same(vm.BarItems[1], chart.ItemAt(new Point(firstCentre + chart.SlotWidth, bottom + 9)));
+        Assert.Null(chart.ItemAt(new Point(chart.PlotLeft + 1, bottom)));                      // the overhang is no bar
+        Assert.Null(chart.ItemAt(new Point(chart.PlotRight - 1, bottom)));
 
         var first = vm.BarItems[0];
-        var inFirstBar = new Point(chart.PlotLeft + chart.SlotWidth / 2, BarBreakdownChart.PlotHeight + 9);
-        Assert.Same(first, chart.ItemAt(inFirstBar));                                           // the bottom of the bar, or the name below it, belongs to the bar
-        Assert.Null(chart.ItemAt(new Point(chart.PlotLeft - 3, BarBreakdownChart.PlotHeight)));
-        Assert.Null(chart.ItemAt(new Point(chart.PlotRight + 3, BarBreakdownChart.PlotHeight)));
-        Assert.Same(vm.BarItems[1], chart.ItemAt(new Point(chart.PlotLeft + chart.SlotWidth * 1.5, BarBreakdownChart.PlotHeight + 9)));
-
         var tip = chart.TipOf(first);                                                           // one bar: its amount, not a list for the amount
         Assert.StartsWith(first.Name + ":", tip);
         Assert.Contains("zł", tip);
         Assert.EndsWith("%)", tip);
         Assert.DoesNotContain("\n", tip);
+        Assert.Contains("zł", chart.ValueOf(first));
+    });
+
+    [Fact]
+    public void Dashboard_TheAreaOfTheCharts_HasTheSameSizeInEveryMonth_AndAfterDrillingIn() => WithApp(app =>
+    {
+        var vm = app.Get<DashboardViewModel>();
+        var view = new BudzetDomowy.App.Views.DashboardView { DataContext = vm };
+        UiHost.Layout(view, 1500, 1100);
+        var chart = Assert.IsType<BarBreakdownChart>(view.FindName("CategoryBars"));
+        var scroll = UiHost.Ancestor<System.Windows.Controls.ScrollViewer>(chart);
+        var area = (System.Windows.Controls.Grid)scroll.Parent;
+        var height = area.ActualHeight;
+        var legendX = scroll.TranslatePoint(new Point(), view).X;
+        Assert.Equal(vm.ChartAreaHeight, height, 0.5);
+        Assert.Equal(12 * DashboardViewModel.LegendRowHeight, vm.ChartAreaHeight);              // room for twelve rows of the legend
+
+        vm.PreviousMonthCommand.Execute(null);                                                  // another month, another number of categories
+        UiHost.Layout(view, 1500, 1100);
+        Assert.Equal(height, area.ActualHeight, 0.5);
+        Assert.Equal(legendX, scroll.TranslatePoint(new Point(), view).X, 0.5);                 // and the bars did not move sideways
+
+        vm.NextMonthCommand.Execute(null);
+        var slice = vm.Slices.FirstOrDefault(s => s.CanDrill);
+        if (slice is not null) vm.DrillIntoCommand.Execute(slice);
+        UiHost.Layout(view, 1500, 1100);
+        Assert.Equal(height, area.ActualHeight, 0.5);
+        Assert.Equal(legendX, scroll.TranslatePoint(new Point(), view).X, 0.5);
+    });
+
+    [Fact]
+    public void Dashboard_TheChartSettings_ChangeTheBarsAndTheRing_AndTheAreaFollowsTheNumberOfRows() => WithApp(app =>
+    {
+        var prefs = UiPreferences.Instance;
+        try
+        {
+            var vm = app.Get<DashboardViewModel>();
+            var view = new BudzetDomowy.App.Views.DashboardView { DataContext = vm };
+            UiHost.Layout(view, 1500, 1100);
+            var chart = Assert.IsType<BarBreakdownChart>(view.FindName("CategoryBars"));
+
+            prefs.ChartBarWidth = 20;
+            prefs.ChartBarGap = 50;
+            UiHost.Layout(view, 1500, 1100);
+            Assert.Equal(20, chart.BarWidth);
+            Assert.Equal(10, chart.Gap, 0.001);
+
+            prefs.ChartRingThickness = 20;                                                      // 100 - 20
+            Assert.All(vm.PieSeries.OfType<LiveChartsCore.SkiaSharpView.PieSeries<LiveChartsCore.Defaults.ObservableValue>>(), s => Assert.Equal(80, s.InnerRadius));
+
+            prefs.ChartRows = 5;
+            Assert.Equal(5 * DashboardViewModel.LegendRowHeight, vm.LegendHeight);
+            Assert.Equal(296, vm.ChartAreaHeight);                                              // never less than the bars need
+            prefs.ChartRows = 14;
+            Assert.Equal(14 * DashboardViewModel.LegendRowHeight, vm.ChartAreaHeight);
+        }
+        finally
+        {
+            prefs.ChartBarWidth = 30;
+            prefs.ChartBarGap = 25;
+            prefs.ChartRingThickness = 30;
+            prefs.ChartRows = 12;
+        }
     });
 
     [Fact]

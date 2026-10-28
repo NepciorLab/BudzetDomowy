@@ -20,6 +20,10 @@ public sealed partial class UiPreferences : ObservableObject
     [ObservableProperty] private bool _colorAmounts = true;
     [ObservableProperty] private bool _showClock = true;
     [ObservableProperty] private bool _subcategoriesInheritColor;
+    [ObservableProperty] private double _chartBarWidth = 30;
+    [ObservableProperty] private double _chartBarGap = 25;
+    [ObservableProperty] private double _chartRingThickness = 30;
+    [ObservableProperty] private double _chartRows = 12;
 
     /// <summary>Raised when scale, symbol or amount style changed (screens that format text refresh themselves).</summary>
     public event EventHandler? AppearanceChanged;
@@ -68,6 +72,10 @@ public sealed partial class UiPreferences : ObservableObject
             ColorAmounts = s.ColorAmounts;
             ShowClock = s.ShowClock;
             SubcategoriesInheritColor = s.SubcategoriesInheritColor;
+            ChartBarWidth = s.ChartBarWidth;
+            ChartBarGap = s.ChartBarGap;
+            ChartRingThickness = s.ChartRingThickness;
+            ChartRows = s.ChartRows;
         }
         finally
         {
@@ -110,6 +118,23 @@ public sealed partial class UiPreferences : ObservableObject
     partial void OnShowClockChanged(bool value) => Save(x => x with { ShowClock = value });
 
     partial void OnSubcategoriesInheritColorChanged(bool value) => Save(x => x with { SubcategoriesInheritColor = value });
+
+    // the charts of the dashboard: the ring and the legend are rebuilt (the bars follow their own bindings)
+    partial void OnChartBarWidthChanged(double value) => Save(x => x with { ChartBarWidth = value });
+
+    partial void OnChartBarGapChanged(double value) => Save(x => x with { ChartBarGap = value });
+
+    partial void OnChartRingThicknessChanged(double value)
+    {
+        Save(x => x with { ChartRingThickness = value });
+        Appearance();
+    }
+
+    partial void OnChartRowsChanged(double value)
+    {
+        Save(x => x with { ChartRows = value });
+        Appearance();
+    }
 
     partial void OnColorAmountsChanged(bool value)
     {

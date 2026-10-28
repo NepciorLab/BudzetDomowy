@@ -50,6 +50,18 @@ public sealed record AppSettings
     /// <summary>A subcategory gets the colour of its main category (when it is added or moved, and when the main one changes colour).</summary>
     public bool SubcategoriesInheritColor { get; init; }
 
+    /// <summary>Width of a bar of the expenses chart on the dashboard, in pixels.</summary>
+    public double ChartBarWidth { get; init; } = 30;
+
+    /// <summary>Space between the bars, in percent of the width of a bar.</summary>
+    public double ChartBarGap { get; init; } = 25;
+
+    /// <summary>Thickness of the ring of the expenses chart, in pixels.</summary>
+    public double ChartRingThickness { get; init; } = 30;
+
+    /// <summary>How many categories of the legend fit without a scroll bar (the height of the chart area follows).</summary>
+    public double ChartRows { get; init; } = 12;
+
     /// <summary>Check GitHub for a newer version at startup.</summary>
     public bool AutoUpdate { get; init; } = true;
 

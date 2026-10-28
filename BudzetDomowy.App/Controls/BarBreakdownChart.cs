@@ -3,8 +3,10 @@ using System.ComponentModel;
 using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Documents;
 using System.Windows.Media;
+using System.Windows.Shapes;
 using BudzetDomowy.App.Infrastructure;
 
 namespace BudzetDomowy.App.Controls;
@@ -33,10 +35,11 @@ public sealed class BarItem : INotifyPropertyChanged
 }
 
 /// <summary>
-/// Columns of the expenses by category: the chart is put at the left edge, every bar has a slot twice as wide as itself, so the
-/// horizontal lines of the grid reach half a bar beyond the first and the last one and end there instead of running over the whole
-/// card. The names stand under the bars, turned upright. Another amount moves the bar (and the scale) smoothly; a bar that comes
-/// new grows from the bottom. Pointing at a bar shows its amount and its share.
+/// Columns of the expenses by category: the chart is put at the left edge; the horizontal lines of the grid reach half a bar beyond the
+/// first and the last bar and end there instead of running over the whole card. The names stand under the bars, turned upright and
+/// read from the bottom up. The height never changes (the names have a place of their own), so nothing jumps when another month is
+/// shown. Another amount moves the bar (and the scale) smoothly; a bar that comes new grows from the bottom. Pointing at a bar shows
+/// a tip with its colour, amount and share above it.
 /// </summary>
 public sealed class BarBreakdownChart : FrameworkElement
 {
@@ -44,15 +47,31 @@ public sealed class BarBreakdownChart : FrameworkElement
         nameof(Items), typeof(IEnumerable<BarItem>), typeof(BarBreakdownChart),
         new FrameworkPropertyMetadata(null, (d, e) => ((BarBreakdownChart)d).OnItemsReplaced(e.OldValue as IEnumerable<BarItem>, e.NewValue as IEnumerable<BarItem>)));
 
+    public static readonly DependencyProperty BarWidthProperty = DependencyProperty.Register(
+        nameof(BarWidth), typeof(double), typeof(BarBreakdownChart),
+        new FrameworkPropertyMetadata(30.0, FrameworkPropertyMetadataOptions.AffectsMeasure | FrameworkPropertyMetadataOptions.AffectsRender), v => v is double d && d >= 2);
+
+    /// <summary>Space between two bars in percent of the width of a bar.</summary>
+    public static readonly DependencyProperty GapPercentProperty = DependencyProperty.Register(
+        nameof(GapPercent), typeof(double), typeof(BarBreakdownChart),
+        new FrameworkPropertyMetadata(25.0, FrameworkPropertyMetadataOptions.AffectsMeasure | FrameworkPropertyMetadataOptions.AffectsRender), v => v is double d && d >= 0);
+
     public static readonly DependencyProperty ForegroundProperty = TextElement.ForegroundProperty.AddOwner(
         typeof(BarBreakdownChart), new FrameworkPropertyMetadata(SystemColors.ControlTextBrush, FrameworkPropertyMetadataOptions.AffectsRender | FrameworkPropertyMetadataOptions.Inherits));
 
     public IEnumerable<BarItem>? Items { get => (IEnumerable<BarItem>?)GetValue(ItemsProperty); set => SetValue(ItemsProperty, value); }
 
+    public double BarWidth { get => (double)GetValue(BarWidthProperty); set => SetValue(BarWidthProperty, value); }
+
+    public double GapPercent { get => (double)GetValue(GapPercentProperty); set => SetValue(GapPercentProperty, value); }
+
     public Brush Foreground { get => (Brush)GetValue(ForegroundProperty); set => SetValue(ForegroundProperty, value); }
 
     public const double PlotHeight = 150;
-    private const double TopPadding = 10, LabelGap = 6, MaxLabelHeight = 110, MaxBarWidth = 30, MinBarWidth = 8, GridLines = 4;
+    public const double TopPadding = 10;
+    public const double LabelGap = 6;
+    public const double LabelHeight = 110;
+    private const double GridLines = 4;
     private static readonly TimeSpan Duration = TimeSpan.FromMilliseconds(450);
 
     private sealed class Bar
@@ -65,31 +84,61 @@ public sealed class BarBreakdownChart : FrameworkElement
     private double _fromMax, _toMax, _shownMax;
     private DateTime _started;
     private bool _animating;
-    private double _axisWidth, _barWidth = MaxBarWidth, _labelHeight;
+    private double _axisWidth;
     private int _hover = -1;
     private readonly Dictionary<string, Brush> _brushes = new(StringComparer.OrdinalIgnoreCase);
-    private readonly System.Windows.Controls.ToolTip _tip = new();
+
+    // the tip: the look of the tips of the other charts (light, rounded, a dot with the colour of the bar and an arrow)
+    private readonly Popup _popup;
+    private readonly FrameworkElement _tipRoot;
+    private readonly Ellipse _tipDot = new() { Width = 12, Height = 12, VerticalAlignment = VerticalAlignment.Center };
+    private readonly TextBlock _tipName = new() { Margin = new Thickness(8, 0, 16, 0), VerticalAlignment = VerticalAlignment.Center };
+    private readonly TextBlock _tipValue = new() { VerticalAlignment = VerticalAlignment.Center };
 
     public BarBreakdownChart()
     {
         HorizontalAlignment = HorizontalAlignment.Left;
         VerticalAlignment = VerticalAlignment.Top;
         SnapsToDevicePixels = true;
-        ToolTipService.SetInitialShowDelay(this, 120);
-        ToolTip = _tip;                                                                    // one tip for good: its text follows the bar under the pointer
-        ToolTipOpening += (_, e) => e.Handled = _hover < 0;
-        Unloaded += (_, _) => StopAnimation();
+
+        var tipBrush = new SolidColorBrush(Color.FromArgb(0xF2, 0xE6, 0xE6, 0xE6));
+        var tipText = new SolidColorBrush(Color.FromRgb(0x30, 0x30, 0x30));
+        _tipName.Foreground = _tipValue.Foreground = tipText;
+        var row = new StackPanel { Orientation = Orientation.Horizontal };
+        row.Children.Add(_tipDot);
+        row.Children.Add(_tipName);
+        row.Children.Add(_tipValue);
+        var arrow = new Polygon { Points = new PointCollection { new Point(0, 0), new Point(14, 0), new Point(7, 7) }, Fill = tipBrush, HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, -1, 0, 0) };
+        var stack = new StackPanel();
+        stack.Children.Add(new Border { Background = tipBrush, CornerRadius = new CornerRadius(6), Padding = new Thickness(10, 6, 10, 6), Child = row });
+        stack.Children.Add(arrow);
+        stack.Margin = new Thickness(6);                                                   // room for the shadow
+        stack.Effect = new System.Windows.Media.Effects.DropShadowEffect { ShadowDepth = 1, BlurRadius = 6, Opacity = 0.35 };
+        stack.IsHitTestVisible = false;
+        _tipRoot = stack;
+        _popup = new Popup
+        {
+            AllowsTransparency = true, StaysOpen = true, Placement = PlacementMode.Relative, PlacementTarget = this, IsHitTestVisible = false, Child = _tipRoot,
+        };
+
+        Unloaded += (_, _) => { StopAnimation(); _popup.IsOpen = false; };
     }
 
-    /// <summary>Width of the slot of one bar; the bar itself is half of it.</summary>
-    public double SlotWidth => _barWidth * 2;
+    /// <summary>Space between two bars.</summary>
+    public double Gap => BarWidth * GapPercent / 100;
 
-    public double BarWidth => _barWidth;
+    /// <summary>The grid reaches this far beyond the first and the last bar: half a bar.</summary>
+    public double Overhang => BarWidth / 2;
+
+    /// <summary>Distance from one bar to the next.</summary>
+    public double SlotWidth => BarWidth + Gap;
 
     /// <summary>The horizontal lines of the grid run from here to <see cref="PlotRight"/>.</summary>
     public double PlotLeft => _axisWidth;
 
-    public double PlotRight => _axisWidth + SlotWidth * _bars.Count;
+    public double PlotRight => _bars.Count == 0 ? _axisWidth : _axisWidth + 2 * Overhang + _bars.Count * BarWidth + (_bars.Count - 1) * Gap;
+
+    private double BarLeft(int index) => PlotLeft + Overhang + index * SlotWidth;
 
     // ----- the items -----
 
@@ -128,8 +177,7 @@ public sealed class BarBreakdownChart : FrameworkElement
         _toMax = NiceMax(bars.Count == 0 ? 0 : bars.Max(b => b.To));
         if (_shownMax <= 0) _shownMax = _fromMax = _toMax;                                 // the scale is there from the start, only the bars grow
 
-        _hover = -1;
-        _tip.IsOpen = false;
+        HideTip();
         _started = DateTime.UtcNow;
         StartAnimation();
         InvalidateMeasure();
@@ -199,18 +247,12 @@ public sealed class BarBreakdownChart : FrameworkElement
 
     private static string Tick(double value) => Math.Round(value).ToString("N0", CultureInfo.CurrentCulture);
 
+    /// <summary>The height is the same for every month and every list of categories; the width is what the bars need (a scroll viewer around the chart takes care of too many).</summary>
     protected override Size MeasureOverride(Size available)
     {
-        var n = _bars.Count;
-        if (n == 0) return default;
-
         var brush = Foreground;
         _axisWidth = Enumerable.Range(0, (int)GridLines + 1).Max(k => Text(Tick(_toMax * k / GridLines), brush).WidthIncludingTrailingWhitespace) + 10;
-        _barWidth = double.IsInfinity(available.Width)
-            ? MaxBarWidth
-            : Math.Clamp((available.Width - _axisWidth - 2) / (2 * n), MinBarWidth, MaxBarWidth);
-        _labelHeight = Math.Min(MaxLabelHeight, _bars.Max(b => Text(b.Item.Name, brush).WidthIncludingTrailingWhitespace) + 4);
-        return new Size(_axisWidth + SlotWidth * n, TopPadding + PlotHeight + LabelGap + _labelHeight);
+        return new Size(PlotRight, TopPadding + PlotHeight + LabelGap + LabelHeight);
     }
 
     // ----- drawing -----
@@ -233,7 +275,6 @@ public sealed class BarBreakdownChart : FrameworkElement
         if (n == 0) return;
         var fg = Foreground;
         var bottom = TopPadding + PlotHeight;
-        var slot = SlotWidth;
 
         // the grid: only as wide as the bars with half a bar on both sides
         var line = new Pen(fg, 1);
@@ -256,13 +297,13 @@ public sealed class BarBreakdownChart : FrameworkElement
         for (var i = 0; i < n; i++)
         {
             var bar = _bars[i];
-            var left = PlotLeft + slot * i;
-            dc.DrawRectangle(Brushes.Transparent, null, new Rect(left, TopPadding, slot, PlotHeight + LabelGap + _labelHeight));     // the whole slot reacts to the pointer
+            var left = BarLeft(i);
+            dc.DrawRectangle(Brushes.Transparent, null, new Rect(left - Gap / 2, TopPadding, SlotWidth, PlotHeight + LabelGap + LabelHeight));   // the whole column reacts to the pointer
 
             var h = HeightOf(bar);
             if (h > 0)
             {
-                var rect = new Rect(left + _barWidth / 2, bottom - h, _barWidth, h);
+                var rect = new Rect(left, bottom - h, BarWidth, h);
                 dc.DrawRectangle(BrushOf(bar.Item.Color), null, rect);
                 if (i == _hover)
                 {
@@ -272,11 +313,11 @@ public sealed class BarBreakdownChart : FrameworkElement
                 }
             }
 
-            // the name, upright under the bar and starting at the axis
-            var name = Text(bar.Item.Name, fg, _labelHeight);
+            // the name, upright under the bar and read from the bottom up; its end is at the axis
+            var name = Text(bar.Item.Name, fg, LabelHeight);
             var matrix = Matrix.Identity;
-            matrix.Rotate(90);
-            matrix.Translate(left + slot / 2 + name.Height / 2, bottom + LabelGap);
+            matrix.Rotate(-90);
+            matrix.Translate(left + BarWidth / 2 - name.Height / 2, bottom + LabelGap + name.Width);
             dc.PushTransform(new MatrixTransform(matrix));
             dc.DrawText(name, new Point(0, 0));
             dc.Pop();
@@ -289,20 +330,48 @@ public sealed class BarBreakdownChart : FrameworkElement
     public BarItem? ItemAt(Point p)
     {
         var n = _bars.Count;
-        if (n == 0 || p.X < PlotLeft || p.X >= PlotRight) return null;
-        var i = (int)((p.X - PlotLeft) / SlotWidth);
+        var first = PlotLeft + Overhang - Gap / 2;
+        var last = BarLeft(n - 1) + BarWidth + Gap / 2;
+        if (n == 0 || p.X < first || p.X >= last) return null;
+        var i = Math.Clamp((int)((p.X - first) / SlotWidth), 0, n - 1);
         var bottom = TopPadding + PlotHeight;
         var top = bottom - Math.Max(HeightOf(_bars[i]), 0);
-        return p.Y >= top && p.Y <= bottom + LabelGap + _labelHeight ? _bars[i].Item : null;
+        return p.Y >= top && p.Y <= bottom + LabelGap + LabelHeight ? _bars[i].Item : null;
     }
 
-    /// <summary>"Name: 1 234,00 zł (23,4%)" for the bar.</summary>
-    public string TipOf(BarItem item)
+    /// <summary>The share of the bar in all of them, in percent.</summary>
+    private double ShareOf(BarItem item)
     {
         var total = _bars.Sum(b => b.To);
-        var share = total > 0 ? item.Amount / total * 100 : 0;
-        return Res.Format("DashBarTip", item.Name, ((decimal)item.Amount).ToString("C2", CultureInfo.CurrentCulture),
-            share.ToString("0.#", CultureInfo.CurrentCulture) + "%");
+        return total > 0 ? item.Amount / total * 100 : 0;
+    }
+
+    private static string Money(double amount) => ((decimal)amount).ToString("C2", CultureInfo.CurrentCulture);
+
+    /// <summary>"1 234,00 zł (23,4%)".</summary>
+    public string ValueOf(BarItem item) => Money(item.Amount) + " (" + ShareOf(item).ToString("0.#", CultureInfo.CurrentCulture) + "%)";
+
+    /// <summary>"Name: 1 234,00 zł (23,4%)" for the bar.</summary>
+    public string TipOf(BarItem item) => Res.Format("DashBarTip", item.Name, Money(item.Amount), ShareOf(item).ToString("0.#", CultureInfo.CurrentCulture) + "%");
+
+    private void ShowTip(int index)
+    {
+        var bar = _bars[index];
+        _tipDot.Fill = BrushOf(bar.Item.Color);
+        _tipName.Text = bar.Item.Name;
+        _tipValue.Text = ValueOf(bar.Item);
+        _tipRoot.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+        var size = _tipRoot.DesiredSize;
+        // above the bar, centred on it, the arrow pointing at its top
+        _popup.HorizontalOffset = BarLeft(index) + BarWidth / 2 - size.Width / 2;
+        _popup.VerticalOffset = TopPadding + PlotHeight - HeightOf(bar) - size.Height - 2;
+        _popup.IsOpen = true;
+    }
+
+    private void HideTip()
+    {
+        _hover = -1;
+        _popup.IsOpen = false;
     }
 
     protected override void OnMouseMove(System.Windows.Input.MouseEventArgs e)
@@ -311,8 +380,12 @@ public sealed class BarBreakdownChart : FrameworkElement
         var item = ItemAt(e.GetPosition(this));
         var index = item is null ? -1 : _bars.FindIndex(b => b.Item == item);
         if (index == _hover) return;
-        _hover = index;
-        if (item is null) _tip.IsOpen = false; else _tip.Content = TipOf(item);
+        if (index < 0) HideTip();
+        else
+        {
+            _hover = index;
+            ShowTip(index);
+        }
         InvalidateVisual();
     }
 
@@ -320,8 +393,7 @@ public sealed class BarBreakdownChart : FrameworkElement
     {
         base.OnMouseLeave(e);
         if (_hover < 0) return;
-        _hover = -1;
-        _tip.IsOpen = false;
+        HideTip();
         InvalidateVisual();
     }
 }
