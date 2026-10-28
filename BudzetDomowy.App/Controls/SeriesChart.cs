@@ -14,7 +14,7 @@ namespace BudzetDomowy.App.Controls;
 /// Columns and lines over categories, drawn by WPF itself (sharp, in the font of the program, and the same on every scale of the
 /// interface). It reads the series and the axes the view models already build for LiveCharts (names, values, colours, labels, limits),
 /// so the screens keep their data and only the drawing is different. A legend stands under the plot; pointing at a category shows a
-/// tip with its heading and one line per series above the highest value of it.
+/// tip with its heading and one line per series, a plain rectangle in the top left corner of the plot (the same place for every category).
 /// </summary>
 public sealed class SeriesChart : FrameworkElement
 {
@@ -68,7 +68,7 @@ public sealed class SeriesChart : FrameworkElement
     public SeriesChart()
     {
         _tip = new ChartTip(this);
-        Unloaded += (_, _) => _tip.Hide();
+        Unloaded += (_, _) => _tip.Detach();
     }
 
     // ----- the data -----
@@ -354,10 +354,8 @@ public sealed class SeriesChart : FrameworkElement
         }
         else
         {
-            var highest = rows.Max(l => l.Values[index]!.Value);
-            var y = _plot.Bottom - (Math.Clamp(highest, _yMin, _yMax) - _yMin) / (_yMax - _yMin) * _plot.Height;
-            var x = _plot.Left + _plot.Width / _count * (index + 0.5);
-            _tip.Show(HeadingAt(index), rows.Select(l => new TipRow(BrushOf(l.Color), l.Name, Money(l.Values[index]!.Value))).ToList(), new Point(x, y));
+            // a plain rectangle in the corner of the plot: the same place for every category, never beside the pointer or over the bar under it
+            _tip.ShowAt(HeadingAt(index), rows.Select(l => new TipRow(BrushOf(l.Color), l.Name, Money(l.Values[index]!.Value))).ToList(), new Point(_plot.Left + 10, _plot.Top + 6));
         }
         InvalidateVisual();
     }

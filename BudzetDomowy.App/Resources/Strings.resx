@@ -553,6 +553,8 @@ Del – usuń zaznaczone transakcje</value></data>
   <data name="SettingsChartBarGap" xml:space="preserve"><value>Odstęp między słupkami (w procentach szerokości słupka)</value></data>
   <data name="SettingsChartRing" xml:space="preserve"><value>Grubość kółka</value></data>
   <data name="SettingsChartRows" xml:space="preserve"><value>Liczba kategorii bez przewijania</value></data>
+  <data name="SettingsChartBreak" xml:space="preserve"><value>Skracaj bardzo duży słupek</value></data>
+  <data name="SettingsChartBreakTip" xml:space="preserve"><value>Gdy jedna kategoria jest ponad trzy razy większa od następnej, jej słupek jest skrócony i oznaczony przerwą (pełna kwota stoi nad nim i w dymku), żeby pozostałe słupki nie zamieniły się w kreski.</value></data>
   <data name="SettingsChartRowsHint" xml:space="preserve"><value>Obszar wykresów ma stałą wysokość dla tylu kategorii; gdy jest ich więcej, legenda i słupki mają suwak, a wykresy nie zmieniają rozmiaru przy zmianie miesiąca.</value></data>
   <data name="SettingsSubcategoryColor" xml:space="preserve"><value>Podkategorie mają kolor kategorii głównej</value></data>
   <data name="SettingsSubcategoryColorTip" xml:space="preserve"><value>Nowa podkategoria, przeniesiona pod inną kategorię i podkategorie kategorii, której zmieniasz kolor, dostają kolor kategorii głównej. Kolor podkategorii nie jest wtedy wybierany ręcznie. Wykresy na pulpicie rozróżniają takie podkategorie odcieniami.</value></data>

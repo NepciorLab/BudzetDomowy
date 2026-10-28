@@ -206,7 +206,9 @@
                         <ScrollViewer Grid.Column="2" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" VerticalAlignment="Center" HorizontalAlignment="Left">
                             <controls:BarBreakdownChart x:Name="CategoryBars" Items="{Binding ChartItems}" Margin="0,0,0,14"
                                                         BarWidth="{Binding ChartBarWidth, Source={x:Static infra:UiPreferences.Instance}}"
-                                                        GapPercent="{Binding ChartBarGap, Source={x:Static infra:UiPreferences.Instance}}" />
+                                                        GapPercent="{Binding ChartBarGap, Source={x:Static infra:UiPreferences.Instance}}"
+                                                        BreakLargest="{Binding ChartBreakLargest, Source={x:Static infra:UiPreferences.Instance}}"
+                                                        BreakBrush="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}" />
                         </ScrollViewer>
                     </Grid>
                 </StackPanel>

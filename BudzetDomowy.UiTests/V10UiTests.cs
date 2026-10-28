@@ -441,6 +441,55 @@ public class V10UiTests
     });
 
     [Fact]
+    public void Charts_TheTip_PutsThePointOfItsArrowOnThePoint_WhateverTheSizeAndThePlace() => WithApp(_ =>
+    {
+        var box = new Size(200, 40);
+        var bounds = new Rect(0, 0, 800, 400);
+        foreach (var anchor in new[] { new Point(400, 200), new Point(10, 200), new Point(790, 200), new Point(400, 30), new Point(400, 395) })
+        {
+            foreach (var preferBelow in new[] { false, true })
+            {
+                var p = ChartTip.Place(box, anchor, bounds, preferBelow);
+                var arrowX = p.TopLeft.X + ChartTip.Shadow + p.ArrowLeft + 7;                    // the middle of the arrow
+                Assert.Equal(anchor.X, arrowX, 0.001);
+                var arrowY = p.Below ? p.TopLeft.Y + ChartTip.Shadow : p.TopLeft.Y + ChartTip.Shadow + box.Height + ChartTip.ArrowHeight - 1;
+                Assert.Equal(anchor.Y, arrowY, 1.001);                                             // the point of the arrow is the point
+                var left = p.TopLeft.X + ChartTip.Shadow;
+                Assert.InRange(left, 2, 800 - 200 - 2 + 0.001);                                  // the box stays in the window
+            }
+        }
+        Assert.True(ChartTip.Place(box, new Point(400, 30), bounds, false).Below);                // no room above: under the point
+        Assert.False(ChartTip.Place(box, new Point(400, 200), bounds, false).Below);
+        Assert.True(ChartTip.Place(box, new Point(400, 200), bounds, true).Below);
+    });
+
+    [Fact]
+    public void Charts_ABarThatIsFarHigherThanTheOthers_IsCutShort_WhenTheSettingIsOn() => WithApp(_ =>
+    {
+        var items = new System.Collections.ObjectModel.ObservableCollection<ChartItem>
+        {
+            new() { Name = "Auto", Color = "#112233", Amount = 57000 },
+            new() { Name = "Dom", Color = "#445566", Amount = 3000 },
+            new() { Name = "Jedzenie", Color = "#778899", Amount = 1200 },
+        };
+        var chart = new BarBreakdownChart { Items = items };
+        UiHost.Layout(chart, 600, 300);
+        Assert.Same(items[0], chart.BrokenItem);
+        chart.BreakBrush = (System.Windows.Media.Brush)System.Windows.Application.Current.FindResource("SystemControlPageBackgroundAltHighBrush");
+        UiHost.Render(chart, 600, 300, "bars-broken");
+        Assert.Equal(BarBreakdownChart.NiceMax(3000 * 1.25), chart.ScaleMax);                  // the scale follows the others, not the giant
+        Assert.Contains("57 000", chart.TipOf(items[0]).Replace(' ', ' '));               // the tip tells the real amount
+
+        chart.BreakLargest = false;
+        Assert.Null(chart.BrokenItem);
+        Assert.Equal(BarBreakdownChart.NiceMax(57000), chart.ScaleMax);
+
+        chart.BreakLargest = true;
+        items[0].Amount = 8000;                                                                // less than three times the next one: nothing is cut
+        Assert.Null(chart.BrokenItem);
+    });
+
+    [Fact]
     public void Dashboard_BarScale_IsRoundedUpToNiceSteps() => WithApp(app =>
     {
         Assert.Equal(1000, BarBreakdownChart.NiceMax(900));                    // four divisions of 250

@@ -56,6 +56,9 @@ public sealed record AppSettings
     /// <summary>Space between the bars, in percent of the width of a bar.</summary>
     public double ChartBarGap { get; init; } = 25;
 
+    /// <summary>A bar of the expenses chart that is far higher than the others is cut short (marked with a break).</summary>
+    public bool ChartBreakLargest { get; init; } = true;
+
     /// <summary>Thickness of the ring of the expenses chart, in pixels.</summary>
     public double ChartRingThickness { get; init; } = 30;
 

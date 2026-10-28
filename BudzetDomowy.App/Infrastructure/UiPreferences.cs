@@ -24,6 +24,7 @@ public sealed partial class UiPreferences : ObservableObject
     [ObservableProperty] private double _chartBarGap = 25;
     [ObservableProperty] private double _chartRingThickness = 30;
     [ObservableProperty] private double _chartRows = 12;
+    [ObservableProperty] private bool _chartBreakLargest = true;
 
     /// <summary>Raised when scale, symbol or amount style changed (screens that format text refresh themselves).</summary>
     public event EventHandler? AppearanceChanged;
@@ -76,6 +77,7 @@ public sealed partial class UiPreferences : ObservableObject
             ChartBarGap = s.ChartBarGap;
             ChartRingThickness = s.ChartRingThickness;
             ChartRows = s.ChartRows;
+            ChartBreakLargest = s.ChartBreakLargest;
         }
         finally
         {
@@ -127,6 +129,8 @@ public sealed partial class UiPreferences : ObservableObject
     partial void OnChartRingThicknessChanged(double value) => Save(x => x with { ChartRingThickness = value });
 
     partial void OnChartRowsChanged(double value) => Save(x => x with { ChartRows = value });
+
+    partial void OnChartBreakLargestChanged(bool value) => Save(x => x with { ChartBreakLargest = value });
 
     partial void OnColorAmountsChanged(bool value)
     {

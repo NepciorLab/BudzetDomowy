@@ -56,7 +56,7 @@ public sealed class DonutChart : FrameworkElement
     {
         SnapsToDevicePixels = false;
         _tip = new ChartTip(this);
-        Unloaded += (_, _) => { StopAnimation(); _tip.Hide(); };
+        Unloaded += (_, _) => { StopAnimation(); _tip.Detach(); };
     }
 
     // ----- the data -----

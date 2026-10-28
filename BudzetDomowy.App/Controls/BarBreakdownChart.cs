@@ -54,6 +54,16 @@ public sealed class BarBreakdownChart : FrameworkElement
         nameof(GapPercent), typeof(double), typeof(BarBreakdownChart),
         new FrameworkPropertyMetadata(25.0, FrameworkPropertyMetadataOptions.AffectsMeasure | FrameworkPropertyMetadataOptions.AffectsRender), v => v is double d && d >= 0);
 
+    /// <summary>A bar that is much higher than all the others is cut short and marked with a break (its real amount is written above it), so the others do not shrink to lines.</summary>
+    public static readonly DependencyProperty BreakLargestProperty = DependencyProperty.Register(
+        nameof(BreakLargest), typeof(bool), typeof(BarBreakdownChart),
+        new FrameworkPropertyMetadata(true, FrameworkPropertyMetadataOptions.AffectsRender, (d, _) => ((BarBreakdownChart)d).Retarget()));
+
+    /// <summary>The colour of the card behind the chart: the break is a band of it across the cut bar.</summary>
+    public static readonly DependencyProperty BreakBrushProperty = DependencyProperty.Register(
+        nameof(BreakBrush), typeof(Brush), typeof(BarBreakdownChart),
+        new FrameworkPropertyMetadata(Brushes.Black, FrameworkPropertyMetadataOptions.AffectsRender));
+
     public static readonly DependencyProperty ForegroundProperty = TextElement.ForegroundProperty.AddOwner(
         typeof(BarBreakdownChart), new FrameworkPropertyMetadata(SystemColors.ControlTextBrush, FrameworkPropertyMetadataOptions.AffectsRender | FrameworkPropertyMetadataOptions.Inherits));
 
@@ -63,10 +73,18 @@ public sealed class BarBreakdownChart : FrameworkElement
 
     public double GapPercent { get => (double)GetValue(GapPercentProperty); set => SetValue(GapPercentProperty, value); }
 
+    public bool BreakLargest { get => (bool)GetValue(BreakLargestProperty); set => SetValue(BreakLargestProperty, value); }
+
+    public Brush BreakBrush { get => (Brush)GetValue(BreakBrushProperty); set => SetValue(BreakBrushProperty, value); }
+
     public Brush Foreground { get => (Brush)GetValue(ForegroundProperty); set => SetValue(ForegroundProperty, value); }
 
     public const double PlotHeight = 150;
-    public const double TopPadding = 10;
+    public const double TopPadding = 24;                                  // room for the figure above a bar that was cut short
+    /// <summary>The largest bar is cut when it is more than this many times higher than the next one.</summary>
+    public const double BreakRatio = 3;
+    /// <summary>The scale then reaches this many times the next bar.</summary>
+    private const double BreakRoom = 1.25;
     public const double LabelGap = 6;
     public const double LabelHeight = 110;
     private const double GridLines = 4;
@@ -94,7 +112,7 @@ public sealed class BarBreakdownChart : FrameworkElement
         VerticalAlignment = VerticalAlignment.Top;
         SnapsToDevicePixels = true;
         _tip = new ChartTip(this);
-        Unloaded += (_, _) => { StopAnimation(); _tip.Hide(); };
+        Unloaded += (_, _) => { StopAnimation(); _tip.Detach(); };
     }
 
     /// <summary>Space between two bars.</summary>
@@ -146,8 +164,9 @@ public sealed class BarBreakdownChart : FrameworkElement
         }
         _bars = bars;
 
+        _broken = BrokenBar(bars);
         _fromMax = _shownMax;
-        _toMax = NiceMax(bars.Count == 0 ? 0 : bars.Max(b => b.To));
+        _toMax = NiceMax(bars.Count == 0 ? 0 : _broken is { } cut ? bars.Where(b => b != cut).Max(b => b.To) * BreakRoom : bars.Max(b => b.To));
         if (_shownMax <= 0) _shownMax = _fromMax = _toMax;                                 // the scale is there from the start, only the bars grow
 
         HideTip();
@@ -240,6 +259,21 @@ public sealed class BarBreakdownChart : FrameworkElement
         return _brushes[hex] = brush;
     }
 
+    private Bar? _broken;
+
+    /// <summary>The top of the scale the bars are drawn against (after the movement is over).</summary>
+    public double ScaleMax => _toMax;
+
+    /// <summary>The bar that is cut short, if there is one.</summary>
+    public ChartItem? BrokenItem => _broken?.Item;
+
+    private Bar? BrokenBar(List<Bar> bars)
+    {
+        if (!BreakLargest || bars.Count < 2) return null;
+        var ordered = bars.OrderByDescending(b => b.To).ToList();
+        return ordered[1].To > 0 && ordered[0].To > BreakRatio * ordered[1].To ? ordered[0] : null;
+    }
+
     private double HeightOf(Bar bar) => _shownMax > 0 ? Math.Min(PlotHeight, PlotHeight * bar.Shown / _shownMax) : 0;
 
     protected override void OnRender(DrawingContext dc)
@@ -278,6 +312,7 @@ public sealed class BarBreakdownChart : FrameworkElement
             {
                 var rect = new Rect(left, bottom - h, BarWidth, h);
                 dc.DrawRectangle(BrushOf(bar.Item.Color), null, rect);
+                if (bar == _broken && h >= PlotHeight - 0.5) DrawBreak(dc, rect, fg, bar);
                 if (i == _hover)
                 {
                     dc.PushOpacity(0.22);
@@ -295,6 +330,25 @@ public sealed class BarBreakdownChart : FrameworkElement
             dc.DrawText(name, new Point(0, 0));
             dc.Pop();
         }
+    }
+
+    /// <summary>The cut bar: a slanted band of the background across its upper part and the real amount above it.</summary>
+    private void DrawBreak(DrawingContext dc, Rect rect, Brush fg, Bar bar)
+    {
+        var y = rect.Top + 16;
+        var band = new StreamGeometry();
+        using (var g = band.Open())
+        {
+            g.BeginFigure(new Point(rect.Left - 1, y + 6), true, true);
+            g.LineTo(new Point(rect.Right + 1, y - 2), true, false);
+            g.LineTo(new Point(rect.Right + 1, y + 3), true, false);
+            g.LineTo(new Point(rect.Left - 1, y + 11), true, false);
+        }
+        band.Freeze();
+        dc.DrawGeometry(BreakBrush, null, band);
+
+        var label = Text(Math.Round(bar.To).ToString("N0", CultureInfo.CurrentCulture), fg);
+        dc.DrawText(label, new Point(rect.Left + rect.Width / 2 - label.WidthIncludingTrailingWhitespace / 2, rect.Top - label.Height - 2));
     }
 
     // ----- pointer -----
