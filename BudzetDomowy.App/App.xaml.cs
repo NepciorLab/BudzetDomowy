@@ -19,9 +19,19 @@ public partial class App : Application
     private IDisposable? _activation;
     private ServiceProvider? _services;
     private DateTime _lastErrorToast = DateTime.MinValue;
+    private StartupSplash? _splash;
+
+    private void CloseSplash()
+    {
+        _splash?.Close();
+        _splash = null;
+    }
+
+    private void Stage(string key) => _splash?.SetStage(Res.Get(key));
 
     protected override void OnStartup(StartupEventArgs e)
     {
+        var started = System.Diagnostics.Stopwatch.StartNew();
         base.OnStartup(e);
         ShutdownMode = ShutdownMode.OnExplicitShutdown;
         AppPaths.Initialize(e.Args);
@@ -59,22 +69,35 @@ public partial class App : Application
         var settings = AppSettings.Load();
         ThemeService.Apply(settings.Theme);
         UseConfiguredLocalFolder(settings);
+        AppLog.Info($"Startup: settings and theme ready after {started.ElapsedMilliseconds} ms.");
+
+        // the window with what is going on: at once, before the data is opened (the first start asks questions in a window of its own)
+        if (!string.IsNullOrWhiteSpace(settings.DataFolder))
+        {
+            var version = typeof(App).Assembly.GetCustomAttributes(typeof(System.Reflection.AssemblyInformationalVersionAttribute), false)
+                .OfType<System.Reflection.AssemblyInformationalVersionAttribute>().FirstOrDefault()?.InformationalVersion?.Split('+')[0] ?? "";
+            _splash = StartupSplash.Show(settings.Theme, Res.Get("AppTitle"), version.Length > 0 ? "v" + version : "", Res.Get("SplashStarting"));
+            AppLog.Info($"Startup: start window shown after {started.ElapsedMilliseconds} ms.");
+        }
 
         if (!string.IsNullOrWhiteSpace(settings.DataFolder))
         {
             try
             {
+                Stage("SplashDatabase");
                 _core = BudgetCore.Create(AppPaths.LocalDir, settings.DataFolder, settings.DeviceName, log: AppLog.Instance);
             }
             catch (NewerDataException ex)
             {
                 // the data was written by a newer version: offer the update before showing any error
+                CloseSplash();
                 AppLog.Error("The local data is from a newer version of the program.", ex);
                 HandleNewerDataAtStartup(settings);
                 return;
             }
             catch (Exception ex)
             {
+                CloseSplash();
                 AppLog.Error("Startup failed.", ex);
                 MessageBox.Show(Res.Get("StartupFailed"), Res.Get("AppTitle"), MessageBoxButton.OK, MessageBoxImage.Error);
                 Shutdown(1);
@@ -94,6 +117,7 @@ public partial class App : Application
             settings = wizard.ResultSettings!;
         }
 
+        AppLog.Info($"Startup: data engine ready after {started.ElapsedMilliseconds} ms.");
         if (settings.ResetLocalDatabase)
         {
             // the data folder was changed: forget what was built from the old one, it is rebuilt from the new journals
@@ -139,7 +163,8 @@ public partial class App : Application
             .AddTransient<ImportViewModel>()
             .AddSingleton<Func<ImportViewModel>>(sp => () => sp.GetRequiredService<ImportViewModel>())
             .AddSingleton<SettingsViewModel>()
-            .AddSingleton<MainViewModel>()
+            .AddSingleton(sp => MainViewModel.CreateLazy(sp.GetRequiredService<BudgetCore>(), sp.GetRequiredService<IEntryLauncher>(), sp,
+                sp.GetRequiredService<ToastService>(), sp.GetRequiredService<RecurringRunner>(), sp.GetRequiredService<SettingsStore>()))
             .AddSingleton<MainWindow>()
             .BuildServiceProvider();
 
@@ -153,10 +178,27 @@ public partial class App : Application
         }));
         _core.Sync.StatusChanged += (_, status) => watcher.Observe(status);
 
+        // only the screen that is shown first is made now; the others when they are opened (the log tells how long each took)
+        var last = started.ElapsedMilliseconds;
+        void Step(string what)
+        {
+            AppLog.Info($"Startup: {what} ready after {started.ElapsedMilliseconds} ms (+{started.ElapsedMilliseconds - last} ms).");
+            last = started.ElapsedMilliseconds;
+        }
+        Stage("SplashScreens");
+        services.GetRequiredService<MainViewModel>(); Step("main model and the first screen");
+        Stage("SplashWindow");
         var main = services.GetRequiredService<MainWindow>();
+        Step("main window");
         MainWindow = main;
         ShutdownMode = ShutdownMode.OnMainWindowClose;
+        main.ContentRendered += (_, _) =>
+        {
+            AppLog.Info($"Startup: window drawn after {started.ElapsedMilliseconds} ms.");
+            CloseSplash();
+        };
         main.Show();
+        Step("show");
         watcher.Observe(_core.Sync.Status);
         BusyStatus.Instance.Attach(services.GetRequiredService<DataHub>());
         services.GetRequiredService<PaymentReminderRunner>().Start(TimeSpan.FromSeconds(4), TimeSpan.FromHours(1));

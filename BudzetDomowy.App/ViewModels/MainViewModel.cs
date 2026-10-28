@@ -6,6 +6,7 @@ using BudzetDomowy.Core;
 using BudzetDomowy.Core.Sync;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace BudzetDomowy.App.ViewModels;
 
@@ -27,10 +28,12 @@ public sealed class PlaceholderViewModel
 
 public sealed partial class MainViewModel : ObservableObject
 {
-    private readonly Dictionary<string, object> _pages;
+    /// <summary>The screens, each made when it is shown for the first time: making all of them at the start took most of the time before the window appeared.</summary>
+    private readonly Dictionary<string, Lazy<object>> _pages;
+    private readonly Lazy<SettingsViewModel> _settings;
 
     public BudgetCore Core { get; }
-    public SettingsViewModel Settings { get; }
+    public SettingsViewModel Settings => _settings.Value;
     public string VersionLabel { get; }
     public ToastService Toast { get; }
     public IReadOnlyList<NavItem> NavItems { get; }
@@ -52,15 +55,44 @@ public sealed partial class MainViewModel : ObservableObject
     /// <summary>The window shows the details dialog.</summary>
     public event Action? SyncDetailsRequested;
 
+    /// <summary>With all the screens made already (tests).</summary>
     public MainViewModel(BudgetCore core, IEntryLauncher launcher, TransactionsViewModel transactions,
         SettingsViewModel settings, EventsViewModel events, DashboardViewModel dashboard, BudgetsViewModel budgets,
         ReportsViewModel reports, RecurringViewModel recurring, PaymentsViewModel payments, ToastService toast, RecurringRunner runner, SettingsStore store)
+        : this(core, launcher, new Dictionary<string, Func<object>>
+        {
+            ["dashboard"] = () => dashboard,
+            ["transactions"] = () => transactions,
+            ["budgets"] = () => budgets,
+            ["events"] = () => events,
+            ["recurring"] = () => recurring,
+            ["payments"] = () => payments,
+            ["reports"] = () => reports,
+            ["settings"] = () => settings,
+        }, toast, runner, store)
+    {
+    }
+
+    /// <summary>The program: every screen is taken from <paramref name="services"/> when it is shown first.</summary>
+    public static MainViewModel CreateLazy(BudgetCore core, IEntryLauncher launcher, IServiceProvider services, ToastService toast, RecurringRunner runner, SettingsStore store) =>
+        new(core, launcher, new Dictionary<string, Func<object>>
+        {
+            ["dashboard"] = () => services.GetRequiredService<DashboardViewModel>(),
+            ["transactions"] = () => services.GetRequiredService<TransactionsViewModel>(),
+            ["budgets"] = () => services.GetRequiredService<BudgetsViewModel>(),
+            ["events"] = () => services.GetRequiredService<EventsViewModel>(),
+            ["recurring"] = () => services.GetRequiredService<RecurringViewModel>(),
+            ["payments"] = () => services.GetRequiredService<PaymentsViewModel>(),
+            ["reports"] = () => services.GetRequiredService<ReportsViewModel>(),
+            ["settings"] = () => services.GetRequiredService<SettingsViewModel>(),
+        }, toast, runner, store);
+
+    private MainViewModel(BudgetCore core, IEntryLauncher launcher, IReadOnlyDictionary<string, Func<object>> pages, ToastService toast, RecurringRunner runner, SettingsStore store)
     {
         Core = core;
         _runner = runner;
         _store = store;
         _launcher = launcher;
-        Settings = settings;
         VersionLabel = "v" + (typeof(MainViewModel).Assembly.GetCustomAttributes(typeof(System.Reflection.AssemblyInformationalVersionAttribute), false)
             .OfType<System.Reflection.AssemblyInformationalVersionAttribute>().FirstOrDefault()?.InformationalVersion?.Split('+')[0] ?? "?");
         Toast = toast;
@@ -77,17 +109,14 @@ public sealed partial class MainViewModel : ObservableObject
             new("settings", Res.Get("NavSettings"), "", ShortcutMap.Instance.DisplayOf("Go.settings")),
         ];
 
-        _pages = new Dictionary<string, object>
+        _pages = pages.ToDictionary(kv => kv.Key, kv => new Lazy<object>(() =>
         {
-            ["dashboard"] = dashboard,
-            ["transactions"] = transactions,
-            ["budgets"] = budgets,
-            ["events"] = events,
-            ["recurring"] = recurring,
-            ["payments"] = payments,
-            ["reports"] = reports,
-            ["settings"] = settings,
-        };
+            var timer = System.Diagnostics.Stopwatch.StartNew();
+            var page = kv.Value();
+            AppLog.Info($"Screen '{kv.Key}' made in {timer.ElapsedMilliseconds} ms.");
+            return page;
+        }));
+        _settings = new Lazy<SettingsViewModel>(() => (SettingsViewModel)_pages["settings"].Value);
 
         var profile = AppPaths.Profile is null ? "" : Res.Format("ProfileSuffix", AppPaths.Profile);
         WindowTitle = Res.Get("AppTitle") + profile;
@@ -180,7 +209,7 @@ public sealed partial class MainViewModel : ObservableObject
     partial void OnSelectedNavChanged(NavItem? value)
     {
         if (value is null) return;
-        CurrentPage = _pages[value.Key];
+        CurrentPage = _pages[value.Key].Value;
         if (_store.Current.LastPage != value.Key) _store.Update(s => s with { LastPage = value.Key });
     }
 

@@ -89,6 +89,27 @@ public sealed class TransactionService
         };
     }
 
+    /// <summary>
+    /// Joins a new position to an entry that is already there: its amount grows by <paramref name="amount"/> (in the currency of the entry;
+    /// the amount in złoty follows the rate it already has). An entry with several lines grows in the line of that category. Returns the
+    /// saved entry; the one before is what to <see cref="Restore"/> for an undo.
+    /// </summary>
+    public Transaction MergeInto(Transaction existing, Guid? categoryId, decimal amount)
+    {
+        if (amount <= 0) throw new ArgumentOutOfRangeException(nameof(amount), "Amount must be positive.");
+        var joined = existing with { Amount = existing.Amount + amount };
+        if (existing.Lines.Count > 1)
+        {
+            var lines = existing.Lines.ToList();
+            var index = lines.FindIndex(l => l.CategoryId == categoryId && l.Amount == amount);
+            if (index < 0) index = lines.FindIndex(l => l.CategoryId == categoryId);
+            if (index < 0) index = 0;
+            lines[index] = lines[index] with { Amount = lines[index].Amount + amount };
+            joined = joined with { Lines = lines };
+        }
+        return Update(joined);
+    }
+
     public void Delete(IEnumerable<Transaction> transactions)
     {
         foreach (var t in transactions) _recorder.Delete(EntityTypes.Transaction, t.Id);

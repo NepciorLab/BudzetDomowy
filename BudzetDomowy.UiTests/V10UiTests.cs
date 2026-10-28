@@ -1,4 +1,5 @@
 using System.Windows;
+using BudzetDomowy.App;
 using BudzetDomowy.App.Controls;
 using BudzetDomowy.App.Infrastructure;
 using BudzetDomowy.App.ViewModels;
@@ -477,6 +478,42 @@ public class V10UiTests
     [Fact]
     public void Entry_AnIncomeThatIsSaved_DoesNotStartAnotherOne() => WithApp(app =>
         Assert.Equal(1, OpenAndFinish(app, income: true, true)));
+
+    // ----- start: the screens are made when they are shown -----
+
+    private sealed class CountingProvider(IServiceProvider inner) : IServiceProvider
+    {
+        public Dictionary<Type, int> Asked { get; } = [];
+
+        public object? GetService(Type serviceType)
+        {
+            Asked[serviceType] = Asked.GetValueOrDefault(serviceType) + 1;
+            return inner.GetService(serviceType);
+        }
+    }
+
+    [Fact]
+    public void MainViewModel_MakesOnlyTheFirstScreenAtTheStart_AndTheOthersWhenTheyAreOpened() => WithApp(app =>
+    {
+        var provider = new CountingProvider(app.Services);
+        var vm = MainViewModel.CreateLazy(app.Core, app.Get<IEntryLauncher>(), provider, app.Get<ToastService>(), app.Get<RecurringRunner>(), app.Get<SettingsStore>());
+
+        Assert.Equal(1, provider.Asked.GetValueOrDefault(typeof(DashboardViewModel)));         // the start page
+        foreach (var other in new[] { typeof(ReportsViewModel), typeof(EventsViewModel), typeof(BudgetsViewModel), typeof(RecurringViewModel),
+                                      typeof(PaymentsViewModel), typeof(SettingsViewModel), typeof(TransactionsViewModel) })
+            Assert.False(provider.Asked.ContainsKey(other), other.Name + " was made too early");
+        Assert.IsType<DashboardViewModel>(vm.CurrentPage);
+
+        vm.Navigate("reports");
+        Assert.IsType<ReportsViewModel>(vm.CurrentPage);
+        Assert.Equal(1, provider.Asked[typeof(ReportsViewModel)]);
+        vm.Navigate("dashboard");
+        vm.Navigate("reports");
+        Assert.Equal(1, provider.Asked[typeof(ReportsViewModel)]);                             // made once
+
+        Assert.NotNull(vm.Settings);                                                           // asked for by the window: made then
+        Assert.Equal(1, provider.Asked[typeof(SettingsViewModel)]);
+    });
 
     [Fact]
     public void Charts_TheTip_PutsThePointOfItsArrowOnThePoint_WhateverTheSizeAndThePlace() => WithApp(_ =>

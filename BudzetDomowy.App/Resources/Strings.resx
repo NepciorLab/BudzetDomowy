@@ -23,6 +23,10 @@
   <resheader name="version"><value>2.0</value></resheader>
   <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
   <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="SplashStarting" xml:space="preserve"><value>Uruchamianie programu…</value></data>
+  <data name="SplashDatabase" xml:space="preserve"><value>Otwieranie bazy danych…</value></data>
+  <data name="SplashScreens" xml:space="preserve"><value>Przygotowywanie ekranu startowego…</value></data>
+  <data name="SplashWindow" xml:space="preserve"><value>Budowanie okna programu…</value></data>
   <data name="AppTitle" xml:space="preserve"><value>Budżet domowy</value></data>
   <data name="ProfileSuffix" xml:space="preserve"><value> [profil {0}]</value></data>
   <data name="StartupFailed" xml:space="preserve"><value>Program nie mógł się uruchomić. Szczegóły zapisano w dzienniku (folder Data\logs obok programu).</value></data>
@@ -553,6 +557,15 @@ Del – usuń zaznaczone transakcje</value></data>
   <data name="SettingsChartBarGap" xml:space="preserve"><value>Odstęp między słupkami (w procentach szerokości słupka)</value></data>
   <data name="SettingsChartRing" xml:space="preserve"><value>Grubość kółka</value></data>
   <data name="SettingsChartRows" xml:space="preserve"><value>Liczba kategorii bez przewijania</value></data>
+  <data name="DupTitle" xml:space="preserve"><value>Taki wpis już jest</value></data>
+  <data name="DupIntroOne" xml:space="preserve"><value>Wpis z tego samego dnia, o tej samej kwocie, w tej samej kategorii i miejscu już istnieje:</value></data>
+  <data name="DupIntroMany" xml:space="preserve"><value>Wpisy z tego samego dnia, o tych samych kwotach, w tych samych kategoriach i miejscu już istnieją:</value></data>
+  <data name="DupQuestion" xml:space="preserve"><value>Czy na pewno dodać nowy wpis?</value></data>
+  <data name="DupMergeHint" xml:space="preserve"><value>Dodaj: osobny, nowy wpis. Zrezygnuj: wracasz do okna wpisu. Połącz wpisy: kwota istniejącego wpisu rośnie o kwotę nowego (np. dwie takie same sztuki), a nowy wpis nie powstaje.</value></data>
+  <data name="DupAdd" xml:space="preserve"><value>Dodaj</value></data>
+  <data name="DupCancel" xml:space="preserve"><value>Zrezygnuj</value></data>
+  <data name="DupMerge" xml:space="preserve"><value>Połącz wpisy</value></data>
+  <data name="DupMerged" xml:space="preserve"><value>Dopisano do istniejącego wpisu: {0}</value></data>
   <data name="SettingsChartBreak" xml:space="preserve"><value>Skracaj bardzo duży słupek</value></data>
   <data name="SettingsChartBreakTip" xml:space="preserve"><value>Gdy jedna kategoria jest ponad trzy razy większa od następnej, jej słupek jest skrócony i oznaczony przerwą (pełna kwota stoi nad nim i w dymku), żeby pozostałe słupki nie zamieniły się w kreski.</value></data>
   <data name="SettingsChartRowsHint" xml:space="preserve"><value>Obszar wykresów ma stałą wysokość dla tylu kategorii; gdy jest ich więcej, legenda i słupki mają suwak, a wykresy nie zmieniają rozmiaru przy zmianie miesiąca.</value></data>

@@ -300,7 +300,8 @@ public class TwoDeviceSyncTests : IDisposable
         a.Recorder.Save(t);
 
         var deadline = DateTime.UtcNow.AddSeconds(10);
-        while (b.Reader.GetTransaction(t.Id) is null && DateTime.UtcNow < deadline) Thread.Sleep(50);
+        // the data is there a moment before the status says "synced": wait for both (a slow machine shows the difference)
+        while ((b.Reader.GetTransaction(t.Id) is null || b.Sync.Status.State != SyncState.Synced) && DateTime.UtcNow < deadline) Thread.Sleep(50);
 
         Assert.NotNull(b.Reader.GetTransaction(t.Id));
         Assert.Equal(SyncState.Synced, b.Sync.Status.State);

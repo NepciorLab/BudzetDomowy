@@ -28,16 +28,37 @@ public sealed class LocalReader
         return cmd.ExecuteScalar() is string text ? ParseDay(text) : null;
     }
 
+    private readonly object _transactionsGate = new();
+    private IReadOnlyList<Transaction>? _allTransactions;
+    private long _allTransactionsVersion = -1;
+
+    /// <summary>
+    /// The transactions in the order of the day, the time of entry and the id, optionally of a range of days. All of them are read from the
+    /// database once and kept until the data changes: every screen asks for them, and reading some tens of thousands again for each of them
+    /// was the main part of the time the program needed to start. The returned list is shared and must not be changed.
+    /// </summary>
     public IReadOnlyList<Transaction> GetTransactions(DateOnly? from = null, DateOnly? to = null)
+    {
+        IReadOnlyList<Transaction> all;
+        lock (_transactionsGate)
+        {
+            var version = _db.Version;                                   // read before the data: a change meanwhile makes the next call read again
+            if (_allTransactions is null || _allTransactionsVersion != version)
+            {
+                _allTransactions = LoadTransactions();
+                _allTransactionsVersion = version;
+            }
+            all = _allTransactions;
+        }
+        if (from is null && to is null) return all;
+        return all.Where(t => (from is null || t.Date >= from) && (to is null || t.Date <= to)).ToList();
+    }
+
+    private IReadOnlyList<Transaction> LoadTransactions()
     {
         using var conn = _db.Open();
         using var cmd = conn.CreateCommand();
-        var where = new List<string>();
-        if (from is not null) { where.Add("date >= $from"); cmd.Parameters.AddWithValue("$from", Materializer.Day(from.Value)); }
-        if (to is not null) { where.Add("date <= $to"); cmd.Parameters.AddWithValue("$to", Materializer.Day(to.Value)); }
-        cmd.CommandText = "SELECT id, date, type, amount_cents, currency_code, exchange_rate, amount_pln_cents, category_id, note, event_id, created_at, created_by_device, place, rate_date, rate_manual FROM transactions"
-                          + (where.Count > 0 ? " WHERE " + string.Join(" AND ", where) : "")
-                          + " ORDER BY date, created_at, id";
+        cmd.CommandText = "SELECT id, date, type, amount_cents, currency_code, exchange_rate, amount_pln_cents, category_id, note, event_id, created_at, created_by_device, place, rate_date, rate_manual FROM transactions ORDER BY date, created_at, id";
 
         var list = new List<Transaction>();
         using (var r = cmd.ExecuteReader())

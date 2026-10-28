@@ -71,6 +71,7 @@ public sealed class Materializer
         }
 
         tx.Commit();
+        if (applied > 0 || ignored > 0 || failed > 0) _db.Touch();
         return new ApplyResult(applied, ignored, failed);
     }
 

@@ -188,6 +188,14 @@ public sealed class LocalDatabase
 
     public string Path { get; }
 
+    private long _version;
+
+    /// <summary>Grows whenever the data derived from the journals was changed (readers keep what they read until then).</summary>
+    public long Version => Interlocked.Read(ref _version);
+
+    /// <summary>Tells that the materialised data changed; called after the change is committed.</summary>
+    internal void Touch() => Interlocked.Increment(ref _version);
+
     public LocalDatabase(string path)
     {
         Path = path;
@@ -249,6 +257,7 @@ public sealed class LocalDatabase
             cmd.ExecuteNonQuery();
         }
         tx.Commit();
+        Touch();
     }
 
     internal static T Scalar<T>(SqliteConnection conn, string sql, SqliteTransaction? tx = null)

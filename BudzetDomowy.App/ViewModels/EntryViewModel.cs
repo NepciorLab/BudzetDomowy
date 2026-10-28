@@ -172,13 +172,17 @@ public sealed partial class EntryViewModel : ObservableObject
 
     public bool IsForeign => CurrencyCatalog.IsForeign(CurrencyCode);
 
+    private readonly IDuplicatePrompt? _duplicates;
+
     /// <summary>Raised after the entry was saved: the window closes.</summary>
     public event Action? Saved;
 
-    public EntryViewModel(BudgetCore core, ToastService toast, bool isIncome)
+    /// <param name="duplicates">Asked when an entry like the new one is already there (null: the entry is just saved).</param>
+    public EntryViewModel(BudgetCore core, ToastService toast, bool isIncome, IDuplicatePrompt? duplicates = null)
     {
         _core = core;
         _toast = toast;
+        _duplicates = duplicates;
         IsIncome = isIncome;
         var type = isIncome ? TransactionType.Income : TransactionType.Expense;
 
@@ -525,13 +529,43 @@ public sealed partial class EntryViewModel : ObservableObject
         var date = DateOnly.FromDateTime(Date ?? DateTime.Today);
         var eventId = EventKey == Guid.Empty ? (Guid?)null : EventKey;
         var type = IsIncome ? TransactionType.Income : TransactionType.Expense;
+
+        // an entry like this (day, place, category, amount) is already there: the user decides
+        var twins = DuplicateFinder.Find(_core.Reader.GetTransactions(), date, type, CurrencyCode, Place, used.Select(l => (l.CategoryId, l.Value!.Value)).ToList());
+        var merge = false;
+        if (twins.Count > 0 && _duplicates is not null)
+        {
+            var infos = twins.Select(m => new DuplicateInfo(m.Existing.Date, m.Existing.Place,
+                Categories.FirstOrDefault(c => c.Id == used[m.LineIndex].CategoryId)?.DisplayName ?? Res.Get("NoCategory"), used[m.LineIndex].Value!.Value, m.Existing.CurrencyCode)).ToList();
+            switch (_duplicates.Ask(infos))
+            {
+                case DuplicateChoice.Cancel:
+                    return false;                                      // the window stays: the entry can still be changed
+                case DuplicateChoice.Merge:
+                    merge = true;
+                    break;
+            }
+        }
+
         var saved = new List<Transaction>();
+        var before = new Dictionary<Guid, Transaction>();              // the entries that were joined, as they were
+        var joined = new Dictionary<Guid, Transaction>();              // and as they are now
         try
         {
-            foreach (var line in used)
+            for (var i = 0; i < used.Count; i++)
             {
-                saved.Add(_core.Transactions.Add(date, type, line.Value!.Value, line.CategoryId, Note, eventId, place: Place,
-                    currency: CurrencyCode, rateToPln: rate, rateDate: _rateManual ? null : _rateDate, rateManual: _rateManual));
+                var line = used[i];
+                if (merge && twins.FirstOrDefault(m => m.LineIndex == i) is { } twin)
+                {
+                    var current = joined.GetValueOrDefault(twin.Existing.Id) ?? twin.Existing;
+                    before.TryAdd(twin.Existing.Id, twin.Existing);
+                    joined[twin.Existing.Id] = _core.Transactions.MergeInto(current, line.CategoryId, line.Value!.Value);
+                }
+                else
+                {
+                    saved.Add(_core.Transactions.Add(date, type, line.Value!.Value, line.CategoryId, Note, eventId, place: Place,
+                        currency: CurrencyCode, rateToPln: rate, rateDate: _rateManual ? null : _rateDate, rateManual: _rateManual));
+                }
                 if (line.CategoryId is { } category && !string.IsNullOrWhiteSpace(Place))
                     _core.Rules.Learn(Place, category, _eventSource is EventSource.Manual or EventSource.Rule ? eventId : null);
             }
@@ -540,18 +574,23 @@ public sealed partial class EntryViewModel : ObservableObject
         catch (UpdateRequiredException)
         {
             if (saved.Count > 0) _core.Transactions.Delete(saved);
+            if (before.Count > 0) _core.Transactions.Restore(before.Values);
             ErrorMessage = Res.Get("UpdateRequiredShort");
             return false;
         }
 
         var shown = IsForeign
-            ? $"{total.ToString("N2", CultureInfo.CurrentCulture)} {CurrencyCode} ({saved.Sum(t => t.AmountPln).ToString("C2", CultureInfo.CurrentCulture)})"
+            ? $"{total.ToString("N2", CultureInfo.CurrentCulture)} {CurrencyCode}" + (before.Count > 0 ? "" : $" ({saved.Sum(t => t.AmountPln).ToString("C2", CultureInfo.CurrentCulture)})")
             : total.ToString("C2", CultureInfo.CurrentCulture);
         var detail = used.Count == 1
             ? Categories.FirstOrDefault(c => c.Id == used[0].CategoryId)?.DisplayName
             : Res.Format("EntryItems", used.Count);
-        _toast.Show(Res.Format("QuickAddSaved", shown + (string.IsNullOrEmpty(detail) ? "" : " · " + detail)),
-            () => _core.Transactions.Delete(saved));
+        _toast.Show(Res.Format(before.Count > 0 ? "DupMerged" : "QuickAddSaved", shown + (string.IsNullOrEmpty(detail) ? "" : " · " + detail)),
+            () =>
+            {
+                _core.Transactions.Delete(saved);
+                if (before.Count > 0) _core.Transactions.Restore(before.Values);
+            });
         Saved?.Invoke();
         return true;
     }
