@@ -2,6 +2,7 @@ using System.Windows;
 using BudzetDomowy.App.Controls;
 using BudzetDomowy.App.Infrastructure;
 using BudzetDomowy.App.ViewModels;
+using BudzetDomowy.App.Views;
 using BudzetDomowy.Core.Domain;
 
 namespace BudzetDomowy.UiTests;
@@ -439,6 +440,43 @@ public class V10UiTests
         Assert.Equal("sty", columns.HeadingAt(0));                                              // without told periods the label of the category is the heading
         Assert.Equal(2, columns.RowsAt(0).Count);
     });
+
+    // ----- the entry window: after an expense is saved the next one starts -----
+
+    private static List<T> OpenWindows<T>() where T : System.Windows.Window => System.Windows.Application.Current.Windows.OfType<T>().ToList();
+
+    /// <summary>Opens the entry window and finishes the first <paramref name="results"/>.Count windows with these results (true = saved), one after another.</summary>
+    private static int OpenAndFinish(TestApp app, bool income, params bool[] results)
+    {
+        var launcher = new WpfEntryLauncher(app.Core, app.Get<ToastService>());
+        var opened = System.Windows.Application.Current.Windows.OfType<System.Windows.Window>().ToList();     // windows of other tests are not ours
+        var before = opened.Count;
+        var step = 0;
+        var timer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(60) };
+        timer.Tick += (_, _) =>
+        {
+            var window = System.Windows.Application.Current.Windows.OfType<System.Windows.Window>().FirstOrDefault(w => (w is EntryWindow || w is IncomeWindow) && w.IsVisible && !opened.Contains(w));
+            if (window is null) return;
+            opened.Add(window);
+            window.DialogResult = results[Math.Min(step++, results.Length - 1)];
+        };
+        timer.Start();
+        launcher.Open(income);
+        timer.Stop();
+        return opened.Count - before;
+    }
+
+    [Fact]
+    public void Entry_AfterAnExpenseIsSaved_TheNextOneStartsAtOnce_UntilItIsCancelled() => WithApp(app =>
+    {
+        Assert.Equal(3, OpenAndFinish(app, income: false, true, true, false));        // two saved, the third cancelled: three windows in all
+        Assert.DoesNotContain(OpenWindows<EntryWindow>(), w => w.IsVisible);          // nothing is left open
+        Assert.Equal(1, OpenAndFinish(app, income: false, false));                    // cancelled at once: no more windows
+    });
+
+    [Fact]
+    public void Entry_AnIncomeThatIsSaved_DoesNotStartAnotherOne() => WithApp(app =>
+        Assert.Equal(1, OpenAndFinish(app, income: true, true)));
 
     [Fact]
     public void Charts_TheTip_PutsThePointOfItsArrowOnThePoint_WhateverTheSizeAndThePlace() => WithApp(_ =>
