@@ -7,7 +7,6 @@ using BudzetDomowy.Core.Domain;
 using BudzetDomowy.Core.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using LiveChartsCore;
 
 namespace BudzetDomowy.App.ViewModels;
 
@@ -42,8 +41,7 @@ public sealed partial class DashboardViewModel : ObservableObject, IPeriodNaviga
     [ObservableProperty] private bool _canGoBack;
     [ObservableProperty] private bool _hasSlices;
     [ObservableProperty] private IReadOnlyList<PieSlice> _slices = [];
-    [ObservableProperty] private IEnumerable<ISeries> _pieSeries;
-    [ObservableProperty] private ObservableCollection<BarItem> _barItems;
+    [ObservableProperty] private ObservableCollection<ChartItem> _chartItems;
     [ObservableProperty] private IReadOnlyList<BudgetBar> _budgetBars = [];
     [ObservableProperty] private bool _hasBudgets;
     [ObservableProperty] private IReadOnlyList<RecentRow> _recent = [];
@@ -62,9 +60,15 @@ public sealed partial class DashboardViewModel : ObservableObject, IPeriodNaviga
     public DashboardViewModel(BudgetCore core, DataHub hub)
     {
         _core = core;
-        _pieSeries = _breakdown.Donut;                 // the same collections for good: another month moves the slices and the bars instead of drawing them again
-        _barItems = _breakdown.Bars;
+        _chartItems = _breakdown.Items;                // the same collection for good: another month moves the ring and the bars instead of drawing them again
         UiPreferences.Instance.OnAppearanceChanged(this, self => self.Reload());
+        UiPreferences.Instance.PropertyChanged += (_, e) =>
+        {
+            // the number of rows only changes sizes: the legend and the area follow at once, nothing is read or rebuilt while the slider moves
+            if (e.PropertyName != nameof(UiPreferences.ChartRows)) return;
+            OnPropertyChanged(nameof(LegendHeight));
+            OnPropertyChanged(nameof(ChartAreaHeight));
+        };
         hub.Changed += (_, _) => Reload();
         Reload();
     }
@@ -256,9 +260,6 @@ public sealed partial class DashboardViewModel : ObservableObject, IPeriodNaviga
         return Res.Format(period ? "DashChangePeriod" : "DashChange", arrow, Math.Abs(p * 100m).ToString("0", CultureInfo.CurrentCulture));
     }
 
-    /// <summary>The ring is about 100 pixels in radius, so the inner radius is what is left after the thickness chosen in the settings.</summary>
-    private static double RingInnerRadius => 100 - Math.Clamp(UiPreferences.Instance.ChartRingThickness, 8, 70);
-
     private void BuildBreakdown(IReadOnlyList<Transaction> all, IReadOnlyList<Category> cats)
     {
         var from = Month;
@@ -284,7 +285,7 @@ public sealed partial class DashboardViewModel : ObservableObject, IPeriodNaviga
 
         Slices = items.Select(x => new PieSlice(x.b.CategoryId, x.Name, x.Color, Money(x.b.Amount),
             (x.b.Share * 100m).ToString("0.#", CultureInfo.CurrentCulture) + "%", _drillRoot is null && x.b.Children.Count > 0)).ToList();
-        _breakdown.Update(items.Select(x => ($"{x.b.CategoryId}|{x.Name}", x.Name, x.Color, x.b.Amount)), RingInnerRadius);
+        _breakdown.Update(items.Select(x => ($"{x.b.CategoryId}|{x.Name}", x.Name, x.Color, x.b.Amount)));
         OnPropertyChanged(nameof(LegendHeight));
         OnPropertyChanged(nameof(ChartAreaHeight));
         HasSlices = items.Count > 0;

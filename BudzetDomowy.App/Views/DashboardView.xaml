@@ -3,8 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:ui="http://schemas.modernwpf.com/2019"
              xmlns:infra="clr-namespace:BudzetDomowy.App.Infrastructure"
-             xmlns:controls="clr-namespace:BudzetDomowy.App.Controls"
-             xmlns:lvc="clr-namespace:LiveChartsCore.SkiaSharpView.WPF;assembly=LiveChartsCore.SkiaSharpView.WPF">
+             xmlns:controls="clr-namespace:BudzetDomowy.App.Controls">
     <UserControl.Resources>
         <infra:BoolToVisibilityConverter x:Key="BoolToVis" />
         <infra:HexToBrushConverter x:Key="HexToBrush" />
@@ -172,7 +171,8 @@
                             <ColumnDefinition Width="400" />
                             <ColumnDefinition Width="*" MinWidth="260" />
                         </Grid.ColumnDefinitions>
-                        <lvc:PieChart Series="{Binding PieSeries}" LegendPosition="Hidden" Height="220" VerticalAlignment="Center" />
+                        <controls:DonutChart x:Name="CategoryRing" Items="{Binding ChartItems}" Height="220" VerticalAlignment="Center"
+                                             RingThickness="{Binding ChartRingThickness, Source={x:Static infra:UiPreferences.Instance}}" />
                         <!-- the legend: the figures stand next to the names; room for the chosen number of categories, then it scrolls -->
                         <ScrollViewer Grid.Column="1" VerticalAlignment="Center" Height="{Binding LegendHeight}" VerticalScrollBarVisibility="Auto"
                                       HorizontalScrollBarVisibility="Disabled" Margin="8,0,16,0">
@@ -204,7 +204,7 @@
                         </ScrollViewer>
                         <!-- the same expenses as bars, at the left edge: they grow and shrink in place when another month is shown; too many of them scroll -->
                         <ScrollViewer Grid.Column="2" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" VerticalAlignment="Center" HorizontalAlignment="Left">
-                            <controls:BarBreakdownChart x:Name="CategoryBars" Items="{Binding BarItems}" Margin="0,0,0,14"
+                            <controls:BarBreakdownChart x:Name="CategoryBars" Items="{Binding ChartItems}" Margin="0,0,0,14"
                                                         BarWidth="{Binding ChartBarWidth, Source={x:Static infra:UiPreferences.Instance}}"
                                                         GapPercent="{Binding ChartBarGap, Source={x:Static infra:UiPreferences.Instance}}" />
                         </ScrollViewer>

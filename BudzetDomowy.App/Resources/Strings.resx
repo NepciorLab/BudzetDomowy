@@ -548,7 +548,7 @@ Del – usuń zaznaczone transakcje</value></data>
   <data name="MarkerBar" xml:space="preserve"><value>Pionowa kreska</value></data>
   <data name="SettingsAmounts" xml:space="preserve"><value>Kwoty</value></data>
   <data name="SettingsShowMinus" xml:space="preserve"><value>Pokazuj znaki „+” i „−” przy kwotach</value></data>
-  <data name="SettingsCharts" xml:space="preserve"><value>Wykresy na pulpicie</value></data>
+  <data name="SettingsCharts" xml:space="preserve"><value>Wykresy</value></data>
   <data name="SettingsChartBarWidth" xml:space="preserve"><value>Szerokość słupka</value></data>
   <data name="SettingsChartBarGap" xml:space="preserve"><value>Odstęp między słupkami (w procentach szerokości słupka)</value></data>
   <data name="SettingsChartRing" xml:space="preserve"><value>Grubość kółka</value></data>

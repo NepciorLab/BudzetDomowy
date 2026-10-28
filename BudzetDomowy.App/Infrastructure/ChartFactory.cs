@@ -8,6 +8,12 @@ using SkiaSharp;
 
 namespace BudzetDomowy.App.Infrastructure;
 
+/// <summary>A line of the charts tab that knows the period of each of its points (the heading of the tip, see <see cref="BudzetDomowy.App.Controls.SeriesChart"/>).</summary>
+public sealed class PeriodLineSeries : LineSeries<double>
+{
+    public Func<int, string>? PeriodOf { get; init; }
+}
+
 /// <summary>Builds LiveCharts series in the colours of the current theme.</summary>
 public static class ChartFactory
 {
@@ -171,8 +177,9 @@ public static class ChartFactory
         return lines.Select(l =>
         {
             var color = ParseColor(l.Color);
-            return (ISeries)new LineSeries<double>
+            return (ISeries)new PeriodLineSeries
             {
+                PeriodOf = periodOf,
                 Name = l.Name,
                 Values = l.Values.Select(v => (double)v).ToArray(),
                 Fill = null,

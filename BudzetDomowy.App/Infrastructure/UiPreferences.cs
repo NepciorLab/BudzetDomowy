@@ -119,22 +119,14 @@ public sealed partial class UiPreferences : ObservableObject
 
     partial void OnSubcategoriesInheritColorChanged(bool value) => Save(x => x with { SubcategoriesInheritColor = value });
 
-    // the charts of the dashboard: the ring and the legend are rebuilt (the bars follow their own bindings)
+    // the charts follow these by their own bindings: no screen is rebuilt while a slider moves (that was what made the sliders lag)
     partial void OnChartBarWidthChanged(double value) => Save(x => x with { ChartBarWidth = value });
 
     partial void OnChartBarGapChanged(double value) => Save(x => x with { ChartBarGap = value });
 
-    partial void OnChartRingThicknessChanged(double value)
-    {
-        Save(x => x with { ChartRingThickness = value });
-        Appearance();
-    }
+    partial void OnChartRingThicknessChanged(double value) => Save(x => x with { ChartRingThickness = value });
 
-    partial void OnChartRowsChanged(double value)
-    {
-        Save(x => x with { ChartRows = value });
-        Appearance();
-    }
+    partial void OnChartRowsChanged(double value) => Save(x => x with { ChartRows = value });
 
     partial void OnColorAmountsChanged(bool value)
     {

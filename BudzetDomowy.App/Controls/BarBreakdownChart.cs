@@ -3,16 +3,14 @@ using System.ComponentModel;
 using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Controls.Primitives;
 using System.Windows.Documents;
 using System.Windows.Media;
-using System.Windows.Shapes;
 using BudzetDomowy.App.Infrastructure;
 
 namespace BudzetDomowy.App.Controls;
 
-/// <summary>One bar of <see cref="BarBreakdownChart"/>: a category, its colour (#RRGGBB) and the amount; a change of the amount moves the bar.</summary>
-public sealed class BarItem : INotifyPropertyChanged
+/// <summary>One bar of <see cref="BarBreakdownChart"/> or slice of <see cref="DonutChart"/>: a category, its colour (#RRGGBB) and the amount; a change of the amount moves the bar.</summary>
+public sealed class ChartItem : INotifyPropertyChanged
 {
     private string _name = "";
     private string _color = "";
@@ -44,8 +42,8 @@ public sealed class BarItem : INotifyPropertyChanged
 public sealed class BarBreakdownChart : FrameworkElement
 {
     public static readonly DependencyProperty ItemsProperty = DependencyProperty.Register(
-        nameof(Items), typeof(IEnumerable<BarItem>), typeof(BarBreakdownChart),
-        new FrameworkPropertyMetadata(null, (d, e) => ((BarBreakdownChart)d).OnItemsReplaced(e.OldValue as IEnumerable<BarItem>, e.NewValue as IEnumerable<BarItem>)));
+        nameof(Items), typeof(IEnumerable<ChartItem>), typeof(BarBreakdownChart),
+        new FrameworkPropertyMetadata(null, (d, e) => ((BarBreakdownChart)d).OnItemsReplaced(e.OldValue as IEnumerable<ChartItem>, e.NewValue as IEnumerable<ChartItem>)));
 
     public static readonly DependencyProperty BarWidthProperty = DependencyProperty.Register(
         nameof(BarWidth), typeof(double), typeof(BarBreakdownChart),
@@ -59,7 +57,7 @@ public sealed class BarBreakdownChart : FrameworkElement
     public static readonly DependencyProperty ForegroundProperty = TextElement.ForegroundProperty.AddOwner(
         typeof(BarBreakdownChart), new FrameworkPropertyMetadata(SystemColors.ControlTextBrush, FrameworkPropertyMetadataOptions.AffectsRender | FrameworkPropertyMetadataOptions.Inherits));
 
-    public IEnumerable<BarItem>? Items { get => (IEnumerable<BarItem>?)GetValue(ItemsProperty); set => SetValue(ItemsProperty, value); }
+    public IEnumerable<ChartItem>? Items { get => (IEnumerable<ChartItem>?)GetValue(ItemsProperty); set => SetValue(ItemsProperty, value); }
 
     public double BarWidth { get => (double)GetValue(BarWidthProperty); set => SetValue(BarWidthProperty, value); }
 
@@ -76,7 +74,7 @@ public sealed class BarBreakdownChart : FrameworkElement
 
     private sealed class Bar
     {
-        public required BarItem Item { get; init; }
+        public required ChartItem Item { get; init; }
         public double From, To, Shown;
     }
 
@@ -88,40 +86,15 @@ public sealed class BarBreakdownChart : FrameworkElement
     private int _hover = -1;
     private readonly Dictionary<string, Brush> _brushes = new(StringComparer.OrdinalIgnoreCase);
 
-    // the tip: the look of the tips of the other charts (light, rounded, a dot with the colour of the bar and an arrow)
-    private readonly Popup _popup;
-    private readonly FrameworkElement _tipRoot;
-    private readonly Ellipse _tipDot = new() { Width = 12, Height = 12, VerticalAlignment = VerticalAlignment.Center };
-    private readonly TextBlock _tipName = new() { Margin = new Thickness(8, 0, 16, 0), VerticalAlignment = VerticalAlignment.Center };
-    private readonly TextBlock _tipValue = new() { VerticalAlignment = VerticalAlignment.Center };
+    private readonly ChartTip _tip;
 
     public BarBreakdownChart()
     {
         HorizontalAlignment = HorizontalAlignment.Left;
         VerticalAlignment = VerticalAlignment.Top;
         SnapsToDevicePixels = true;
-
-        var tipBrush = new SolidColorBrush(Color.FromArgb(0xF2, 0xE6, 0xE6, 0xE6));
-        var tipText = new SolidColorBrush(Color.FromRgb(0x30, 0x30, 0x30));
-        _tipName.Foreground = _tipValue.Foreground = tipText;
-        var row = new StackPanel { Orientation = Orientation.Horizontal };
-        row.Children.Add(_tipDot);
-        row.Children.Add(_tipName);
-        row.Children.Add(_tipValue);
-        var arrow = new Polygon { Points = new PointCollection { new Point(0, 0), new Point(14, 0), new Point(7, 7) }, Fill = tipBrush, HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, -1, 0, 0) };
-        var stack = new StackPanel();
-        stack.Children.Add(new Border { Background = tipBrush, CornerRadius = new CornerRadius(6), Padding = new Thickness(10, 6, 10, 6), Child = row });
-        stack.Children.Add(arrow);
-        stack.Margin = new Thickness(6);                                                   // room for the shadow
-        stack.Effect = new System.Windows.Media.Effects.DropShadowEffect { ShadowDepth = 1, BlurRadius = 6, Opacity = 0.35 };
-        stack.IsHitTestVisible = false;
-        _tipRoot = stack;
-        _popup = new Popup
-        {
-            AllowsTransparency = true, StaysOpen = true, Placement = PlacementMode.Relative, PlacementTarget = this, IsHitTestVisible = false, Child = _tipRoot,
-        };
-
-        Unloaded += (_, _) => { StopAnimation(); _popup.IsOpen = false; };
+        _tip = new ChartTip(this);
+        Unloaded += (_, _) => { StopAnimation(); _tip.Hide(); };
     }
 
     /// <summary>Space between two bars.</summary>
@@ -142,7 +115,7 @@ public sealed class BarBreakdownChart : FrameworkElement
 
     // ----- the items -----
 
-    private void OnItemsReplaced(IEnumerable<BarItem>? oldItems, IEnumerable<BarItem>? newItems)
+    private void OnItemsReplaced(IEnumerable<ChartItem>? oldItems, IEnumerable<ChartItem>? newItems)
     {
         if (oldItems is INotifyCollectionChanged oldCollection) oldCollection.CollectionChanged -= OnCollectionChanged;
         foreach (var item in _bars) item.Item.PropertyChanged -= OnItemChanged;
@@ -245,7 +218,7 @@ public sealed class BarBreakdownChart : FrameworkElement
         return ft;
     }
 
-    private static string Tick(double value) => Math.Round(value).ToString("N0", CultureInfo.CurrentCulture);
+    private static string Tick(double value) => (Math.Round(value) + 0.0).ToString("N0", CultureInfo.CurrentCulture);
 
     /// <summary>The height is the same for every month and every list of categories; the width is what the bars need (a scroll viewer around the chart takes care of too many).</summary>
     protected override Size MeasureOverride(Size available)
@@ -327,7 +300,7 @@ public sealed class BarBreakdownChart : FrameworkElement
     // ----- pointer -----
 
     /// <summary>The bar at the point: its column, from the top of the bar down to the end of the name.</summary>
-    public BarItem? ItemAt(Point p)
+    public ChartItem? ItemAt(Point p)
     {
         var n = _bars.Count;
         var first = PlotLeft + Overhang - Gap / 2;
@@ -340,7 +313,7 @@ public sealed class BarBreakdownChart : FrameworkElement
     }
 
     /// <summary>The share of the bar in all of them, in percent.</summary>
-    private double ShareOf(BarItem item)
+    private double ShareOf(ChartItem item)
     {
         var total = _bars.Sum(b => b.To);
         return total > 0 ? item.Amount / total * 100 : 0;
@@ -349,29 +322,23 @@ public sealed class BarBreakdownChart : FrameworkElement
     private static string Money(double amount) => ((decimal)amount).ToString("C2", CultureInfo.CurrentCulture);
 
     /// <summary>"1 234,00 zł (23,4%)".</summary>
-    public string ValueOf(BarItem item) => Money(item.Amount) + " (" + ShareOf(item).ToString("0.#", CultureInfo.CurrentCulture) + "%)";
+    public string ValueOf(ChartItem item) => Money(item.Amount) + " (" + ShareOf(item).ToString("0.#", CultureInfo.CurrentCulture) + "%)";
 
     /// <summary>"Name: 1 234,00 zł (23,4%)" for the bar.</summary>
-    public string TipOf(BarItem item) => Res.Format("DashBarTip", item.Name, Money(item.Amount), ShareOf(item).ToString("0.#", CultureInfo.CurrentCulture) + "%");
+    public string TipOf(ChartItem item) => Res.Format("DashBarTip", item.Name, Money(item.Amount), ShareOf(item).ToString("0.#", CultureInfo.CurrentCulture) + "%");
 
     private void ShowTip(int index)
     {
         var bar = _bars[index];
-        _tipDot.Fill = BrushOf(bar.Item.Color);
-        _tipName.Text = bar.Item.Name;
-        _tipValue.Text = ValueOf(bar.Item);
-        _tipRoot.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
-        var size = _tipRoot.DesiredSize;
-        // above the bar, centred on it, the arrow pointing at its top
-        _popup.HorizontalOffset = BarLeft(index) + BarWidth / 2 - size.Width / 2;
-        _popup.VerticalOffset = TopPadding + PlotHeight - HeightOf(bar) - size.Height - 2;
-        _popup.IsOpen = true;
+        // above the bar, the point of the arrow at the middle of its top
+        _tip.Show(null, [new TipRow(BrushOf(bar.Item.Color), bar.Item.Name, ValueOf(bar.Item))],
+            new Point(BarLeft(index) + BarWidth / 2, TopPadding + PlotHeight - HeightOf(bar)));
     }
 
     private void HideTip()
     {
         _hover = -1;
-        _popup.IsOpen = false;
+        _tip.Hide();
     }
 
     protected override void OnMouseMove(System.Windows.Input.MouseEventArgs e)

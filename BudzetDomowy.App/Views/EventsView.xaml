@@ -3,8 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:ui="http://schemas.modernwpf.com/2019"
              xmlns:infra="clr-namespace:BudzetDomowy.App.Infrastructure"
-             xmlns:controls="clr-namespace:BudzetDomowy.App.Controls"
-             xmlns:lvc="clr-namespace:LiveChartsCore.SkiaSharpView.WPF;assembly=LiveChartsCore.SkiaSharpView.WPF">
+             xmlns:controls="clr-namespace:BudzetDomowy.App.Controls">
     <UserControl.Resources>
         <infra:BoolToVisibilityConverter x:Key="BoolToVis" />
         <infra:HexToBrushConverter x:Key="HexToBrush" />
@@ -172,7 +171,7 @@
                             <ColumnDefinition Width="260" />
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
-                        <lvc:PieChart Series="{Binding PieSeries}" LegendPosition="Hidden" Height="240" />
+                        <controls:DonutChart Series="{Binding PieSeries}" Height="240" RingThickness="{Binding ChartRingThickness, Source={x:Static infra:UiPreferences.Instance}}" />
                         <ItemsControl Grid.Column="1" ItemsSource="{Binding Slices}" VerticalAlignment="Center" Margin="12,0,0,0">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>

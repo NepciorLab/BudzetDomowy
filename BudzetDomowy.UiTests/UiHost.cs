@@ -139,6 +139,10 @@ public static class UiHost
         // the real window sets the text colour for everything inside it; do the same here
         System.Windows.Documents.TextElement.SetForeground(page, (Brush)Application.Current.FindResource("SystemControlPageTextBaseHighBrush"));
         Layout(page, width, height);
+        // the charts move into place with a few frames; a picture is taken without frames, so let them arrive
+        foreach (var chart in Descendants<BudzetDomowy.App.Controls.DonutChart>(page)) chart.CompleteAnimation();
+        foreach (var chart in Descendants<BudzetDomowy.App.Controls.BarBreakdownChart>(page)) chart.CompleteAnimation();
+        Layout(page, width, height);
         var bitmap = new RenderTargetBitmap((int)width, (int)height, 96, 96, PixelFormats.Pbgra32);
         bitmap.Render(page);
         var path = Path.Combine(OutputDir, name + ".png");

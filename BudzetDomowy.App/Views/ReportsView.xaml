@@ -4,8 +4,7 @@
              xmlns:ui="http://schemas.modernwpf.com/2019"
              xmlns:infra="clr-namespace:BudzetDomowy.App.Infrastructure"
              xmlns:controls="clr-namespace:BudzetDomowy.App.Controls"
-             xmlns:vm="clr-namespace:BudzetDomowy.App.ViewModels"
-             xmlns:lvc="clr-namespace:LiveChartsCore.SkiaSharpView.WPF;assembly=LiveChartsCore.SkiaSharpView.WPF">
+             xmlns:vm="clr-namespace:BudzetDomowy.App.ViewModels">
     <UserControl.Resources>
         <infra:BoolToVisibilityConverter x:Key="BoolToVis" />
         <infra:BoolToVisibilityConverter x:Key="NotVis" Invert="True" />
@@ -166,13 +165,11 @@
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="300" />
                         </Grid.ColumnDefinitions>
-                        <lvc:CartesianChart Series="{Binding TrendSeries}" XAxes="{Binding TrendXAxes}" YAxes="{Binding TrendYAxes}"
-                                            LegendPosition="Bottom" LegendTextPaint="{Binding LegendTextPaint}" Height="280" />
+                        <controls:SeriesChart Series="{Binding TrendSeries}" XAxes="{Binding TrendXAxes}" YAxes="{Binding TrendYAxes}" Height="280" />
                         <!-- the sums of everything the chart on the left shows -->
                         <StackPanel Grid.Column="1" Margin="16,0,0,0">
                             <TextBlock Text="{Binding SumTitle}" Opacity="0.75" TextWrapping="Wrap" Margin="0,0,0,2" />
-                            <lvc:CartesianChart Series="{Binding SumSeries}" XAxes="{Binding SumXAxes}" YAxes="{Binding SumYAxes}"
-                                                LegendPosition="Bottom" LegendTextPaint="{Binding LegendTextPaint}" Height="260" />
+                            <controls:SeriesChart Series="{Binding SumSeries}" XAxes="{Binding SumXAxes}" YAxes="{Binding SumYAxes}" Height="260" />
                         </StackPanel>
                     </Grid>
                 </StackPanel>
@@ -199,7 +196,7 @@
                             <ColumnDefinition Width="220" />
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
-                        <lvc:PieChart Series="{Binding PieSeries}" LegendPosition="Hidden" Height="210" />
+                        <controls:DonutChart Series="{Binding PieSeries}" Height="210" RingThickness="{Binding ChartRingThickness, Source={x:Static infra:UiPreferences.Instance}}" />
                         <StackPanel Grid.Column="1" Margin="12,0,0,0" MaxWidth="560" HorizontalAlignment="Left">
                             <TextBlock Text="{infra:Str ReportTop5}" Opacity="0.7" />
                             <ItemsControl ItemsSource="{Binding TopCategories}" Margin="0,4,0,12">
@@ -382,8 +379,7 @@
                                 </Style>
                             </TextBlock.Style>
                         </TextBlock>
-                        <lvc:CartesianChart Series="{Binding Series}" XAxes="{Binding XAxes}" YAxes="{Binding YAxes}"
-                                            LegendPosition="Bottom" LegendTextPaint="{Binding LegendTextPaint}" Height="340"
+                        <controls:SeriesChart Series="{Binding Series}" XAxes="{Binding XAxes}" YAxes="{Binding YAxes}" Height="340"
                                             Visibility="{Binding HasData, Converter={StaticResource BoolToVis}}" />
                         <ItemsControl ItemsSource="{Binding Totals}" Margin="0,12,0,0" MaxWidth="620" HorizontalAlignment="Left">
                             <ItemsControl.ItemTemplate>
@@ -627,8 +623,7 @@
                             <TextBlock Text="{Binding PointsText}" HorizontalAlignment="Right" Opacity="0.7" />
                         </Grid>
                         <Grid>
-                            <lvc:CartesianChart x:Name="CategoriesChart" Series="{Binding Series}" XAxes="{Binding XAxes}" YAxes="{Binding YAxes}"
-                                                LegendPosition="Bottom" LegendTextPaint="{Binding LegendTextPaint}" Height="440" />
+                            <controls:SeriesChart x:Name="CategoriesChart" Series="{Binding Series}" XAxes="{Binding XAxes}" YAxes="{Binding YAxes}" Height="440" />
                             <TextBlock x:Name="ChartHint" Text="{infra:Str ChartPickHint}" Opacity="0.65" HorizontalAlignment="Center" VerticalAlignment="Center" TextAlignment="Center"
                                        IsHitTestVisible="False" Visibility="{Binding ShowHint, Converter={StaticResource BoolToVis}}" />
                         </Grid>

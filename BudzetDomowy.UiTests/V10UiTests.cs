@@ -235,33 +235,32 @@ public class V10UiTests
     });
 
     [Fact]
-    public void Dashboard_TheDonutKeepsItsSlices_AndOnlyTheirSizesChangeWithTheMonth() => WithApp(app =>
+    public void Dashboard_TheRingKeepsItsSlices_AndOnlyTheirSizesChangeWithTheMonth() => WithApp(app =>
     {
         var vm = app.Get<DashboardViewModel>();
-        var series = vm.PieSeries;
-        var groceries = series.OfType<LiveChartsCore.SkiaSharpView.PieSeries<LiveChartsCore.Defaults.ObservableValue>>().Single(s => s.Name == "Spożywcze");
-        var now = groceries.Values!.Single().Value;
+        var items = vm.ChartItems;
+        var groceries = items.Single(s => s.Name == "Spożywcze");
+        var now = groceries.Amount;
 
         vm.PreviousMonthCommand.Execute(null);                                // last month had 640 in groceries
-        Assert.Same(series, vm.PieSeries);                                    // the same collection: the chart is not given a new one to draw from the centre
-        Assert.Contains(groceries, series);                                   // and the very same series, only with another value
-        Assert.Equal(640d, groceries.Values!.Single().Value);
-        Assert.NotEqual(now, groceries.Values!.Single().Value);
+        Assert.Same(items, vm.ChartItems);                                    // the same collection: the ring is not given a new one to draw from the centre
+        Assert.Contains(groceries, items);                                    // and the very same item, only with another amount
+        Assert.Equal(640d, groceries.Amount);
+        Assert.NotEqual(now, groceries.Amount);
 
         vm.NextMonthCommand.Execute(null);
-        Assert.Equal(now, groceries.Values!.Single().Value);
+        Assert.Equal(now, groceries.Amount);
     });
 
     [Fact]
     public void Dashboard_TheBars_ShareTheSlicesOfTheDonut_AndAreNotReplacedByAnotherMonth() => WithApp(app =>
     {
         var vm = app.Get<DashboardViewModel>();
-        var bars = vm.BarItems;
+        var bars = vm.ChartItems;
         var groceries = bars.Single(b => b.Name == "Spożywcze");
-        Assert.Equal(vm.PieSeries.Count(), bars.Count);                        // one bar for every slice of the ring
 
         vm.PreviousMonthCommand.Execute(null);
-        Assert.Same(bars, vm.BarItems);                                        // not given a new collection: the chart does not start again from the bottom
+        Assert.Same(bars, vm.ChartItems);                                        // not given a new collection: the chart does not start again from the bottom
         Assert.Contains(groceries, bars);
         Assert.Equal(640d, groceries.Amount);                                  // the same figure as the ring
     });
@@ -305,16 +304,16 @@ public class V10UiTests
         Assert.Equal(30, chart.BarWidth, 0.001);
         Assert.Equal(chart.BarWidth / 4, chart.Gap, 0.001);                                     // the space between the bars: a quarter of a bar
         Assert.Equal(chart.BarWidth / 2, chart.Overhang, 0.001);                                // the grid goes half a bar beyond the first and the last one
-        Assert.Equal(chart.PlotLeft + 2 * chart.Overhang + vm.BarItems.Count * chart.BarWidth + (vm.BarItems.Count - 1) * chart.Gap, chart.PlotRight, 0.001);
+        Assert.Equal(chart.PlotLeft + 2 * chart.Overhang + vm.ChartItems.Count * chart.BarWidth + (vm.ChartItems.Count - 1) * chart.Gap, chart.PlotRight, 0.001);
 
         var bottom = BarBreakdownChart.PlotHeight + BarBreakdownChart.TopPadding;
         var firstCentre = chart.PlotLeft + chart.Overhang + chart.BarWidth / 2;
-        Assert.Same(vm.BarItems[0], chart.ItemAt(new Point(firstCentre, bottom + 9)));         // the bottom of the bar, or the name below it, belongs to the bar
-        Assert.Same(vm.BarItems[1], chart.ItemAt(new Point(firstCentre + chart.SlotWidth, bottom + 9)));
+        Assert.Same(vm.ChartItems[0], chart.ItemAt(new Point(firstCentre, bottom + 9)));         // the bottom of the bar, or the name below it, belongs to the bar
+        Assert.Same(vm.ChartItems[1], chart.ItemAt(new Point(firstCentre + chart.SlotWidth, bottom + 9)));
         Assert.Null(chart.ItemAt(new Point(chart.PlotLeft + 1, bottom)));                      // the overhang is no bar
         Assert.Null(chart.ItemAt(new Point(chart.PlotRight - 1, bottom)));
 
-        var first = vm.BarItems[0];
+        var first = vm.ChartItems[0];
         var tip = chart.TipOf(first);                                                           // one bar: its amount, not a list for the amount
         Assert.StartsWith(first.Name + ":", tip);
         Assert.Contains("zł", tip);
@@ -367,8 +366,9 @@ public class V10UiTests
             Assert.Equal(20, chart.BarWidth);
             Assert.Equal(10, chart.Gap, 0.001);
 
-            prefs.ChartRingThickness = 20;                                                      // 100 - 20
-            Assert.All(vm.PieSeries.OfType<LiveChartsCore.SkiaSharpView.PieSeries<LiveChartsCore.Defaults.ObservableValue>>(), s => Assert.Equal(80, s.InnerRadius));
+            var ring = Assert.IsType<DonutChart>(view.FindName("CategoryRing"));
+            prefs.ChartRingThickness = 20;                                                      // the ring follows its binding at once, nothing is rebuilt
+            Assert.Equal(20, ring.RingThickness);
 
             prefs.ChartRows = 5;
             Assert.Equal(5 * DashboardViewModel.LegendRowHeight, vm.LegendHeight);
@@ -383,6 +383,61 @@ public class V10UiTests
             prefs.ChartRingThickness = 30;
             prefs.ChartRows = 12;
         }
+    });
+
+    [Fact]
+    public void Charts_TheRing_HasItsSlicesWhereTheShareSaysAndTellsTheAmountAndShare() => WithApp(app =>
+    {
+        var vm = app.Get<DashboardViewModel>();
+        var view = new BudzetDomowy.App.Views.DashboardView { DataContext = vm };
+        UiHost.Layout(view, 1500, 1100);
+        var ring = Assert.IsType<DonutChart>(view.FindName("CategoryRing"));
+        ring.CompleteAnimation();
+
+        var centre = new Point(ring.ActualWidth / 2, ring.ActualHeight / 2);
+        var outer = Math.Min(ring.ActualWidth, ring.ActualHeight) / 2 - 4;
+        var middle = outer - ring.RingThickness / 2;
+        Point At(double degrees, double radius) => new(centre.X + radius * Math.Sin(degrees * Math.PI / 180), centre.Y - radius * Math.Cos(degrees * Math.PI / 180));
+
+        var first = vm.ChartItems[0];
+        var total = vm.ChartItems.Sum(i => i.Amount);
+        Assert.Same(first, ring.ItemAt(At(1, middle)));                                          // the first slice starts at the top
+        var firstEnd = first.Amount / total * 360;
+        Assert.Same(vm.ChartItems[1], ring.ItemAt(At(firstEnd + 1, middle)));                    // and the next one where the share of the first ends
+        Assert.Null(ring.ItemAt(centre));                                                        // the hole is no slice
+        Assert.Null(ring.ItemAt(At(1, outer + 20)));
+        var value = ring.ValueOf(first);
+        Assert.Contains("zł", value);
+        Assert.EndsWith("%)", value);
+    });
+
+    [Fact]
+    public void Charts_TheSeriesChart_ReadsTheSeriesOfTheViewModels_ForTheLinesAndTheirTips() => WithApp(app =>
+    {
+        var chart = new SeriesChart
+        {
+            Series = ChartFactory.CategoryLines([("Auto", "#112233", [1m, 2m, 3m]), ("Dom", "#445566", [4m, 5m, 6m])], i => "Okres " + i),
+            XAxes = ChartFactory.LabelAxes(["a", "b", "c"]),
+            YAxes = ChartFactory.MoneyAxes(),
+        };
+        UiHost.Layout(chart, 600, 300);
+        UiHost.Render(chart, 600, 300, "series-chart");
+        Assert.Equal("Okres 1", chart.HeadingAt(1));                                            // the heading is told by the lines
+        var rows = chart.RowsAt(1);
+        Assert.Equal(["Auto", "Dom"], rows.Select(r => r.Name));
+        Assert.All(rows, r => Assert.Contains("zł", r.Value));
+        Assert.Contains("2", rows[0].Value);
+        Assert.Contains("5", rows[1].Value);
+
+        var columns = new SeriesChart
+        {
+            Series = ChartFactory.IncomeExpenseColumns([new BudzetDomowy.Core.Services.MonthPoint(new DateOnly(2026, 1, 1), 10m, 4m)], "P", "W"),
+            XAxes = ChartFactory.LabelAxes(["sty"]),
+            YAxes = ChartFactory.MoneyAxes(),
+        };
+        UiHost.Layout(columns, 400, 250);
+        Assert.Equal("sty", columns.HeadingAt(0));                                              // without told periods the label of the category is the heading
+        Assert.Equal(2, columns.RowsAt(0).Count);
     });
 
     [Fact]
@@ -409,15 +464,13 @@ public class V10UiTests
         var slice = vm.Slices.First(s => s.Id == parent.Id);
         Assert.True(slice.CanDrill);
         vm.DrillIntoCommand.Execute(slice);
-        Assert.True(vm.PieSeries.Count() > vm.Slices.Count);                   // the main categories are still shrinking away
+        Assert.True(vm.ChartItems.Count > vm.Slices.Count);                    // the main categories are still shrinking away
         await Task.Delay(1500);
-        Assert.Equal(vm.Slices.Count, vm.PieSeries.Count());                   // and then they are gone, with their bars
-        Assert.Equal(vm.Slices.Count, vm.BarItems.Count);
+        Assert.Equal(vm.Slices.Count, vm.ChartItems.Count);
 
         vm.BackCommand.Execute(null);
         await Task.Delay(1500);
-        Assert.Equal(vm.Slices.Count, vm.PieSeries.Count());
-        Assert.Equal(vm.Slices.Count, vm.BarItems.Count);
+        Assert.Equal(vm.Slices.Count, vm.ChartItems.Count);
     });
 
     [Fact]
