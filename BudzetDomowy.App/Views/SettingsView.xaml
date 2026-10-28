@@ -1,4 +1,4 @@
-<UserControl x:Class="BudzetDomowy.App.Views.SettingsView"
+<UserControl infra:Help.Topic="settings" x:Class="BudzetDomowy.App.Views.SettingsView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:ui="http://schemas.modernwpf.com/2019"
@@ -12,8 +12,8 @@
     </UserControl.Resources>
     <TabControl Margin="16,8,16,8" Background="Transparent" SelectedIndex="{Binding SelectedTab, Mode=TwoWay}">
         <!-- General -->
-        <TabItem Header="{infra:Str SettingsGeneral}">
-            <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <TabItem infra:Help.Topic="settings.general" Header="{infra:Str SettingsGeneral}">
+            <ScrollViewer infra:Help.Topic="settings.general" VerticalScrollBarVisibility="Auto">
                 <StackPanel Margin="0,16,0,0" MaxWidth="720" HorizontalAlignment="Left">
                     <TextBlock Text="{infra:Str SettingsDataSection}" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,8" />
                     <TextBlock Text="{infra:Str SyncDetailsFolder}" Opacity="0.7" />
@@ -88,8 +88,8 @@
         </TabItem>
 
         <!-- Appearance -->
-        <TabItem Header="{infra:Str SettingsAppearance}">
-            <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <TabItem infra:Help.Topic="settings.appearance" Header="{infra:Str SettingsAppearance}">
+            <ScrollViewer infra:Help.Topic="settings.appearance" VerticalScrollBarVisibility="Auto">
                 <StackPanel Margin="0,16,0,0" MaxWidth="720" HorizontalAlignment="Left">
                     <ComboBox ItemsSource="{Binding Themes}" SelectedItem="{Binding SelectedTheme, Mode=TwoWay}" Width="260"
                               ui:ControlHelper.Header="{infra:Str SettingsTheme}" />
@@ -155,8 +155,8 @@
         </TabItem>
 
         <!-- Categories -->
-        <TabItem Header="{infra:Str SettingsCategories}" DataContext="{Binding Categories}">
-            <Grid Margin="0,16,0,0">
+        <TabItem infra:Help.Topic="settings.categories" Header="{infra:Str SettingsCategories}" DataContext="{Binding Categories}">
+            <Grid infra:Help.Topic="settings.categories" Margin="0,16,0,0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" MinWidth="260" />
                     <ColumnDefinition Width="16" />
@@ -285,12 +285,12 @@
             </Grid>
         </TabItem>
         <!-- Import and export -->
-        <TabItem Header="{infra:Str SettingsImportExport}">
-            <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <TabItem infra:Help.Topic="settings.importexport" Header="{infra:Str SettingsImportExport}">
+            <ScrollViewer infra:Help.Topic="settings.importexport" VerticalScrollBarVisibility="Auto">
                 <StackPanel Margin="0,16,0,0" MaxWidth="720" HorizontalAlignment="Left">
                     <TextBlock Text="{infra:Str ImportHeading}" FontSize="18" FontWeight="SemiBold" />
                     <TextBlock Text="{infra:Str SettingsImportText}" TextWrapping="Wrap" Margin="0,6,0,10" Opacity="0.85" />
-                    <Button Content="{infra:Str SettingsImportButton}" Command="{Binding OpenImportCommand}" Style="{StaticResource AccentButtonStyle}" />
+                    <Button infra:Help.Topic="import" Content="{infra:Str SettingsImportButton}" Command="{Binding OpenImportCommand}" Style="{StaticResource AccentButtonStyle}" />
 
                     <TextBlock Text="{infra:Str SettingsExportHeading}" FontSize="18" FontWeight="SemiBold" Margin="0,30,0,0" />
                     <TextBlock Text="{infra:Str SettingsExportText}" TextWrapping="Wrap" Margin="0,6,0,10" Opacity="0.85" />
@@ -304,13 +304,13 @@
         </TabItem>
 
         <!-- Diagnostics -->
-        <TabItem Header="{infra:Str SettingsDiagnostics}">
-            <local:DiagnosticsView DataContext="{Binding Diagnostics}" />
+        <TabItem infra:Help.Topic="settings.diagnostics" Header="{infra:Str SettingsDiagnostics}">
+            <local:DiagnosticsView infra:Help.Topic="settings.diagnostics" DataContext="{Binding Diagnostics}" />
         </TabItem>
 
         <!-- Backups -->
-        <TabItem Header="{infra:Str SettingsBackup}">
-            <Grid Margin="0,16,0,0" MaxWidth="900" HorizontalAlignment="Left" DataContext="{Binding Backup}">
+        <TabItem infra:Help.Topic="settings.backup" Header="{infra:Str SettingsBackup}">
+            <Grid infra:Help.Topic="settings.backup" Margin="0,16,0,0" MaxWidth="900" HorizontalAlignment="Left" DataContext="{Binding Backup}">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
@@ -345,8 +345,8 @@
         </TabItem>
 
         <!-- Keyboard shortcuts -->
-        <TabItem Header="{infra:Str SettingsShortcuts}">
-            <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <TabItem infra:Help.Topic="settings.shortcuts" Header="{infra:Str SettingsShortcuts}">
+            <ScrollViewer infra:Help.Topic="settings.shortcuts" VerticalScrollBarVisibility="Auto">
                 <StackPanel Margin="0,16,0,0" MaxWidth="760" HorizontalAlignment="Left">
                     <TextBlock Text="{infra:Str ShortcutsIntro}" TextWrapping="Wrap" Opacity="0.8" Margin="0,0,0,12" />
                     <ItemsControl ItemsSource="{Binding Shortcuts}">
@@ -401,8 +401,8 @@
         </TabItem>
 
         <!-- Suggestions of the "Place" box -->
-        <TabItem Header="{infra:Str SettingsPlaces}" DataContext="{Binding PlaceHints}">
-            <Grid Margin="0,16,0,0">
+        <TabItem infra:Help.Topic="settings.places" Header="{infra:Str SettingsPlaces}" DataContext="{Binding PlaceHints}">
+            <Grid infra:Help.Topic="settings.places" Margin="0,16,0,0">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />

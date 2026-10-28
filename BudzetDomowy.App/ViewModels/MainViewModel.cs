@@ -209,7 +209,9 @@ public sealed partial class MainViewModel : ObservableObject
     partial void OnSelectedNavChanged(NavItem? value)
     {
         if (value is null) return;
+        var existed = _pages[value.Key].IsValueCreated;                  // a screen made just now has just read everything
         CurrentPage = _pages[value.Key].Value;
+        if (existed && CurrentPage is IRefreshOnShow screen) screen.RefreshOnShow();
         if (_store.Current.LastPage != value.Key) _store.Update(s => s with { LastPage = value.Key });
     }
 

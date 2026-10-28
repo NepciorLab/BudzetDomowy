@@ -1,4 +1,4 @@
-<UserControl x:Class="BudzetDomowy.App.Views.EventsView"
+<UserControl infra:Help.Topic="events" x:Class="BudzetDomowy.App.Views.EventsView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:ui="http://schemas.modernwpf.com/2019"
@@ -27,9 +27,9 @@
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
-            <Button Content="{infra:Str EventAdd}" Command="{Binding AddEventCommand}" Style="{StaticResource AccentButtonStyle}"
+            <Button infra:Help.Topic="events.list" Content="{infra:Str EventAdd}" Command="{Binding AddEventCommand}" Style="{StaticResource AccentButtonStyle}"
                     HorizontalAlignment="Stretch" Margin="0,0,0,10" />
-            <ListBox Grid.Row="1" ItemsSource="{Binding Items}" SelectedItem="{Binding Selected, Mode=TwoWay}"
+            <ListBox infra:Help.Topic="events.list" Grid.Row="1" ItemsSource="{Binding Items}" SelectedItem="{Binding Selected, Mode=TwoWay}"
                      HorizontalContentAlignment="Stretch" BorderThickness="0">
                 <ListBox.ItemTemplate>
                     <DataTemplate>
@@ -71,7 +71,7 @@
         <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto" Visibility="{Binding HasSelection, Converter={StaticResource BoolToVis}}">
             <StackPanel>
                 <!-- Editor -->
-                <Border Style="{StaticResource Card}" Margin="0,0,0,12">
+                <Border infra:Help.Topic="events.edit" Style="{StaticResource Card}" Margin="0,0,0,12">
                     <StackPanel>
                         <Grid>
                             <Grid.ColumnDefinitions>
@@ -119,13 +119,13 @@
 
                 <!-- Figures -->
                 <WrapPanel>
-                    <Border Style="{StaticResource Card}">
+                    <Border infra:Help.Topic="events.summary" Style="{StaticResource Card}">
                         <StackPanel>
                             <TextBlock Text="{infra:Str EventSpent}" Opacity="0.7" />
                             <TextBlock Text="{Binding ExpenseText}" FontSize="24" FontWeight="Bold" Foreground="{StaticResource ExpenseBrush}" />
                         </StackPanel>
                     </Border>
-                    <Border Style="{StaticResource Card}">
+                    <Border infra:Help.Topic="events.summary" Style="{StaticResource Card}">
                         <StackPanel>
                             <TextBlock Text="{infra:Str EventPerDay}" Opacity="0.7" />
                             <TextBlock Text="{Binding PerDayText}" FontSize="24" FontWeight="Bold" />
@@ -134,7 +134,7 @@
                             </TextBlock>
                         </StackPanel>
                     </Border>
-                    <Border Style="{StaticResource Card}">
+                    <Border infra:Help.Topic="events.summary" Style="{StaticResource Card}">
                         <StackPanel>
                             <TextBlock Text="{infra:Str EventIncomeRefunds}" Opacity="0.7" />
                             <TextBlock Text="{Binding IncomeText}" FontSize="24" FontWeight="Bold" Foreground="{StaticResource IncomeBrush}" />
@@ -143,7 +143,7 @@
                 </WrapPanel>
 
                 <!-- Plan comparison -->
-                <Border Style="{StaticResource Card}" Margin="0,0,0,12">
+                <Border infra:Help.Topic="events.summary" Style="{StaticResource Card}" Margin="0,0,0,12">
                     <StackPanel>
                         <TextBlock Text="{infra:Str EventPlanTitle}" FontWeight="SemiBold" />
                         <TextBlock Text="{Binding PlanText}" Margin="0,4,0,0" />
@@ -195,7 +195,7 @@
 
                 <!-- Transactions -->
                 <TextBlock Text="{infra:Str EventTransactions}" FontWeight="SemiBold" Margin="0,0,0,6" />
-                <DataGrid infra:GridBehaviors.ColumnChooserKey="event-transactions" infra:GridBehaviors.AutoFit="{Binding AutoFitColumns, Source={x:Static infra:UiPreferences.Instance}}" ItemsSource="{Binding Transactions}" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False"
+                <DataGrid infra:Help.Topic="events.summary" infra:GridBehaviors.ColumnChooserKey="event-transactions" infra:GridBehaviors.AutoFit="{Binding AutoFitColumns, Source={x:Static infra:UiPreferences.Instance}}" ItemsSource="{Binding Transactions}" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False"
                           HeadersVisibility="Column" GridLinesVisibility="All" MaxHeight="420" Margin="0,0,12,16"
                           AlternationCount="2" AlternatingRowBackground="{DynamicResource SystemControlBackgroundListLowBrush}">
                     <DataGrid.Columns>

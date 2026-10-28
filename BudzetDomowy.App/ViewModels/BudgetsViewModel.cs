@@ -67,7 +67,7 @@ public sealed partial class BudgetRowViewModel : ObservableObject
     }
 }
 
-public sealed partial class BudgetsViewModel : ObservableObject, IPeriodNavigable
+public sealed partial class BudgetsViewModel : ObservableObject, IPeriodNavigable, IRefreshOnShow
 {
     private readonly BudgetCore _core;
     private readonly ToastService _toast;
@@ -80,10 +80,13 @@ public sealed partial class BudgetsViewModel : ObservableObject, IPeriodNavigabl
     [ObservableProperty] private string _totalText = "";
     [ObservableProperty] private string _message = "";
 
+    private readonly DataHub _hub;
+
     public BudgetsViewModel(BudgetCore core, DataHub hub, ToastService toast)
     {
         _core = core;
         _toast = toast;
+        _hub = hub;
         hub.Changed += (_, _) => Reload();
         Reload();
     }
@@ -105,6 +108,7 @@ public sealed partial class BudgetsViewModel : ObservableObject, IPeriodNavigabl
             var count = _core.Budgets.CopyFromPreviousMonth(Month);
             Message = count == 0 ? Res.Get("BudgetsNothingToCopy") : Res.Format("BudgetsCopied", count);
             Reload();
+            _hub.NotifyNow();                                                                // the Dashboard shows the limits too
         }
         catch (UpdateRequiredException)
         {
@@ -124,7 +128,10 @@ public sealed partial class BudgetsViewModel : ObservableObject, IPeriodNavigabl
             _toast.Show(Res.Get("UpdateRequiredShort"));
         }
         Reload();
+        _hub.NotifyNow();                                                                    // the Dashboard shows the limits too: no wait, no restart
     }
+
+    public void RefreshOnShow() => Reload();
 
     public void Reload()
     {

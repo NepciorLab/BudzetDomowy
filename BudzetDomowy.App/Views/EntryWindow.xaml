@@ -1,4 +1,4 @@
-<Window x:Class="BudzetDomowy.App.Views.EntryWindow"
+<Window infra:Help.Topic="entry.expense" x:Class="BudzetDomowy.App.Views.EntryWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ui="http://schemas.modernwpf.com/2019"
@@ -33,14 +33,14 @@
                 <ColumnDefinition Width="150" />
                 <ColumnDefinition Width="100" />
             </Grid.ColumnDefinitions>
-            <DatePicker x:Name="DateBox" SelectedDate="{Binding Date, Mode=TwoWay}" Margin="0,0,10,0" HorizontalAlignment="Stretch"
+            <DatePicker infra:Help.Topic="entry.date" x:Name="DateBox" SelectedDate="{Binding Date, Mode=TwoWay}" Margin="0,0,10,0" HorizontalAlignment="Stretch"
                         ui:ControlHelper.Header="{infra:Str QuickDate}" />
-            <controls:PlaceBox x:Name="PlaceBox" Grid.Column="1" Text="{Binding Place, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,10,0"
+            <controls:PlaceBox infra:Help.Topic="entry.place" x:Name="PlaceBox" Grid.Column="1" Text="{Binding Place, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,10,0"
                                Suggestions="{Binding PlaceSuggestions}" ui:ControlHelper.Header="{infra:Str QuickPlace}" />
-            <controls:ExpressionBox x:Name="TotalBox" Grid.Column="2" Expression="{Binding TotalText, Mode=TwoWay}" DisplayText="{Binding TotalDisplay}"
+            <controls:ExpressionBox infra:Help.Topic="entry.total" x:Name="TotalBox" Grid.Column="2" Expression="{Binding TotalText, Mode=TwoWay}" DisplayText="{Binding TotalDisplay}"
                                     Margin="0,0,10,0" TextAlignment="Right" ToolTip="{infra:Str EntryAmountTip}"
                                     ui:ControlHelper.Header="{infra:Str EntryTotal}" ui:ControlHelper.PlaceholderText="0,00" />
-            <ComboBox x:Name="CurrencyBox" Grid.Column="3" ItemsSource="{Binding Currencies}" DisplayMemberPath="Code" SelectedValuePath="Code"
+            <ComboBox infra:Help.Topic="entry.currency" x:Name="CurrencyBox" Grid.Column="3" ItemsSource="{Binding Currencies}" DisplayMemberPath="Code" SelectedValuePath="Code"
                       SelectedValue="{Binding CurrencyCode, Mode=TwoWay}" HorizontalAlignment="Stretch"
                       ui:ControlHelper.Header="{infra:Str QuickCurrency}" ToolTip="{infra:Str QuickCurrencyTip}" />
         </Grid>
@@ -49,15 +49,15 @@
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
-            <ComboBox x:Name="EventBox" ItemsSource="{Binding Events}" DisplayMemberPath="Name" SelectedValuePath="Key"
+            <ComboBox infra:Help.Topic="entry.event" x:Name="EventBox" ItemsSource="{Binding Events}" DisplayMemberPath="Name" SelectedValuePath="Key"
                       SelectedValue="{Binding EventKey, Mode=TwoWay}" HorizontalAlignment="Stretch" Margin="0,0,10,0"
                       ui:ControlHelper.Header="{infra:Str QuickEvent}" />
-            <TextBox x:Name="NoteBox" Grid.Column="1" Text="{Binding Note, UpdateSourceTrigger=PropertyChanged}"
+            <TextBox infra:Help.Topic="entry.note" x:Name="NoteBox" Grid.Column="1" Text="{Binding Note, UpdateSourceTrigger=PropertyChanged}"
                      ui:ControlHelper.Header="{infra:Str QuickNote}" ui:ControlHelper.PlaceholderText="{infra:Str QuickNoteHint}" />
         </Grid>
 
         <!-- exchange rate: only for a foreign currency -->
-        <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="0,10,0,0" Visibility="{Binding IsForeign, Converter={StaticResource BoolToVis}}">
+        <StackPanel infra:Help.Topic="entry.currency" Grid.Row="3" Orientation="Horizontal" Margin="0,10,0,0" Visibility="{Binding IsForeign, Converter={StaticResource BoolToVis}}">
             <TextBlock Text="{infra:Str RateLabel}" VerticalAlignment="Center" Margin="0,0,8,0" />
             <TextBox x:Name="RateBox" Width="100" IsTabStop="False" Text="{Binding RateText, UpdateSourceTrigger=PropertyChanged}" ToolTip="{infra:Str RateTip}" />
             <Button Content="↻" Command="{Binding ResetRateCommand}" Margin="6,0,0,0" IsTabStop="False" ToolTip="{infra:Str RateReset}" />
@@ -67,7 +67,7 @@
         </StackPanel>
 
         <!-- the items of the receipt -->
-        <ScrollViewer Grid.Row="4" VerticalScrollBarVisibility="Auto" Margin="0,16,0,0">
+        <ScrollViewer infra:Help.Topic="entry.lines" Grid.Row="4" VerticalScrollBarVisibility="Auto" Margin="0,16,0,0">
             <StackPanel>
                 <TextBlock Text="{infra:Str EntryLines}" Opacity="0.7" Margin="0,0,0,4" />
                 <ItemsControl x:Name="LinesList" ItemsSource="{Binding Lines}">
@@ -118,7 +118,7 @@
 
         <StackPanel Grid.Row="6" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,14,0,0">
             <Button Content="{infra:Str Cancel}" Click="Cancel_Click" MinWidth="110" Margin="0,0,8,0" />
-            <Button x:Name="ConfirmButton" Content="{infra:Str EntryConfirm}" Click="Confirm_Click" Style="{StaticResource AccentButtonStyle}" MinWidth="130"
+            <Button infra:Help.Topic="entry.confirm" x:Name="ConfirmButton" Content="{infra:Str EntryConfirm}" Click="Confirm_Click" Style="{StaticResource AccentButtonStyle}" MinWidth="130"
                     ToolTip="{infra:Str QuickAddTip}" />
         </StackPanel>
     </Grid>

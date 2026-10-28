@@ -1,0 +1,78 @@
+# Spis tematów pomocy: jeden temat w wierszu, wcięcie 2 spacje = poziom niżej.
+intro
+  intro.data
+  intro.firstrun
+main
+  main.header
+  main.quick
+  main.nav
+  main.sync
+  main.footer
+  main.busy
+  main.toast
+entry
+  entry.expense
+    entry.date
+    entry.place
+    entry.total
+    entry.currency
+    entry.event
+    entry.note
+    entry.lines
+    entry.confirm
+    entry.duplicates
+  entry.income
+  entry.calculator
+dashboard
+  dashboard.month
+  dashboard.tiles
+  dashboard.chart
+  dashboard.recent
+  dashboard.budgets
+  dashboard.event
+transactions
+  transactions.period
+  transactions.filters
+  transactions.amount
+  transactions.table
+  transactions.edit
+  transactions.selection
+  transactions.sums
+  transactions.export
+budgets
+  budgets.limits
+  budgets.copy
+events
+  events.list
+  events.edit
+  events.summary
+recurring
+  recurring.list
+  recurring.edit
+  recurring.confirm
+payments
+  payments.list
+  payments.payees
+  payments.plan
+  payments.pay
+  payments.reminders
+reports
+  reports.overview
+  reports.compare
+  reports.places
+  reports.charts
+settings
+  settings.general
+  settings.appearance
+  settings.categories
+  settings.importexport
+    import
+      import.row
+  settings.diagnostics
+  settings.backup
+  settings.shortcuts
+  settings.places
+keys
+help
+  help.button
+trouble

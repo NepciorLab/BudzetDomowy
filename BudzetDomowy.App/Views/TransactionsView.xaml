@@ -1,4 +1,4 @@
-<UserControl x:Class="BudzetDomowy.App.Views.TransactionsView"
+<UserControl infra:Help.Topic="transactions" x:Class="BudzetDomowy.App.Views.TransactionsView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:ui="http://schemas.modernwpf.com/2019"
@@ -19,7 +19,7 @@
         </Grid.RowDefinitions>
 
         <!-- Period: week, month, year or free range, with arrows; Excel export on the right -->
-        <Grid Grid.Row="0" Margin="0,0,0,8">
+        <Grid infra:Help.Topic="transactions.period" Grid.Row="0" Margin="0,0,0,8">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" />
@@ -51,7 +51,7 @@
                             Visibility="{Binding IsRangeMode, Converter={StaticResource BoolToVis}}" />
             </StackPanel>
             <!-- Excel icon: exports what the table shows -->
-            <Button Grid.Column="2" Command="{Binding ExportXlsxCommand}" ToolTip="{infra:Str ExportVisibleTip}" Padding="6" HorizontalAlignment="Right">
+            <Button infra:Help.Topic="transactions.export" Grid.Column="2" Command="{Binding ExportXlsxCommand}" ToolTip="{infra:Str ExportVisibleTip}" Padding="6" HorizontalAlignment="Right">
                 <Border Width="26" Height="26" CornerRadius="4" Background="#217346">
                     <Grid>
                         <Path Data="M5,6 L21,6 M5,11 L21,11 M5,16 L21,16 M5,21 L21,21 M11,6 L11,21" Stroke="#66FFFFFF" StrokeThickness="0.8" />
@@ -62,7 +62,7 @@
         </Grid>
 
         <!-- Filters -->
-        <WrapPanel Grid.Row="1" Orientation="Horizontal">
+        <WrapPanel infra:Help.Topic="transactions.filters" Grid.Row="1" Orientation="Horizontal">
             <controls:FilterComboBox Choices="{Binding FilterCategories}" DisplayMemberPath="DisplayName"
                                      SelectedValuePath="Id" SelectedValue="{Binding CategoryFilter, Mode=TwoWay}"
                                      Width="230" Margin="0,0,4,8"
@@ -76,7 +76,7 @@
             <ComboBox ItemsSource="{Binding TypeFilters}" SelectedItem="{Binding TypeFilter, Mode=TwoWay}" Width="130" Margin="0,0,8,8"
                       ui:ControlHelper.Header="{infra:Str FilterType}" />
             <!-- the amount range: only entries whose amount lies between the two numbers (both included) -->
-            <TextBox x:Name="AmountFromBox" Text="{Binding AmountFrom, UpdateSourceTrigger=PropertyChanged}" Width="100" Margin="0,0,8,8" TextAlignment="Right"
+            <TextBox infra:Help.Topic="transactions.amount" x:Name="AmountFromBox" Text="{Binding AmountFrom, UpdateSourceTrigger=PropertyChanged}" Width="100" Margin="0,0,8,8" TextAlignment="Right"
                      ui:ControlHelper.Header="{infra:Str FilterAmountFrom}" ui:ControlHelper.PlaceholderText="0,00">
                 <TextBox.Style>
                     <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
@@ -88,7 +88,7 @@
                     </Style>
                 </TextBox.Style>
             </TextBox>
-            <TextBox x:Name="AmountToBox" Text="{Binding AmountTo, UpdateSourceTrigger=PropertyChanged}" Width="100" Margin="0,0,8,8" TextAlignment="Right"
+            <TextBox infra:Help.Topic="transactions.amount" x:Name="AmountToBox" Text="{Binding AmountTo, UpdateSourceTrigger=PropertyChanged}" Width="100" Margin="0,0,8,8" TextAlignment="Right"
                      ui:ControlHelper.Header="{infra:Str FilterAmountTo}" ui:ControlHelper.PlaceholderText="∞">
                 <TextBox.Style>
                     <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
@@ -143,7 +143,7 @@
                 </ui:Flyout>
             </ui:FlyoutService.Flyout>
         </Button>
-        <DataGrid x:Name="Grid" Grid.Row="2" ItemsSource="{Binding Rows}"
+        <DataGrid infra:Help.Topic="transactions.table" x:Name="Grid" Grid.Row="2" ItemsSource="{Binding Rows}"
                   infra:GridBehaviors.ColumnChooserKey="transactions"
                   infra:GridBehaviors.AutoFit="{Binding AutoFitColumns, Source={x:Static infra:UiPreferences.Instance}}" AutoGenerateColumns="False"
                   SelectionMode="Extended" SelectionUnit="FullRow" CanUserAddRows="False" CanUserDeleteRows="False"
@@ -154,9 +154,9 @@
                   SelectionChanged="Grid_SelectionChanged" PreviewKeyDown="Grid_PreviewKeyDown">
             <DataGrid.ContextMenu>
                 <ContextMenu>
-                    <MenuItem Header="{infra:Str BulkChangeCategory}" Click="MenuChangeCategory_Click" />
-                    <MenuItem x:Name="MenuChangeAmount" Header="{infra:Str BulkChangeAmount}" Click="MenuChangeAmount_Click" />
-                    <MenuItem Header="{infra:Str BulkDelete}" InputGestureText="Del" Click="MenuDelete_Click" />
+                    <MenuItem infra:Help.Topic="transactions.selection" Header="{infra:Str BulkChangeCategory}" Click="MenuChangeCategory_Click" />
+                    <MenuItem infra:Help.Topic="transactions.selection" x:Name="MenuChangeAmount" Header="{infra:Str BulkChangeAmount}" Click="MenuChangeAmount_Click" />
+                    <MenuItem infra:Help.Topic="transactions.selection" Header="{infra:Str BulkDelete}" InputGestureText="Del" Click="MenuDelete_Click" />
                 </ContextMenu>
             </DataGrid.ContextMenu>
             <DataGrid.Columns>
@@ -271,7 +271,7 @@
                    Opacity="0.6" IsHitTestVisible="False"
                    Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVis}}" />
 
-        <DockPanel Grid.Row="3" Margin="0,10,0,0" LastChildFill="True">
+        <DockPanel infra:Help.Topic="transactions.sums" Grid.Row="3" Margin="0,10,0,0" LastChildFill="True">
             <WrapPanel DockPanel.Dock="Right" Margin="16,0,0,0" VerticalAlignment="Top" Visibility="{Binding HasSelection, Converter={StaticResource BoolToVis}}">
                 <Border CornerRadius="14" Padding="14,5" Margin="0,0,8,0" Background="{DynamicResource SystemControlBackgroundAccentBrush}">
                     <TextBlock Text="{Binding SelectionLabel}" FontWeight="SemiBold" Foreground="White" />

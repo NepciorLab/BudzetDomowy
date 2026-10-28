@@ -31,6 +31,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- The help: pages (Help\*.md, the list of them in Help\index.txt) and their pictures (made by BudzetDomowy.UiTests\HelpPictures) -->
+    <EmbeddedResource Include="Help\*.md;Help\index.txt" LogicalName="Help/%(Filename)%(Extension)" />
+    <Resource Include="Assets\Help\*.png" />
+  </ItemGroup>
+
+  <ItemGroup>
     <!-- Same icon for the windows (title bar, Alt+Tab, taskbar button) -->
     <Resource Include="Assets\BudzetDomowy.ico" />
   </ItemGroup>

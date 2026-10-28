@@ -36,6 +36,7 @@ public sealed class WpfDuplicatePrompt : IDuplicatePrompt
         };
         window.WindowStartupLocation = window.Owner is null ? WindowStartupLocation.CenterScreen : WindowStartupLocation.CenterOwner;
         WindowHelper.SetUseModernWindowStyle(window, true);
+        Help.SetTopic(window, "entry.duplicates");
 
         var panel = new StackPanel { Margin = new Thickness(24, 16, 24, 20), MinWidth = 420 };
         panel.Children.Add(new TextBlock { Text = Res.Get(existing.Count == 1 ? "DupIntroOne" : "DupIntroMany"), TextWrapping = TextWrapping.Wrap, FontSize = 15 });

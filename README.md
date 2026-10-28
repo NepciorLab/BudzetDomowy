@@ -2,7 +2,7 @@
 
 Program dla Windows 11 do wpisywania przychodów i wydatków oraz pilnowania budżetu domowego. Pracują w nim dwie osoby na dwóch komputerach na wspólnych danych. Interfejs jest po polsku, walutą bazową jest złoty.
 
-Wersja **0.7.0**.
+Wersja **0.8.0**.
 
 ## Uruchomienie
 
@@ -47,7 +47,8 @@ U góry każdego ekranu są dwa przyciski z podpowiedzią klawiszy: **W – nowy
 * W tabeli Transakcje Home i End przechodzą do pierwszego i ostatniego wpisu. Esc, którego nic innego nie użyło (zaznaczenie, filtry, otwarta lista, pola tekstu), wraca na Pulpit.
 * Podwójne kliknięcie w polu z kwotą zaznacza całą kwotę, razem z groszami.
 * Klawisze skrótów można zmienić: Ustawienia → Skróty klawiszowe → *Zmień…* (program nie pozwoli przypisać klawisza, który ma już inne polecenie albo który jest zarezerwowany, np. Ctrl+C).
-* Pełna lista skrótów: **F1** albo Ustawienia → Skróty klawiszowe.
+* Pełna lista skrótów: **F2** albo Ustawienia → Skróty klawiszowe.
+* **Pomoc**: **F1** otwiera okno z drzewem tematów po lewej i opisem po prawej, od razu na temacie pola (albo ekranu), na którym stoisz; działa też w oknach wpisu. Przycisk **?** w lewym dolnym rogu okna zamienia kursor w strzałkę ze znakiem zapytania: następne kliknięcie dowolnego przycisku, pola lub wykresu otwiera jego opis zamiast go uruchomić (`Esc` albo ponowne kliknięcie „?” wraca do zwykłej pracy). Teksty pomocy to pliki `BudzetDomowy.App\Help\*.md` (spis: `index.txt`), obrazki w `Assets\Help` powstają z prawdziwych ekranów z wymyślonymi danymi: `$env:BUDZET_HELP_PICTURES = "...\Assets\Help"; dotnet test --filter HelpPictures`.
 
 **Kalkulator**: przycisk z ikoną kalkulatora obok przycisków nowego wydatku i przychodu otwiera go w osobnym oknie, które może zostać otwarte obok programu. Są cyfry, przecinek, `+ − × ÷`, `=`, `C`, ⌫ i zmiana znaku; działania wykonują się po kolei, jak w kalkulatorze biurkowym (12 + 3 × 2 = 30). Działa też z klawiatury (cyfry, `,` lub `.`, `+ - * /`, Enter, Backspace, Del = C, Esc zamyka). Przycisk **Kopiuj wynik** (albo Ctrl+C) wkłada liczbę ze schowka z przecinkiem dziesiętnym, bez spacji, gotową do wklejenia w polu kwoty.
 

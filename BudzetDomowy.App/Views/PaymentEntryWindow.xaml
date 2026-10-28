@@ -1,4 +1,4 @@
-<Window x:Class="BudzetDomowy.App.Views.PaymentEntryWindow"
+<Window infra:Help.Topic="payments.plan" x:Class="BudzetDomowy.App.Views.PaymentEntryWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ui="http://schemas.modernwpf.com/2019"
@@ -27,7 +27,7 @@
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
-            <ComboBox x:Name="PayeeBox" ItemsSource="{Binding Payees}" SelectedItem="{Binding SelectedPayee, Mode=TwoWay}" DisplayMemberPath="Name"
+            <ComboBox infra:Help.Topic="payments.payees" x:Name="PayeeBox" ItemsSource="{Binding Payees}" SelectedItem="{Binding SelectedPayee, Mode=TwoWay}" DisplayMemberPath="Name"
                       HorizontalAlignment="Stretch" ui:ControlHelper.Header="{infra:Str PayPayee}" ui:ControlHelper.PlaceholderText="{infra:Str PayPayeeHint}" />
             <Button Grid.Column="1" Content="{infra:Str PayNewPayee}" Command="{Binding NewPayeeCommand}" VerticalAlignment="Bottom" Margin="10,0,0,0" IsTabStop="False" />
         </Grid>

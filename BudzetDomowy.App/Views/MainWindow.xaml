@@ -1,4 +1,4 @@
-<Window x:Class="BudzetDomowy.App.Views.MainWindow"
+<Window infra:Help.Topic="main" x:Class="BudzetDomowy.App.Views.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ui="http://schemas.modernwpf.com/2019"
@@ -56,7 +56,7 @@
             </Grid.RowDefinitions>
 
             <!-- Today's date, big -->
-            <Border Grid.Row="0" Background="{StaticResource HeaderBrush}" Padding="20,8">
+            <Border infra:Help.Topic="main.header" Grid.Row="0" Background="{StaticResource HeaderBrush}" Padding="20,8">
                 <Grid>
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                         <TextBlock Text="{Binding TodayText}" FontSize="30" FontWeight="Bold" Foreground="White" VerticalAlignment="Center" />
@@ -70,20 +70,20 @@
             </Border>
 
             <!-- instead of entry fields: what to press to enter something new -->
-            <Border Grid.Row="1" Padding="16,8" BorderThickness="0,0,0,1" Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}"
+            <Border infra:Help.Topic="main.quick" Grid.Row="1" Padding="16,8" BorderThickness="0,0,0,1" Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}"
                     BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
                 <StackPanel Orientation="Horizontal">
-                    <Button x:Name="NewExpenseButton" Content="{Binding ExpenseHint}" Command="{Binding NewExpenseCommand}" Padding="16,6" Margin="0,0,10,0"
+                    <Button infra:Help.Topic="entry.expense" x:Name="NewExpenseButton" Content="{Binding ExpenseHint}" Command="{Binding NewExpenseCommand}" Padding="16,6" Margin="0,0,10,0"
                             Foreground="{StaticResource ExpenseBrush}" FontWeight="SemiBold" />
-                    <Button x:Name="NewIncomeButton" Content="{Binding IncomeHint}" Command="{Binding NewIncomeCommand}" Padding="16,6"
+                    <Button infra:Help.Topic="entry.income" x:Name="NewIncomeButton" Content="{Binding IncomeHint}" Command="{Binding NewIncomeCommand}" Padding="16,6"
                             Foreground="{StaticResource IncomeBrush}" FontWeight="SemiBold" Margin="0,0,10,0" />
-                    <Button x:Name="CalculatorButton" Command="{Binding OpenCalculatorCommand}" Padding="12,6" ToolTip="{infra:Str CalcTip}"
+                    <Button infra:Help.Topic="entry.calculator" x:Name="CalculatorButton" Command="{Binding OpenCalculatorCommand}" Padding="12,6" ToolTip="{infra:Str CalcTip}"
                             AutomationProperties.Name="{infra:Str CalcTitle}">
                         <TextBlock Text="&#xE8EF;" FontFamily="Segoe MDL2 Assets" FontSize="20" Foreground="{DynamicResource SystemControlForegroundAccentBrush}" />
                     </Button>
 
                     <!-- what a long operation is doing (deleting thousands of entries...) -->
-                    <StackPanel x:Name="BusyBar" Orientation="Horizontal" VerticalAlignment="Center" Margin="18,0,0,0"
+                    <StackPanel infra:Help.Topic="main.busy" x:Name="BusyBar" Orientation="Horizontal" VerticalAlignment="Center" Margin="18,0,0,0"
                                 Visibility="{Binding IsBusy, Source={x:Static infra:BusyStatus.Instance}, Converter={x:Static infra:BoolToVisibilityConverter.Visible}}">
                         <ui:ProgressRing IsActive="True" Width="20" Height="20" />
                         <TextBlock x:Name="BusyText" Text="{Binding Text, Source={x:Static infra:BusyStatus.Instance}}" FontWeight="SemiBold" Margin="10,0,0,0" VerticalAlignment="Center" />
@@ -97,20 +97,32 @@
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
 
-                <ListBox x:Name="Nav" ItemsSource="{Binding NavItems}" SelectedItem="{Binding SelectedNav, Mode=TwoWay}"
-                         BorderThickness="0,0,1,0" Padding="0,8,0,0" IsTabStop="False"
-                         BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
-                    <ListBox.ItemTemplate>
-                        <DataTemplate>
-                            <StackPanel Orientation="Horizontal" Margin="4,6" ToolTip="{Binding Shortcut}">
-                                <TextBlock Text="{Binding Glyph}" FontFamily="Segoe MDL2 Assets" FontSize="16"
-                                           Width="28" VerticalAlignment="Center"
-                                           Foreground="{DynamicResource SystemControlForegroundAccentBrush}" />
-                                <TextBlock Text="{Binding Title}" FontSize="15" VerticalAlignment="Center" />
-                            </StackPanel>
-                        </DataTemplate>
-                    </ListBox.ItemTemplate>
-                </ListBox>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <ListBox x:Name="Nav" ItemsSource="{Binding NavItems}" SelectedItem="{Binding SelectedNav, Mode=TwoWay}"
+                             BorderThickness="0" Padding="0,8,0,0" IsTabStop="False" infra:Help.Topic="main.nav">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal" Margin="4,6" ToolTip="{Binding Shortcut}">
+                                    <TextBlock Text="{Binding Glyph}" FontFamily="Segoe MDL2 Assets" FontSize="16"
+                                               Width="28" VerticalAlignment="Center"
+                                               Foreground="{DynamicResource SystemControlForegroundAccentBrush}" />
+                                    <TextBlock Text="{Binding Title}" FontSize="15" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                    <!-- the question mark: the next click on anything shows what it is -->
+                    <ToggleButton x:Name="HelpButton" Grid.Row="1" Content="?" Width="36" Height="36" MinWidth="0" Padding="0" Margin="10,6,0,10"
+                                  HorizontalAlignment="Left" FontSize="18" FontWeight="Bold" Click="HelpButton_Click"
+                                  ToolTip="{infra:Str HelpButtonTip}" AutomationProperties.Name="{infra:Str HelpTitle}"
+                                  infra:Help.Topic="help.button" />
+                    <Border Grid.RowSpan="2" BorderThickness="0,0,1,0" IsHitTestVisible="False"
+                            BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}" />
+                </Grid>
 
                 <ContentControl Grid.Column="1" Content="{Binding CurrentPage}" IsTabStop="False" />
             </Grid>
@@ -119,14 +131,14 @@
                     BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
                     Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}">
                 <Grid>
-                    <Button Command="{Binding ShowSyncDetailsCommand}" Padding="8,2" Background="Transparent" BorderThickness="0"
+                    <Button infra:Help.Topic="main.sync" Command="{Binding ShowSyncDetailsCommand}" Padding="8,2" Background="Transparent" BorderThickness="0"
                             HorizontalAlignment="Left" ToolTip="{infra:Str SyncClickForDetails}">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="{Binding SyncGlyph}" Foreground="{Binding SyncBrush}" Margin="0,0,8,0" VerticalAlignment="Center" />
                             <TextBlock Text="{Binding SyncText}" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Opacity="0.6">
+                    <StackPanel infra:Help.Topic="main.footer" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Opacity="0.6">
                         <TextBlock Text="{Binding DeviceLabel}" />
                         <TextBlock Text="{Binding VersionLabel}" Margin="14,0,0,0" ToolTip="{infra:Str FooterVersionTip}" />
                     </StackPanel>
@@ -135,7 +147,7 @@
         </Grid>
 
         <!-- Discreet message with Undo -->
-        <Border Grid.Row="1" VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="0,0,0,92"
+        <Border infra:Help.Topic="main.toast" Grid.Row="1" VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="0,0,0,92"
                 CornerRadius="6" Padding="16,10" MaxWidth="640"
                 Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}"
                 BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}" BorderThickness="1"

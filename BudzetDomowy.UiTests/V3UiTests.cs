@@ -369,7 +369,7 @@ public class V3UiTests
         var window = new MainWindow(app.Get<MainViewModel>(), app.Get<SettingsStore>());
         bool Has(Key key, ModifierKeys mods) => window.InputBindings.OfType<KeyBinding>().Any(b => b.Key == key && b.Modifiers == mods);
 
-        Assert.True(Has(Key.F1, ModifierKeys.None));
+        Assert.True(Has(Key.F2, ModifierKeys.None));                                    // the list of shortcuts; F1 (the help) is handled for the whole program
         Assert.True(Has(Key.D2, ModifierKeys.Control));
         Assert.Equal(12, window.InputBindings.Count);
 

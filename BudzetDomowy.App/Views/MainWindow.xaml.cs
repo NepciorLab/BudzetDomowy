@@ -31,6 +31,14 @@ public partial class MainWindow : Window
         WindowPlacement.Apply(this, store.Current);
         Closing += (_, _) => store.Update(s => WindowPlacement.Capture(this, s));
         RebuildKeyBindings();
+        HelpService.Install();
+        HelpService.PageTopic = PageTopic;
+        HelpService.PickingChanged += OnPickingChanged;
+        Closed += (_, _) =>
+        {
+            HelpService.PickingChanged -= OnPickingChanged;
+            HelpService.StopPicking();
+        };
         KeyDown += OnWindowKeyDown;
         PreviewKeyDown += OnEntryKey;
         ShortcutMap.Instance.Changed += OnShortcutChanged;
@@ -40,6 +48,26 @@ public partial class MainWindow : Window
     }
 
     private void OnShortcutChanged(string id) => RebuildKeyBindings();
+
+    private void HelpButton_Click(object sender, RoutedEventArgs e)
+    {
+        HelpService.TogglePicking();
+        HelpButton.IsChecked = HelpService.IsPicking;
+    }
+
+    private void OnPickingChanged() => HelpButton.IsChecked = HelpService.IsPicking;
+
+    /// <summary>The help topic of the open screen (the tab of Settings or Reports as well).</summary>
+    private string? PageTopic() => _vm.SelectedNav?.Key switch
+    {
+        "settings" => "settings." + (_vm.Settings.SelectedTab switch
+        {
+            0 => "general", 1 => "appearance", 2 => "categories", 3 => "importexport", 4 => "diagnostics", 5 => "backup", 6 => "shortcuts", 7 => "places", _ => "general",
+        }),
+        "reports" when _vm.CurrentPage is ReportsViewModel reports => "reports." + (reports.TabIndex switch { 1 => "compare", 2 => "places", 3 => "charts", _ => "overview" }),
+        { } key => key,
+        _ => null,
+    };
 
     /// <summary>W and Q (or the keys chosen in Settings) open the window for a new expense or income, but never while text is being typed.</summary>
     private void OnEntryKey(object sender, KeyEventArgs e)
@@ -81,7 +109,7 @@ public partial class MainWindow : Window
             InputBindings.Add(new KeyBinding(command, key, modifiers) { CommandParameter = parameter });
         }
 
-        Add(ShortcutMap.Help, ShowShortcutsCommand);
+        Add(ShortcutMap.ShortcutsList, ShowShortcutsCommand);   // F1, the help, is handled for the whole program by HelpService
         Add(ShortcutMap.Undo, _vm.UndoCommand);
         foreach (var page in ShortcutMap.Pages) Add(ShortcutMap.GoPrefix + page, GoCommand, page);
         Add(ShortcutMap.PreviousPeriod, _vm.PreviousPeriodCommand);

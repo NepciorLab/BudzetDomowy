@@ -66,3 +66,8 @@ Podsumowanie miesiąca i roku, porównanie z poprzednim okresem, średnie wydatk
 - Struktura rozwiązania: BudzetDomowy.sln → BudzetDomowy.Core (domena, zdarzenia, synchronizacja, repozytoria), BudzetDomowy.App (WPF), BudzetDomowy.Tests.
 - Nie dodawaj funkcji spoza specyfikacji bez pytania. Przy niejasnościach zadaj mi pytanie zamiast zgadywać.
 - Commituj do git po każdej fazie z opisową wiadomością.
+
+## Pomoc
+- Okno `HelpWindow` (drzewo tematów + `FlowDocumentScrollViewer`), jedno na program, niemodalne; `HelpService` (Infrastructure/Help.cs): F1 (`ShortcutMap.Help`, klawisz w KeyDown z dołu drzewa, więc pole może go przejąć) otwiera temat elementu z fokusem albo ekranu (`PageTopic` ustawia MainWindow), przycisk „?” (`HelpButton`) włącza tryb wskazywania (`Cursors.Help`, PreviewMouseDown pochłania jedno kliknięcie, Esc kończy). `ShortcutMap.ShortcutsList` = F2 (lista skrótów).
+- Element opisuje się atrybutem `infra:Help.Topic="id"` (dziedziczy po rodzicu); test `HelpTests` sprawdza, że każdy id ma stronę, a każdy link, obrazek i `{key:...}` istnieje.
+- Strony: `BudzetDomowy.App\Help\<id>.md` (pierwsza linia `# Tytuł`) + `index.txt` (wcięcie 2 spacje = poziom); mini-składnia w `HelpDocumentBuilder` (`## `, `- `, `1. `, `> `, `![podpis](plik.png)`, `**b**`, `` `klawisz` ``, `{key:Id}`, `[tekst](temat)`). Obrazki: `Assets\Help`, generator `BudzetDomowy.UiTests\HelpPictures.cs` (losowe dane, ramki z numerami po `Help.Topic`).

@@ -19,6 +19,7 @@ public sealed class ShortcutMap
     public const string NewIncome = "Entry.Income";
     public const string Undo = "Undo";
     public const string Help = "Help";
+    public const string ShortcutsList = "Shortcuts";
     public const string PreviousPeriod = "Period.Previous";
     public const string NextPeriod = "Period.Next";
     public const string TxChangeCategory = "Tx.ChangeCategory";
@@ -38,7 +39,8 @@ public sealed class ShortcutMap
         new(NextPeriod, "Alt+Right", "KeyNextPeriod"),
         new(TxChangeCategory, "Ctrl+K", "KeyCtrlK"),
         new(TxDelete, "Delete", "KeyDel"),
-        new(Help, "F1", "KeyF1"),
+        new(Help, "F1", "KeyHelp"),
+        new(ShortcutsList, "F2", "KeyShortcutsList"),
     ];
 
     /// <summary>Keys the program needs for itself or that belong to the system; they cannot be assigned.</summary>

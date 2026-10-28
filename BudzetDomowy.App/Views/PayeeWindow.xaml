@@ -1,4 +1,4 @@
-<Window x:Class="BudzetDomowy.App.Views.PayeeWindow"
+<Window infra:Help.Topic="payments.payees" x:Class="BudzetDomowy.App.Views.PayeeWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ui="http://schemas.modernwpf.com/2019"
@@ -16,7 +16,7 @@
                  ui:ControlHelper.Header="{infra:Str PayeeName}" ui:ControlHelper.PlaceholderText="{infra:Str PayeeNameHint}" />
 
         <!-- the number: typed in any way, shown in the standard groups once the box is left -->
-        <TextBox x:Name="AccountBox" Text="{Binding AccountText, UpdateSourceTrigger=PropertyChanged}" Margin="0,12,0,0" FontFamily="Consolas" FontSize="16"
+        <TextBox infra:Help.Topic="payments.payees" x:Name="AccountBox" Text="{Binding AccountText, UpdateSourceTrigger=PropertyChanged}" Margin="0,12,0,0" FontFamily="Consolas" FontSize="16"
                  ui:ControlHelper.Header="{infra:Str PayeeAccount}" ui:ControlHelper.PlaceholderText="00 0000 0000 0000 0000 0000 0000"
                  LostFocus="AccountBox_LostFocus" />
         <TextBlock x:Name="AccountHint" Text="{Binding AccountHint}" Margin="0,4,0,0" FontSize="12">

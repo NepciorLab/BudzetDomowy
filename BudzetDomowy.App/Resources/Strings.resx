@@ -431,7 +431,7 @@ Del – usuń zaznaczone transakcje</value></data>
   <data name="KeyEnter" xml:space="preserve"><value>Okno wpisu: przejdź do następnego pola; w kwocie pozycji – przyjmij ją i przejdź dalej</value></data>
   <data name="KeyCtrlEnter" xml:space="preserve"><value>Okno wpisu: zatwierdź z dowolnego pola</value></data>
   <data name="KeyTab" xml:space="preserve"><value>Następne / poprzednie pole</value></data>
-  <data name="KeyEsc" xml:space="preserve"><value>Zamknij okno wpisu (otwarta lista zamyka się pierwsza); na ekranie bez nic do anulowania – wróć na Pulpit</value></data>
+  <data name="KeyEsc" xml:space="preserve"><value>Zamknij okno wpisu (otwarta lista zamyka się pierwsza); na ekranie bez nic do anulowania – wróć na Pulpit; w trybie pomocy (przycisk ze znakiem zapytania) – zakończ ten tryb</value></data>
   <data name="KeyF2" xml:space="preserve"><value>Przełącz Wydatek / Przychód</value></data>
   <data name="KeyF3" xml:space="preserve"><value>Przejdź do wyboru waluty</value></data>
   <data name="KeyF4" xml:space="preserve"><value>Przejdź do pola kursu (gdy wybrana jest waluta obca)</value></data>
@@ -439,7 +439,8 @@ Del – usuń zaznaczone transakcje</value></data>
   <data name="KeyCtrlZ" xml:space="preserve"><value>Cofnij ostatnią operację, gdy widać komunikat z przyciskiem „Cofnij”</value></data>
   <data name="KeyCtrlDigitsOld" xml:space="preserve"><value>Przełącz ekrany: Pulpit, Transakcje, Budżety, Wydarzenia, Wydatki cykliczne, Raporty, Ustawienia</value></data>
   <data name="KeyDel" xml:space="preserve"><value>Usuń zaznaczone transakcje (na ekranie Transakcje)</value></data>
-  <data name="KeyF1" xml:space="preserve"><value>Pokaż tę listę skrótów</value></data>
+  <data name="KeyHelp" xml:space="preserve"><value>Pomoc: opis zaznaczonego pola albo ekranu</value></data>
+  <data name="KeyShortcutsList" xml:space="preserve"><value>Pokaż tę listę skrótów</value></data>
   <data name="EventPlannedField" xml:space="preserve"><value>Plan (zł)</value></data>
   <data name="EventPlannedHint" xml:space="preserve"><value>np. 5000 (opcjonalnie)</value></data>
   <data name="CategoryPickIcon" xml:space="preserve"><value>Wybierz ikonę z listy (albo wpisz własną powyżej):</value></data>
@@ -843,4 +844,10 @@ Dodaj rachunki przyciskiem „Zaplanuj płatności”.</value></data>
   <data name="ChartTooMany" xml:space="preserve"><value>Na wykresie może być najwyżej {0} kategorii naraz: usuń którąś, żeby dodać następną.</value></data>
   <data name="PeriodAll" xml:space="preserve"><value>Wszystko</value></data>
   <data name="PeriodAllTitle" xml:space="preserve"><value>Wszystkie wpisy</value></data>
+  <data name="HelpTitle" xml:space="preserve"><value>Pomoc</value></data>
+  <data name="HelpSearchHint" xml:space="preserve"><value>Szukaj w pomocy…</value></data>
+  <data name="HelpSearchTip" xml:space="preserve"><value>Wpisz słowo: lista pokaże strony, na których ono jest (Esc czyści pole)</value></data>
+  <data name="HelpBack" xml:space="preserve"><value>Wstecz (Alt + ←)</value></data>
+  <data name="HelpForward" xml:space="preserve"><value>Dalej (Alt + →)</value></data>
+  <data name="HelpButtonTip" xml:space="preserve"><value>Pomoc: kliknij, a potem kliknij przycisk, pole albo wykres, żeby zobaczyć jego opis. Esc – wróć do zwykłej pracy.</value></data>
 </root>

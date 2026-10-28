@@ -22,7 +22,7 @@ public sealed record PickerMonth(int Number, string Name, bool IsCurrent, bool H
 
 public sealed record RecentRow(DateTime Date, string Place, string Category, string CategoryColor, string AmountText, bool IsIncome);
 
-public sealed partial class DashboardViewModel : ObservableObject, IPeriodNavigable
+public sealed partial class DashboardViewModel : ObservableObject, IPeriodNavigable, IRefreshOnShow
 {
     private readonly BudgetCore _core;
     private readonly MorphingBreakdown _breakdown = new();
@@ -197,6 +197,8 @@ public sealed partial class DashboardViewModel : ObservableObject, IPeriodNaviga
         _drillRoot = null;
         Reload();
     }
+
+    public void RefreshOnShow() => Reload();
 
     public void Reload()
     {

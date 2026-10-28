@@ -63,6 +63,14 @@ public sealed class DataHub : IDisposable
         }
     }
 
+    /// <summary>Tells the screens at once (on the UI thread, without the short wait) that the user has just changed something on another screen.</summary>
+    public void NotifyNow()
+    {
+        if (_stopped) return;
+        _timer.Stop();                       // the notification that was waiting is this one
+        Changed?.Invoke(this, EventArgs.Empty);
+    }
+
     public void Request()
     {
         if (_stopped) return;

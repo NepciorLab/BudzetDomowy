@@ -1,4 +1,4 @@
-<UserControl x:Class="BudzetDomowy.App.Views.PaymentsView"
+<UserControl infra:Help.Topic="payments" x:Class="BudzetDomowy.App.Views.PaymentsView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:ui="http://schemas.modernwpf.com/2019"
@@ -15,12 +15,12 @@
         </Grid.RowDefinitions>
 
         <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-            <Button Content="{infra:Str PayAddButton}" Command="{Binding AddPaymentsCommand}" Style="{StaticResource AccentButtonStyle}" Margin="0,0,8,0" />
-            <Button Content="{infra:Str PayPayees}" Command="{Binding ManagePayeesCommand}" />
+            <Button infra:Help.Topic="payments.plan" Content="{infra:Str PayAddButton}" Command="{Binding AddPaymentsCommand}" Style="{StaticResource AccentButtonStyle}" Margin="0,0,8,0" />
+            <Button infra:Help.Topic="payments.payees" Content="{infra:Str PayPayees}" Command="{Binding ManagePayeesCommand}" />
         </StackPanel>
         <TextBlock Grid.Row="1" Text="{Binding Summary}" FontWeight="SemiBold" Margin="0,0,0,8" />
 
-        <DataGrid Grid.Row="2" x:Name="PaymentGrid" ItemsSource="{Binding Items}" SelectedItem="{Binding Selected, Mode=TwoWay}" AutoGenerateColumns="False"
+        <DataGrid infra:Help.Topic="payments.list" Grid.Row="2" x:Name="PaymentGrid" ItemsSource="{Binding Items}" SelectedItem="{Binding Selected, Mode=TwoWay}" AutoGenerateColumns="False"
                   IsReadOnly="True" CanUserAddRows="False" CanUserDeleteRows="False" SelectionMode="Single" SelectionUnit="FullRow" HeadersVisibility="Column"
                   GridLinesVisibility="All" RowHeight="46" AlternationCount="2" AlternatingRowBackground="{DynamicResource SystemControlBackgroundListLowBrush}"
                   MouseDoubleClick="Grid_MouseDoubleClick"
@@ -88,7 +88,7 @@
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                <Button Content="{infra:Str PayButton}" Style="{StaticResource AccentButtonStyle}" Padding="16,4" MinWidth="0"
+                                <Button infra:Help.Topic="payments.pay" Content="{infra:Str PayButton}" Style="{StaticResource AccentButtonStyle}" Padding="16,4" MinWidth="0"
                                         Command="{Binding DataContext.PayCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" />
                                 <Button Content="✕" Margin="8,0,0,0" Padding="0" Width="32" Height="32" MinWidth="0" ToolTip="{infra:Str PayDeleteTip}"
                                         Command="{Binding DataContext.DeleteCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" />

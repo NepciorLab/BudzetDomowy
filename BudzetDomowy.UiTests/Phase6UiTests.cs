@@ -25,7 +25,7 @@ public class Phase6UiTests
         Assert.True(device.EventCount > 10);
         Assert.Contains("TEST-PC", device.Name);
         Assert.Matches(@"\d", device.JournalSize);
-        Assert.Contains("0.7.7", vm.Version);
+        Assert.Contains("0.8.0", vm.Version);
 
         var before = app.Core.Reader.GetTransactions().Count;
         UiHost.RunAsync(async () =>
@@ -65,11 +65,12 @@ public class Phase6UiTests
         var keys = UiHost.Texts(second);
         UiHost.Render(second, 1100, 760, "settings-shortcuts");
         Assert.Contains("F1", keys);
-        Assert.Equal(21, vm.Shortcuts.Count);
+        Assert.Contains("F2", keys);
+        Assert.Equal(22, vm.Shortcuts.Count);
     });
 
     [Fact]
-    public void MainWindow_F1Command_OpensTheShortcutsTab() => WithApp(app =>
+    public void MainWindow_ShortcutsCommand_OpensTheShortcutsTab() => WithApp(app =>
     {
         var vm = app.Get<MainViewModel>();
         var window = new MainWindow(vm, app.Get<SettingsStore>());

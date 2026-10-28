@@ -6,3 +6,9 @@ public interface IPeriodNavigable
     void PreviousPeriod();
     void NextPeriod();
 }
+
+/// <summary>A screen that reads its figures again each time it is opened, so it never shows what was true before the last change on another screen.</summary>
+public interface IRefreshOnShow
+{
+    void RefreshOnShow();
+}
