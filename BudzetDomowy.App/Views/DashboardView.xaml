@@ -33,11 +33,11 @@
         <StackPanel Margin="16,12,4,12">
             <!-- Month switch -->
             <StackPanel infra:Help.Topic="dashboard.month" Orientation="Horizontal" Margin="0,0,0,12">
-                <Button Content="◀" Command="{Binding PreviousMonthCommand}" Width="40" ToolTip="{infra:Str DashPrevMonth}" />
+                <Button Content="◀" Command="{Binding PreviousMonthCommand}" Width="40" ToolTip="{Binding PreviousTip}" />
                 <!-- the title opens a list of months and years, to get far back at once -->
                 <Grid Width="260">
                     <Button x:Name="MonthPickerButton" Command="{Binding TogglePickerCommand}" Background="Transparent" BorderThickness="0"
-                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Padding="0,2" ToolTip="{infra:Str DashPickMonth}">
+                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Padding="0,2" ToolTip="{Binding PickTip}">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="{Binding MonthTitle}" FontSize="24" FontWeight="SemiBold" />
                             <TextBlock Text="▾" FontSize="14" Opacity="0.6" VerticalAlignment="Center" Margin="8,4,0,0" />
@@ -63,7 +63,7 @@
                                             Width="40" ToolTip="{infra:Str DashYearBack10}" />
                                     <Button Grid.Column="1" Content="‹" Command="{Binding ShiftPickerYearCommand}" CommandParameter="-1" IsEnabled="{Binding CanPickerGoBack}"
                                             Width="36" Margin="4,0,0,0" ToolTip="{infra:Str DashYearBack1}" />
-                                    <TextBlock Grid.Column="2" Text="{Binding PickerYear}" FontSize="18" FontWeight="SemiBold" TextAlignment="Center" VerticalAlignment="Center" />
+                                    <TextBlock Grid.Column="2" Text="{Binding PickerTitle}" FontSize="18" FontWeight="SemiBold" TextAlignment="Center" VerticalAlignment="Center" />
                                     <Button Grid.Column="3" Content="›" Command="{Binding ShiftPickerYearCommand}" CommandParameter="1" IsEnabled="{Binding CanPickerGoForward}"
                                             Width="36" Margin="0,0,4,0" ToolTip="{infra:Str DashYearForward1}" />
                                     <Button Grid.Column="4" Content="»" Command="{Binding ShiftPickerYearCommand}" CommandParameter="10" IsEnabled="{Binding CanPickerGoForward}"
@@ -105,8 +105,13 @@
                         </Border>
                     </Popup>
                 </Grid>
-                <Button Content="▶" Command="{Binding NextMonthCommand}" Width="40" ToolTip="{infra:Str DashNextMonth}" />
+                <Button Content="▶" Command="{Binding NextMonthCommand}" Width="40" ToolTip="{Binding NextTip}" />
                 <Button Content="{infra:Str DashToday}" Command="{Binding ThisMonthCommand}" Margin="12,0,0,0" />
+                <!-- the same screen for a month or for the whole year -->
+                <RadioButton Content="{infra:Str PeriodMonth}" GroupName="dashmode" IsChecked="{Binding IsMonthMode, Mode=OneWay}"
+                             Command="{Binding SetModeCommand}" CommandParameter="Month" MinWidth="0" Margin="24,0,0,0" infra:Help.Topic="dashboard.mode" />
+                <RadioButton Content="{infra:Str PeriodYear}" GroupName="dashmode" IsChecked="{Binding IsYear, Mode=OneWay}"
+                             Command="{Binding SetModeCommand}" CommandParameter="Year" MinWidth="0" Margin="6,0,0,0" infra:Help.Topic="dashboard.mode" />
             </StackPanel>
 
             <!-- Tiles -->
@@ -254,7 +259,7 @@
                 <StackPanel Grid.Column="1">
                     <Border infra:Help.Topic="dashboard.budgets" Style="{StaticResource Card}">
                         <StackPanel>
-                            <TextBlock Text="{infra:Str DashBudgets}" FontWeight="SemiBold" FontSize="15" />
+                            <TextBlock Text="{Binding BudgetsTitle}" FontWeight="SemiBold" FontSize="15" />
                             <TextBlock Text="{infra:Str DashNoBudgets}" Opacity="0.6" Margin="0,8,0,0" TextWrapping="Wrap">
                                 <TextBlock.Style>
                                     <Style TargetType="TextBlock">

@@ -850,4 +850,8 @@ Dodaj rachunki przyciskiem „Zaplanuj płatności”.</value></data>
   <data name="HelpBack" xml:space="preserve"><value>Wstecz (Alt + ←)</value></data>
   <data name="HelpForward" xml:space="preserve"><value>Dalej (Alt + →)</value></data>
   <data name="HelpButtonTip" xml:space="preserve"><value>Pomoc: kliknij, a potem kliknij przycisk, pole albo wykres, żeby zobaczyć jego opis. Esc – wróć do zwykłej pracy.</value></data>
+  <data name="DashPrevYear" xml:space="preserve"><value>Poprzedni rok</value></data>
+  <data name="DashNextYear" xml:space="preserve"><value>Następny rok</value></data>
+  <data name="DashPickYear" xml:space="preserve"><value>Kliknij, aby wybrać rok</value></data>
+  <data name="DashBudgetsYear" xml:space="preserve"><value>Budżety w roku (suma limitów miesięcznych)</value></data>
 </root>

@@ -24,6 +24,7 @@ entry
   entry.income
   entry.calculator
 dashboard
+  dashboard.mode
   dashboard.month
   dashboard.tiles
   dashboard.chart

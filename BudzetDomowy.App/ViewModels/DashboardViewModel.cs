@@ -29,6 +29,10 @@ public sealed partial class DashboardViewModel : ObservableObject, IPeriodNaviga
     private Guid? _drillRoot;
 
     [ObservableProperty] private DateOnly _month = BudgetMath.MonthStart(DateOnly.FromDateTime(DateTime.Today));
+    /// <summary>The whole year of <see cref="Month"/> instead of the month alone (the same screen, a longer period).</summary>
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(IsMonthMode)), NotifyPropertyChangedFor(nameof(PreviousTip)), NotifyPropertyChangedFor(nameof(NextTip)),
+     NotifyPropertyChangedFor(nameof(PickTip)), NotifyPropertyChangedFor(nameof(BudgetsTitle)), NotifyPropertyChangedFor(nameof(PickerTitle)),
+     NotifyPropertyChangedFor(nameof(CanPickerGoBack))] private bool _isYear;
     [ObservableProperty] private string _monthTitle = "";
     [ObservableProperty] private string _incomeText = "";
     [ObservableProperty] private string _expenseText = "";
@@ -79,6 +83,34 @@ public sealed partial class DashboardViewModel : ObservableObject, IPeriodNaviga
         Reload();
     }
 
+    public bool IsMonthMode => !IsYear;
+
+    public string PreviousTip => Res.Get(IsYear ? "DashPrevYear" : "DashPrevMonth");
+    public string NextTip => Res.Get(IsYear ? "DashNextYear" : "DashNextMonth");
+    public string PickTip => Res.Get(IsYear ? "DashPickYear" : "DashPickMonth");
+    public string BudgetsTitle => Res.Get(IsYear ? "DashBudgetsYear" : "DashBudgets");
+
+    partial void OnIsYearChanged(bool value)
+    {
+        _drillRoot = null;
+        if (IsPickerOpen) IsPickerOpen = false;
+        Reload();
+    }
+
+    /// <param name="mode">"Month" or "Year" (text because it comes from XAML).</param>
+    [RelayCommand]
+    private void SetMode(string? mode) => IsYear = mode == "Year";
+
+    /// <summary>The month of the chosen year the screen stays on: the same month number, but never one that has not begun.</summary>
+    private static DateOnly InYear(int year, DateOnly like)
+    {
+        var month = new DateOnly(Math.Clamp(year, 1, 9999), like.Month, 1);
+        var now = BudgetMath.MonthStart(Today);
+        return month > now ? now : month;
+    }
+
+    private PeriodKind Kind => IsYear ? PeriodKind.Year : PeriodKind.Month;
+
     // ----- choosing the month and the year -----
 
     private const int FirstPickerYear = 2000;
@@ -103,11 +135,16 @@ public sealed partial class DashboardViewModel : ObservableObject, IPeriodNaviga
 
     public bool CanPickerGoForward => PickerYear < Today.Year;
 
-    public bool CanPickerGoBack => PickerYear > FirstPickerYear;
+    public bool CanPickerGoBack => PickerYear - (IsYear ? YearsShown - 1 : 0) > FirstPickerYear;
+
+    /// <summary>The list of years shows this many years, the last one being <see cref="PickerYear"/>.</summary>
+    private const int YearsShown = 12;
+
+    public string PickerTitle => IsYear ? $"{PickerYear - YearsShown + 1}–{PickerYear}" : PickerYear.ToString(CultureInfo.CurrentCulture);
 
     partial void OnIsPickerOpenChanged(bool value)
     {
-        if (value) PickerYear = Month.Year;
+        if (value) PickerYear = IsYear ? Math.Min(Today.Year, Math.Max(Month.Year + YearsShown / 2, FirstPickerYear + YearsShown - 1)) : Month.Year;
         else _pickerClosedAt = DateTime.UtcNow;
         BuildPickerMonths();
     }
@@ -116,6 +153,7 @@ public sealed partial class DashboardViewModel : ObservableObject, IPeriodNaviga
     {
         OnPropertyChanged(nameof(CanPickerGoForward));
         OnPropertyChanged(nameof(CanPickerGoBack));
+        OnPropertyChanged(nameof(PickerTitle));
         BuildPickerMonths();
     }
 
@@ -123,6 +161,14 @@ public sealed partial class DashboardViewModel : ObservableObject, IPeriodNaviga
     {
         var culture = CultureInfo.CurrentCulture;
         var today = Today;
+        if (IsYear)
+        {
+            // twelve years ending with PickerYear; Number is the year itself
+            PickerMonths = Enumerable.Range(PickerYear - YearsShown + 1, YearsShown)
+                .Select(y => new PickerMonth(y, y.ToString(culture), y == Month.Year, _monthsWithData.Any(m => m.Year == y), y > today.Year)).ToList();
+            return;
+        }
+
         PickerMonths = Enumerable.Range(1, 12).Select(n =>
         {
             var name = culture.DateTimeFormat.GetAbbreviatedMonthName(n).TrimEnd('.');
@@ -145,12 +191,20 @@ public sealed partial class DashboardViewModel : ObservableObject, IPeriodNaviga
     private void ShiftPickerYear(string? years)
     {
         if (!int.TryParse(years, NumberStyles.Integer, CultureInfo.InvariantCulture, out var by)) return;
-        PickerYear = Math.Clamp(PickerYear + by, FirstPickerYear, Today.Year);
+        PickerYear = Math.Clamp(PickerYear + by, FirstPickerYear + (IsYear ? YearsShown - 1 : 0), Today.Year);
     }
 
     [RelayCommand]
     private void PickMonth(int number)
     {
+        if (IsYear)                                                                       // in the list of years the number is the year
+        {
+            if (number < FirstPickerYear || number > Today.Year) return;
+            IsPickerOpen = false;
+            Month = InYear(number, Month);
+            return;
+        }
+
         if (number is < 1 or > 12) return;
         var month = new DateOnly(PickerYear, number, 1);
         if (month > BudgetMath.MonthStart(Today)) return;
@@ -161,13 +215,14 @@ public sealed partial class DashboardViewModel : ObservableObject, IPeriodNaviga
     private static DateOnly Today => DateOnly.FromDateTime(DateTime.Today);
 
     /// <summary>The arrows lead only to months with entries (and to the present month once it has begun).</summary>
-    public bool CanGoPrevious => PeriodNavigation.CanMove(PeriodKind.Month, Month, -1, _core.Reader, Today);
+    public bool CanGoPrevious => PeriodNavigation.CanMove(Kind, Month, -1, _core.Reader, Today);
 
-    public bool CanGoNext => PeriodNavigation.CanMove(PeriodKind.Month, Month, +1, _core.Reader, Today);
+    public bool CanGoNext => PeriodNavigation.CanMove(Kind, Month, +1, _core.Reader, Today);
 
     private void Step(int direction)
     {
-        if (PeriodNavigation.Target(PeriodKind.Month, Month, direction, _core.Reader, Today) is { } date) Month = BudgetMath.MonthStart(date);
+        if (PeriodNavigation.Target(Kind, Month, direction, _core.Reader, Today) is { } date)
+            Month = IsYear ? InYear(date.Year, Month) : BudgetMath.MonthStart(date);
     }
 
     private void RefreshArrows()
@@ -207,19 +262,19 @@ public sealed partial class DashboardViewModel : ObservableObject, IPeriodNaviga
         var today = DateOnly.FromDateTime(DateTime.Today);
         string Money(decimal v) => v.ToString("C2", CultureInfo.CurrentCulture);
 
-        var title = Month.ToString("MMMM yyyy", CultureInfo.CurrentCulture);
+        var title = IsYear ? Month.Year.ToString(CultureInfo.CurrentCulture) : Month.ToString("MMMM yyyy", CultureInfo.CurrentCulture);
         MonthTitle = char.ToUpper(title[0], CultureInfo.CurrentCulture) + title[1..];
 
-        var cmp = PeriodReports.CompareMonth(all, Month);
+        var cmp = IsYear ? PeriodReports.CompareYear(all, Month.Year) : PeriodReports.CompareMonth(all, Month);
         IncomeText = Money(cmp.Current.Income);
         ExpenseText = Money(cmp.Current.Expense);
         BalanceText = Money(cmp.Current.Balance);
         BalanceNegative = cmp.Current.Balance < 0;
 
-        // a month that is still running is compared with the same days of the month before, not with all of it
-        var running = Month == BudgetMath.MonthStart(today);
+        // a month (or a year) that is still running is compared with the same days of the one before, not with all of it
+        var running = IsYear ? Month.Year == today.Year : Month == BudgetMath.MonthStart(today);
         var tip = "";
-        var compared = running ? SamePeriod(all, today, out tip) : cmp;
+        var compared = running ? (IsYear ? SamePeriodOfYear(all, today, out tip) : SamePeriod(all, today, out tip)) : cmp;
         ChangeTip = tip;
         IncomeChange = ChangeText(compared.Income, running);
         ExpenseChange = ChangeText(compared.Expense, running);
@@ -254,6 +309,18 @@ public sealed partial class DashboardViewModel : ObservableObject, IPeriodNaviga
         return new PeriodComparison(PeriodReports.Summary(all, start, today), PeriodReports.Summary(all, previous, previousEnd));
     }
 
+    /// <summary>The days of the running year so far against the same days of the year before.</summary>
+    private static PeriodComparison SamePeriodOfYear(IReadOnlyList<Transaction> all, DateOnly today, out string tip)
+    {
+        var start = new DateOnly(today.Year, 1, 1);
+        var previous = start.AddYears(-1);
+        var previousEnd = previous.AddDays(today.DayNumber - start.DayNumber);       // the same day of the year before
+        var names = CultureInfo.CurrentCulture.DateTimeFormat.MonthGenitiveNames;
+        string Range(DateOnly from, DateOnly to) => $"{from.Day} {names[from.Month - 1]}–{to.Day} {names[to.Month - 1]} {to.Year}";
+        tip = Res.Format("DashChangeTip", Range(start, today), Range(previous, previousEnd));
+        return new PeriodComparison(PeriodReports.Summary(all, start, today), PeriodReports.Summary(all, previous, previousEnd));
+    }
+
     private static string ChangeText(Change c, bool period)
     {
         if (c.Percent is not { } p) return c.Current == 0 ? "" : Res.Get(period ? "DashNoPreviousPeriod" : "DashNoPrevious");
@@ -264,8 +331,8 @@ public sealed partial class DashboardViewModel : ObservableObject, IPeriodNaviga
 
     private void BuildBreakdown(IReadOnlyList<Transaction> all, IReadOnlyList<Category> cats)
     {
-        var from = Month;
-        var to = PeriodReports.MonthEnd(Month);
+        var from = IsYear ? new DateOnly(Month.Year, 1, 1) : Month;
+        var to = IsYear ? new DateOnly(Month.Year, 12, 31) : PeriodReports.MonthEnd(Month);
         var roots = PeriodReports.Breakdown(all, cats, from, to, TransactionType.Expense);
         var level = roots;
         BreakdownItem? drilled = null;
@@ -298,13 +365,35 @@ public sealed partial class DashboardViewModel : ObservableObject, IPeriodNaviga
     private void BuildBudgets(IReadOnlyList<Transaction> all, IReadOnlyList<Category> cats)
     {
         string Money(decimal v) => v.ToString("C0", CultureInfo.CurrentCulture);
-        var lines = BudgetMath.Progress(Month, _core.Reader.GetBudgets(), cats, all);
+        var lines = IsYear ? YearProgress(all, cats) : BudgetMath.Progress(Month, _core.Reader.GetBudgets(), cats, all);
         BudgetBars = lines.Select(l => new BudgetBar(l.Path,
             Res.Format("DashBudgetOf", Money(l.Spent), Money(l.Limit)),
             (double)Math.Min(1m, l.Fraction),
             (l.Fraction * 100m).ToString("0", CultureInfo.CurrentCulture) + "%",
             l.Status.ToString())).ToList();
         HasBudgets = lines.Count > 0;
+    }
+
+    /// <summary>
+    /// A year against its limits: for each category the monthly limits of the months in which it had one are added up (up to the running
+    /// month in the present year) and so is what was spent in those months.
+    /// </summary>
+    private IReadOnlyList<BudgetLine> YearProgress(IReadOnlyList<Transaction> all, IReadOnlyList<Category> cats)
+    {
+        var budgets = _core.Reader.GetBudgets();
+        var last = Month.Year == Today.Year ? Today.Month : 12;
+        var total = new Dictionary<Guid, (BudgetLine First, decimal Limit, decimal Spent)>();
+        for (var m = 1; m <= last; m++)
+            foreach (var line in BudgetMath.Progress(new DateOnly(Month.Year, m, 1), budgets, cats, all))
+            {
+                total[line.Category.Id] = total.TryGetValue(line.Category.Id, out var so)
+                    ? (so.First, so.Limit + line.Limit, so.Spent + line.Spent)
+                    : (line, line.Limit, line.Spent);
+            }
+
+        return total.Values
+            .Select(t => new BudgetLine(t.First.Category, t.First.Path, t.Limit, t.Spent, t.Spent / t.Limit, BudgetMath.StatusOf(t.Spent / t.Limit)))
+            .OrderByDescending(l => l.Fraction).ThenBy(l => l.Path, StringComparer.CurrentCultureIgnoreCase).ToList();
     }
 
     private void BuildEvent(IReadOnlyList<Transaction> all, IReadOnlyList<Category> cats, DateOnly today)
