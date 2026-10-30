@@ -20,6 +20,20 @@
                 </DataTrigger>
             </Style.Triggers>
         </Style>
+        <Style x:Key="YearBarStyle" TargetType="ProgressBar" BasedOn="{StaticResource DefaultProgressBarStyle}">
+            <Setter Property="Minimum" Value="0" />
+            <Setter Property="Maximum" Value="1" />
+            <Setter Property="Height" Value="8" />
+            <Setter Property="Foreground" Value="{StaticResource IncomeBrush}" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding YearStatus}" Value="Warning">
+                    <Setter Property="Foreground" Value="{StaticResource WarningBrush}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding YearStatus}" Value="Over">
+                    <Setter Property="Foreground" Value="{StaticResource ExpenseBrush}" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
     </UserControl.Resources>
     <Grid Margin="16,12,16,8">
         <Grid.RowDefinitions>
@@ -51,39 +65,56 @@
                 </Grid.RowDefinitions>
                 <Grid Margin="0,0,0,6" Opacity="0.7">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="130" />
-                        <ColumnDefinition Width="140" />
-                        <ColumnDefinition Width="240" />
-                        <ColumnDefinition Width="56" />
+                        <ColumnDefinition Width="*" MinWidth="140" />
+                        <ColumnDefinition Width="120" />
+                        <ColumnDefinition Width="180" />
+                        <ColumnDefinition Width="120" />
+                        <ColumnDefinition Width="180" />
                     </Grid.ColumnDefinitions>
                     <TextBlock Text="{infra:Str ColCategory}" />
-                    <TextBlock Grid.Column="1" Text="{infra:Str BudgetsLimit}" Margin="8,0" />
-                    <TextBlock Grid.Column="2" Text="{infra:Str BudgetsSpent}" />
-                    <TextBlock Grid.Column="3" Text="{infra:Str BudgetsProgress}" />
+                    <TextBlock Grid.Column="1" Text="{infra:Str BudgetsLimit}" Margin="8,0" TextWrapping="Wrap" />
+                    <TextBlock Grid.Column="2" Text="{infra:Str BudgetsSpent}" Margin="8,0" />
+                    <TextBlock Grid.Column="3" Text="{infra:Str BudgetsLimitYear}" Margin="8,0" TextWrapping="Wrap" />
+                    <TextBlock Grid.Column="4" Text="{infra:Str BudgetsSpentYear}" Margin="8,0" />
                 </Grid>
                 <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
                     <ItemsControl ItemsSource="{Binding Rows}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <Grid Margin="0,2" ToolTip="{Binding HistoryText}">
+                                <Grid Margin="0,3" ToolTip="{Binding HistoryText}">
                                     <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="130" />
-                                        <ColumnDefinition Width="140" />
-                                        <ColumnDefinition Width="240" />
-                                        <ColumnDefinition Width="56" />
+                                        <ColumnDefinition Width="*" MinWidth="140" />
+                                        <ColumnDefinition Width="120" />
+                                        <ColumnDefinition Width="180" />
+                                        <ColumnDefinition Width="120" />
+                                        <ColumnDefinition Width="180" />
                                     </Grid.ColumnDefinitions>
                                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="{Binding IndentWidth, Converter={x:Static infra:IndentConverter.Instance}}">
                                         <controls:CategoryMarker Size="10" Color="{Binding Color}" Margin="0,0,8,0" />
                                         <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis" />
                                     </StackPanel>
+                                    <!-- the monthly limit and how much of it was spent in the month -->
                                     <TextBox infra:Help.Topic="budgets.limits" Grid.Column="1" Text="{Binding LimitText, UpdateSourceTrigger=LostFocus}" Margin="8,0" TextAlignment="Right"
-                                             ui:ControlHelper.PlaceholderText="—" />
-                                    <TextBlock Grid.Column="2" Text="{Binding SpentText}" VerticalAlignment="Center" Opacity="0.85" />
-                                    <ProgressBar Grid.Column="3" Value="{Binding Fraction, Mode=OneWay}" Style="{StaticResource BarStyle}" VerticalAlignment="Center"
-                                                 Visibility="{Binding HasLimit, Converter={x:Static infra:BoolToVisibilityConverter.Visible}}" />
-                                    <TextBlock Grid.Column="4" Text="{Binding PercentText}" VerticalAlignment="Center" TextAlignment="Right" FontWeight="SemiBold" />
+                                             VerticalAlignment="Center" ui:ControlHelper.PlaceholderText="—" />
+                                    <StackPanel Grid.Column="2" Margin="8,0" VerticalAlignment="Center" infra:Help.Topic="budgets.progress">
+                                        <ProgressBar Value="{Binding Fraction, Mode=OneWay}" Style="{StaticResource BarStyle}"
+                                                     Visibility="{Binding HasLimit, Converter={x:Static infra:BoolToVisibilityConverter.Visible}}" />
+                                        <Grid MinHeight="18">
+                                            <TextBlock Text="{Binding SpentText}" Opacity="0.85" FontSize="12" />
+                                            <TextBlock Text="{Binding PercentText}" HorizontalAlignment="Right" FontWeight="SemiBold" FontSize="12" />
+                                        </Grid>
+                                    </StackPanel>
+                                    <!-- the yearly limit and how much of it was spent in the year -->
+                                    <TextBox infra:Help.Topic="budgets.yearly" Grid.Column="3" Text="{Binding YearLimitText, UpdateSourceTrigger=LostFocus}" Margin="8,0" TextAlignment="Right"
+                                             VerticalAlignment="Center" ui:ControlHelper.PlaceholderText="—" />
+                                    <StackPanel Grid.Column="4" Margin="8,0" VerticalAlignment="Center" infra:Help.Topic="budgets.yearly">
+                                        <ProgressBar Value="{Binding YearFraction, Mode=OneWay}" Style="{StaticResource YearBarStyle}"
+                                                     Visibility="{Binding HasYearLimit, Converter={x:Static infra:BoolToVisibilityConverter.Visible}}" />
+                                        <Grid MinHeight="18">
+                                            <TextBlock Text="{Binding YearSpentText}" Opacity="0.85" FontSize="12" />
+                                            <TextBlock Text="{Binding YearPercentText}" HorizontalAlignment="Right" FontWeight="SemiBold" FontSize="12" />
+                                        </Grid>
+                                    </StackPanel>
                                 </Grid>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>

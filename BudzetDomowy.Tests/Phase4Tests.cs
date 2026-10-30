@@ -1,5 +1,6 @@
 using BudzetDomowy.Core;
 using BudzetDomowy.Core.Domain;
+using BudzetDomowy.Core.Journal;
 using BudzetDomowy.Core.Services;
 
 namespace BudzetDomowy.Tests;
@@ -329,6 +330,97 @@ public class BudgetAndRecurringServiceTests : IDisposable
         Assert.Equal(0, core.Budgets.CopyFromPreviousMonth(new DateOnly(2026, 10, 1)));
         var november = core.Budgets.CopyFromPreviousMonth(new DateOnly(2026, 11, 1));
         Assert.Equal(0, november); // November already inherits October's limit
+    }
+
+    // ----- the yearly limit -----
+
+    [Fact]
+    public void YearlyLimit_IsSetNextToTheMonthlyOne_AndChangingOneKeepsTheOther()
+    {
+        var core = NewCore();
+        var cat = core.Categories.Add("Test", null, CategoryType.Expense);
+
+        core.Budgets.SetLimit(cat.Id, 500, new DateOnly(2026, 3, 1));
+        core.Budgets.SetYearlyLimit(cat.Id, 4800, new DateOnly(2026, 3, 1));            // the same month: one record holds both
+        var march = Assert.Single(core.Budgets.History(cat.Id));
+        Assert.Equal((500m, 4800m), (march.MonthlyAmount, march.YearlyAmount));
+
+        core.Budgets.SetLimit(cat.Id, 600, new DateOnly(2026, 6, 1));                   // a later month: the yearly limit is taken over
+        var june = core.Budgets.History(cat.Id).Last();
+        Assert.Equal((600m, 4800m), (june.MonthlyAmount, june.YearlyAmount));
+        core.Budgets.SetYearlyLimit(cat.Id, 0, new DateOnly(2026, 9, 1));               // switched off from September, the monthly one stays
+        var all = core.Reader.GetBudgets();
+        Assert.Equal(4800m, BudgetMath.EffectiveYearly(all, new DateOnly(2026, 8, 1))[cat.Id]);
+        Assert.False(BudgetMath.EffectiveYearly(all, new DateOnly(2026, 9, 1)).ContainsKey(cat.Id));
+        Assert.Equal(600m, BudgetMath.Effective(all, new DateOnly(2026, 9, 1))[cat.Id]);
+
+        core.Budgets.SetLimit(cat.Id, 0, new DateOnly(2026, 9, 1));                     // a record with neither: nothing is in force
+        all = core.Reader.GetBudgets();
+        Assert.Empty(BudgetMath.Effective(all, new DateOnly(2026, 9, 1)));
+        Assert.Empty(BudgetMath.EffectiveYearly(all, new DateOnly(2026, 9, 1)));
+    }
+
+    [Fact]
+    public void YearlyLimit_SurvivesARebuildFromTheJournal_AndIsWrittenWithTheNewerSchema()
+    {
+        var core = NewCore();
+        var cat = core.Categories.Add("Test", null, CategoryType.Expense);
+        core.Budgets.SetYearlyLimit(cat.Id, 3600, new DateOnly(2026, 1, 1));
+        core.Sync.Rebuild();
+        Assert.Equal(3600m, Assert.Single(core.Reader.GetBudgets()).YearlyAmount);
+
+        Assert.Equal(JournalEvent.PlaceHintSchemaVersion, EntityTypes.SchemaOf(EntityTypes.Budget, new Budget { YearlyAmount = 1 }));    // an older program offers the update
+        Assert.Equal(JournalEvent.BaseSchemaVersion, EntityTypes.SchemaOf(EntityTypes.Budget, new Budget { MonthlyAmount = 100 }));       // without it nothing changes for them
+    }
+
+    [Fact]
+    public void CopyFromPreviousMonth_CopiesTheYearlyLimitsToo()
+    {
+        var core = NewCore();
+        var a = core.Categories.Add("A", null, CategoryType.Expense);
+        var b = core.Categories.Add("B", null, CategoryType.Expense);
+        core.Budgets.SetLimit(a.Id, 100, new DateOnly(2026, 9, 1));
+        core.Budgets.SetYearlyLimit(b.Id, 2400, new DateOnly(2026, 9, 1));              // B has only a yearly limit
+
+        Assert.Equal(0, core.Budgets.CopyFromPreviousMonth(new DateOnly(2026, 10, 1)));  // both already in force in October
+        core.Budgets.SetYearlyLimit(a.Id, 1000, new DateOnly(2026, 10, 1));              // October differs for A
+        Assert.Equal(1, core.Budgets.CopyFromPreviousMonth(new DateOnly(2026, 10, 1)));
+        var october = core.Reader.GetBudgets().Single(x => x.CategoryId == a.Id && x.ValidFromMonth == new DateOnly(2026, 10, 1));
+        Assert.Equal((100m, 0m), (october.MonthlyAmount, october.YearlyAmount));         // September's pair, the yearly one included
+    }
+
+    [Fact]
+    public void YearlyProgress_CountsTheWholeYear_WithSubcategories_AndYearProgressMixesBothKinds()
+    {
+        var core = NewCore();
+        var food = core.Categories.Add("Jedzenie", null, CategoryType.Expense);
+        var bread = core.Categories.Add("Pieczywo", food.Id, CategoryType.Expense);
+        var car = core.Categories.Add("Auto", null, CategoryType.Expense);
+        core.Budgets.SetYearlyLimit(food.Id, 1000, new DateOnly(2026, 1, 1));
+        core.Budgets.SetLimit(car.Id, 100, new DateOnly(2026, 1, 1));                    // the car has only a monthly limit
+
+        var cats = core.Reader.GetCategories();
+        var tx = new[]
+        {
+            Make.Expense("2026-02-10", 300, food.Id), Make.Expense("2026-08-03", 200, bread.Id),     // food: 500 of 1000 (the subcategory counts)
+            Make.Expense("2025-12-31", 900, food.Id),                                               // another year: not counted
+            Make.Expense("2026-03-05", 80, car.Id), Make.Expense("2026-04-05", 150, car.Id),         // car: March 80 of 100, April 150 of 100
+        };
+        var budgets = core.Reader.GetBudgets();
+
+        var yearly = BudgetMath.YearlyProgress(new DateOnly(2026, 6, 1), budgets, cats, tx);
+        var line = Assert.Single(yearly);
+        Assert.Equal((food.Id, 1000m, 500m, 0.5m, BudgetStatus.Ok), (line.Category.Id, line.Limit, line.Spent, line.Fraction, line.Status));
+
+        var year = BudgetMath.YearProgress(2026, new DateOnly(2026, 10, 24), budgets, cats, tx);
+        Assert.Equal(2, year.Count);
+        var carLine = year.Single(l => l.Category.Id == car.Id);
+        Assert.Equal((1000m, 230m), (carLine.Limit, carLine.Spent));                     // ten months of 100, what was spent in them
+        Assert.Equal(BudgetStatus.Ok, carLine.Status);
+        Assert.Equal(500m, year.Single(l => l.Category.Id == food.Id).Spent);
+
+        // a finished year counts all twelve months
+        Assert.Equal(1200m, BudgetMath.YearProgress(2026, new DateOnly(2027, 2, 1), budgets, cats, tx).Single(l => l.Category.Id == car.Id).Limit);
     }
 
     private static RecurringTransaction Rent(DateOnly start, string currency = "PLN", decimal amount = 1200m) => new()

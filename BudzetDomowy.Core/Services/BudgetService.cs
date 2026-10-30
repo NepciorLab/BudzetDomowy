@@ -34,6 +34,18 @@ public static class BudgetMath
             .ToDictionary(b => b.CategoryId, b => b.MonthlyAmount);
     }
 
+    /// <summary>The yearly limits valid in the month (the same rule as for the monthly ones: the newest record that starts in or before the month).</summary>
+    public static IReadOnlyDictionary<Guid, decimal> EffectiveYearly(IEnumerable<Budget> budgets, DateOnly month)
+    {
+        var m = MonthStart(month);
+        return budgets
+            .Where(b => b.ValidFromMonth <= m)
+            .GroupBy(b => b.CategoryId)
+            .Select(g => g.OrderByDescending(b => b.ValidFromMonth).ThenBy(b => b.Id).First())
+            .Where(b => b.YearlyAmount > 0)
+            .ToDictionary(b => b.CategoryId, b => b.YearlyAmount);
+    }
+
     public static BudgetStatus StatusOf(decimal fraction) =>
         fraction > 1m ? BudgetStatus.Over : fraction >= WarningFraction ? BudgetStatus.Warning : BudgetStatus.Ok;
 
@@ -61,6 +73,60 @@ public static class BudgetMath
         }
         return lines.OrderByDescending(l => l.Fraction).ThenBy(l => l.Path, StringComparer.CurrentCultureIgnoreCase).ToList();
     }
+
+    /// <summary>
+    /// What was spent in the calendar year of <paramref name="month"/> against the yearly limits valid in that month
+    /// (subcategories count towards their parent, as with the monthly ones).
+    /// </summary>
+    public static IReadOnlyList<BudgetLine> YearlyProgress(
+        DateOnly month, IEnumerable<Budget> budgets, IEnumerable<Category> categories, IEnumerable<Transaction> transactions)
+    {
+        var cats = categories.ToList();
+        var byId = cats.ToDictionary(c => c.Id);
+        var expenses = transactions.Where(t => t.Type == TransactionType.Expense && t.Date.Year == month.Year).ToList();
+
+        var lines = new List<BudgetLine>();
+        foreach (var (categoryId, limit) in EffectiveYearly(budgets, month))
+        {
+            if (!byId.TryGetValue(categoryId, out var cat)) continue;
+            var ids = CategoryHelpers.WithDescendants(categoryId, cats);
+            var spent = expenses.Where(t => t.CategoryId is { } c && ids.Contains(c)).Sum(t => t.AmountPln);
+            var fraction = spent / limit;
+            lines.Add(new BudgetLine(cat, CategoryHelpers.PathOf(categoryId, byId), limit, spent, fraction, StatusOf(fraction)));
+        }
+        return lines.OrderByDescending(l => l.Fraction).ThenBy(l => l.Path, StringComparer.CurrentCultureIgnoreCase).ToList();
+    }
+
+    /// <summary>
+    /// A whole year against its limits (the Dashboard). A category with a yearly limit is measured by it: what was spent in the year
+    /// against that limit. One that has only monthly limits is measured by their sum (of the months in which it had one, up to the running
+    /// month in the present year) against what was spent in those months.
+    /// </summary>
+    public static IReadOnlyList<BudgetLine> YearProgress(
+        int year, DateOnly today, IEnumerable<Budget> budgets, IEnumerable<Category> categories, IEnumerable<Transaction> transactions)
+    {
+        var list = budgets.ToList();
+        var cats = categories.ToList();
+        var all = transactions.ToList();
+        var last = year == today.Year ? today.Month : 12;
+
+        var lines = YearlyProgress(new DateOnly(year, last, 1), list, cats, all).ToList();
+        var measuredYearly = lines.Select(l => l.Category.Id).ToHashSet();
+
+        var monthly = new Dictionary<Guid, (BudgetLine First, decimal Limit, decimal Spent)>();
+        for (var m = 1; m <= last; m++)
+            foreach (var line in Progress(new DateOnly(year, m, 1), list, cats, all))
+            {
+                if (measuredYearly.Contains(line.Category.Id)) continue;
+                monthly[line.Category.Id] = monthly.TryGetValue(line.Category.Id, out var so)
+                    ? (so.First, so.Limit + line.Limit, so.Spent + line.Spent)
+                    : (line, line.Limit, line.Spent);
+            }
+
+        lines.AddRange(monthly.Values.Select(t =>
+            new BudgetLine(t.First.Category, t.First.Path, t.Limit, t.Spent, t.Spent / t.Limit, StatusOf(t.Spent / t.Limit))));
+        return lines.OrderByDescending(l => l.Fraction).ThenBy(l => l.Path, StringComparer.CurrentCultureIgnoreCase).ToList();
+    }
 }
 
 public sealed class BudgetService
@@ -78,15 +144,27 @@ public sealed class BudgetService
     public static Guid IdFor(Guid categoryId, DateOnly month) =>
         DeterministicId.FromString($"budget:{categoryId:D}:{month:yyyy-MM}");
 
-    /// <summary>Sets the limit valid from the month on. Amount 0 removes the limit from that month.</summary>
-    public Budget SetLimit(Guid categoryId, decimal monthlyAmount, DateOnly month)
+    /// <summary>Sets the monthly limit valid from the month on (the yearly one stays as it is). Amount 0 removes the limit from that month.</summary>
+    public Budget SetLimit(Guid categoryId, decimal monthlyAmount, DateOnly month) => Write(categoryId, monthlyAmount, null, month);
+
+    /// <summary>Sets the yearly limit valid from the month on (the monthly one stays as it is). Amount 0 removes the limit from that month.</summary>
+    public Budget SetYearlyLimit(Guid categoryId, decimal yearlyAmount, DateOnly month) => Write(categoryId, null, yearlyAmount, month);
+
+    private static decimal Clean(decimal amount) => Math.Max(0, Math.Round(amount, 2, MidpointRounding.AwayFromZero));
+
+    /// <summary>One record holds both limits: the one that is not being changed is taken over from the record that is valid in the month.</summary>
+    private Budget Write(Guid categoryId, decimal? monthly, decimal? yearly, DateOnly month)
     {
         var start = BudgetMath.MonthStart(month);
+        var valid = _reader.GetBudgets()
+            .Where(b => b.CategoryId == categoryId && b.ValidFromMonth <= start)
+            .OrderByDescending(b => b.ValidFromMonth).ThenBy(b => b.Id).FirstOrDefault();
         var b = new Budget
         {
             Id = IdFor(categoryId, start),
             CategoryId = categoryId,
-            MonthlyAmount = Math.Max(0, Math.Round(monthlyAmount, 2, MidpointRounding.AwayFromZero)),
+            MonthlyAmount = monthly is { } m ? Clean(m) : valid?.MonthlyAmount ?? 0,
+            YearlyAmount = yearly is { } y ? Clean(y) : valid?.YearlyAmount ?? 0,
             ValidFromMonth = start,
         };
         _recorder.Save(b);
@@ -98,13 +176,18 @@ public sealed class BudgetService
     {
         var start = BudgetMath.MonthStart(month);
         var all = _reader.GetBudgets();
-        var previous = BudgetMath.Effective(all, start.AddMonths(-1));
-        var current = BudgetMath.Effective(all, start);
+        var before = start.AddMonths(-1);
+        var monthlyBefore = BudgetMath.Effective(all, before);
+        var yearlyBefore = BudgetMath.EffectiveYearly(all, before);
+        var monthlyNow = BudgetMath.Effective(all, start);
+        var yearlyNow = BudgetMath.EffectiveYearly(all, start);
         var count = 0;
-        foreach (var (categoryId, amount) in previous)
+        foreach (var categoryId in monthlyBefore.Keys.Union(yearlyBefore.Keys).ToList())
         {
-            if (current.TryGetValue(categoryId, out var now) && now == amount) continue;
-            SetLimit(categoryId, amount, start);
+            var monthly = monthlyBefore.GetValueOrDefault(categoryId);
+            var yearly = yearlyBefore.GetValueOrDefault(categoryId);
+            if (monthlyNow.GetValueOrDefault(categoryId) == monthly && yearlyNow.GetValueOrDefault(categoryId) == yearly) continue;
+            Write(categoryId, monthly, yearly, start);
             count++;
         }
         return count;

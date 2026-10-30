@@ -42,6 +42,8 @@ transactions
   transactions.export
 budgets
   budgets.limits
+  budgets.yearly
+  budgets.progress
   budgets.copy
 events
   events.list

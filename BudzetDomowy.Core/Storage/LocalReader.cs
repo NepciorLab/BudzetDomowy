@@ -138,13 +138,14 @@ public sealed class LocalReader
             Note = r.GetString(6),
         });
 
-    public IReadOnlyList<Budget> GetBudgets() => Query("SELECT id, category_id, monthly_cents, valid_from_month FROM budgets ORDER BY category_id, valid_from_month",
+    public IReadOnlyList<Budget> GetBudgets() => Query("SELECT id, category_id, monthly_cents, valid_from_month, yearly_cents FROM budgets ORDER BY category_id, valid_from_month",
         r => new Budget
         {
             Id = Guid.Parse(r.GetString(0)),
             CategoryId = Guid.Parse(r.GetString(1)),
             MonthlyAmount = Money.FromCents(r.GetInt64(2)),
             ValidFromMonth = ParseDay(r.GetString(3)),
+            YearlyAmount = Money.FromCents(r.GetInt64(4)),
         });
 
     public IReadOnlyList<Payee> GetPayees() => Query("SELECT id, name, account, category_id FROM payees ORDER BY name COLLATE NOCASE, id",

@@ -182,6 +182,10 @@ public sealed class LocalDatabase
             hidden INTEGER NOT NULL DEFAULT 0
         );
         """,
+        // v9: a yearly limit next to the monthly one
+        """
+        ALTER TABLE budgets ADD COLUMN yearly_cents INTEGER NOT NULL DEFAULT 0;
+        """,
     ];
 
     public static int CurrentVersion => Migrations.Length;

@@ -33,6 +33,8 @@ public static class EntityTypes
     public static int SchemaOf(string entityType, object? entity = null) => entityType switch
     {
         PlaceHint => JournalEvent.PlaceHintSchemaVersion,
+        // a yearly limit is unknown to older programs (they would drop it when they save the record), so it asks them to update
+        Budget when entity is Budget { YearlyAmount: > 0 } => JournalEvent.PlaceHintSchemaVersion,
         Payee or PlannedPayment => 2,
         // "every N days" is unknown to older programs (they could not read the value), so such an entry asks them to update
         RecurringTransaction when entity is RecurringTransaction { Frequency: RecurrenceFrequency.EveryDays } => JournalEvent.PlaceHintSchemaVersion,
@@ -101,12 +103,18 @@ public sealed record SpecialEvent
     public string Note { get; init; } = "";
 }
 
-/// <summary>Monthly limit for a category, valid from <see cref="ValidFromMonth"/> (first day of the month) until superseded.</summary>
+/// <summary>
+/// Limits of a category, valid from <see cref="ValidFromMonth"/> (first day of the month) until superseded: the monthly one and,
+/// independently, the yearly one (0 = none). Both are set in one record, so a change of one keeps the other.
+/// </summary>
 public sealed record Budget
 {
     public Guid Id { get; init; }
     public Guid CategoryId { get; init; }
     public decimal MonthlyAmount { get; init; }
+
+    /// <summary>The limit for the whole calendar year; 0 when there is none. Older programs do not know it (see <see cref="EntityTypes.SchemaOf"/>).</summary>
+    public decimal YearlyAmount { get; init; }
     public DateOnly ValidFromMonth { get; init; }
 }
 

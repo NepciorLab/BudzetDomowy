@@ -266,9 +266,14 @@ Del – usuń zaznaczone transakcje</value></data>
   <data name="DashRecent" xml:space="preserve"><value>Ostatnie wpisy</value></data>
   <data name="BudgetsCopy" xml:space="preserve"><value>Kopiuj z poprzedniego miesiąca</value></data>
   <data name="BudgetsCopyTip" xml:space="preserve"><value>Przenosi limity obowiązujące w poprzednim miesiącu na wybrany miesiąc.</value></data>
-  <data name="BudgetsHint" xml:space="preserve"><value>Wpisz miesięczny limit przy kategorii. Zmiana obowiązuje od wybranego miesiąca do kolejnej zmiany; puste pole zdejmuje limit. Limit kategorii nadrzędnej obejmuje jej podkategorie.</value></data>
+  <data name="BudgetsHint" xml:space="preserve"><value>Wpisz limit miesięczny i/lub roczny przy kategorii. Zmiana obowiązuje od wybranego miesiąca do kolejnej zmiany; puste pole zdejmuje limit. Limit kategorii nadrzędnej obejmuje jej podkategorie. Limit roczny liczy się od 1 stycznia do 31 grudnia.</value></data>
   <data name="BudgetsLimit" xml:space="preserve"><value>Limit miesięczny</value></data>
-  <data name="BudgetsSpent" xml:space="preserve"><value>Wydano</value></data>
+  <data name="BudgetsSpent" xml:space="preserve"><value>Wydano w miesiącu</value></data>
+  <data name="BudgetsLimitYear" xml:space="preserve"><value>Limit roczny</value></data>
+  <data name="BudgetsSpentYear" xml:space="preserve"><value>Wydano w roku</value></data>
+  <data name="BudgetsTotalYear" xml:space="preserve"><value>Suma limitów rocznych głównych kategorii: {0}</value></data>
+  <data name="BudgetsHistoryBoth" xml:space="preserve"><value>od {0}: {1} miesięcznie, {2} rocznie</value></data>
+  <data name="BudgetsHistoryYearly" xml:space="preserve"><value>od {0}: {1} rocznie</value></data>
   <data name="BudgetsProgress" xml:space="preserve"><value>Wykorzystanie</value></data>
   <data name="BudgetsSpentOf" xml:space="preserve"><value>{0}</value></data>
   <data name="BudgetsTotal" xml:space="preserve"><value>Suma limitów głównych kategorii: {0}</value></data>

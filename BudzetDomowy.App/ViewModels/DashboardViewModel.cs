@@ -365,35 +365,14 @@ public sealed partial class DashboardViewModel : ObservableObject, IPeriodNaviga
     private void BuildBudgets(IReadOnlyList<Transaction> all, IReadOnlyList<Category> cats)
     {
         string Money(decimal v) => v.ToString("C0", CultureInfo.CurrentCulture);
-        var lines = IsYear ? YearProgress(all, cats) : BudgetMath.Progress(Month, _core.Reader.GetBudgets(), cats, all);
+        var budgets = _core.Reader.GetBudgets();
+        var lines = IsYear ? BudgetMath.YearProgress(Month.Year, Today, budgets, cats, all) : BudgetMath.Progress(Month, budgets, cats, all);
         BudgetBars = lines.Select(l => new BudgetBar(l.Path,
             Res.Format("DashBudgetOf", Money(l.Spent), Money(l.Limit)),
             (double)Math.Min(1m, l.Fraction),
             (l.Fraction * 100m).ToString("0", CultureInfo.CurrentCulture) + "%",
             l.Status.ToString())).ToList();
         HasBudgets = lines.Count > 0;
-    }
-
-    /// <summary>
-    /// A year against its limits: for each category the monthly limits of the months in which it had one are added up (up to the running
-    /// month in the present year) and so is what was spent in those months.
-    /// </summary>
-    private IReadOnlyList<BudgetLine> YearProgress(IReadOnlyList<Transaction> all, IReadOnlyList<Category> cats)
-    {
-        var budgets = _core.Reader.GetBudgets();
-        var last = Month.Year == Today.Year ? Today.Month : 12;
-        var total = new Dictionary<Guid, (BudgetLine First, decimal Limit, decimal Spent)>();
-        for (var m = 1; m <= last; m++)
-            foreach (var line in BudgetMath.Progress(new DateOnly(Month.Year, m, 1), budgets, cats, all))
-            {
-                total[line.Category.Id] = total.TryGetValue(line.Category.Id, out var so)
-                    ? (so.First, so.Limit + line.Limit, so.Spent + line.Spent)
-                    : (line, line.Limit, line.Spent);
-            }
-
-        return total.Values
-            .Select(t => new BudgetLine(t.First.Category, t.First.Path, t.Limit, t.Spent, t.Spent / t.Limit, BudgetMath.StatusOf(t.Spent / t.Limit)))
-            .OrderByDescending(l => l.Fraction).ThenBy(l => l.Path, StringComparer.CurrentCultureIgnoreCase).ToList();
     }
 
     private void BuildEvent(IReadOnlyList<Transaction> all, IReadOnlyList<Category> cats, DateOnly today)

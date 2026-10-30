@@ -110,6 +110,8 @@ public class HelpPictures
 
         foreach (var (name, limit) in new[] { ("Spożywcze", 1800m), ("Rozrywka", 700m), ("Rachunki", 2400m), ("Auto", 1000m), ("Zdrowie", 350m), ("Chemia", 200m) })
             app.Core.Budgets.SetLimit(Cat(name), limit, today);
+        foreach (var (name, limit) in new[] { ("Spożywcze", 20000m), ("Rozrywka", 7000m), ("Auto", 11000m), ("Zdrowie", 3500m) })
+            app.Core.Budgets.SetYearlyLimit(Cat(name), limit, today);
 
         app.Core.Recurring.Add(new RecurringTransaction
         {
@@ -312,7 +314,7 @@ public class HelpPictures
         Shoot("transactions-selection", selecting, 1000, 560, N(1, "Grid"), T(2, "transactions.sums"));
 
         var budgets = new BudgetsView { DataContext = app.Get<BudgetsViewModel>() };
-        Shoot("budgets", budgets, 1000, 560, T(1, "budgets.copy"), T(2, "budgets.limits"));
+        Shoot("budgets", budgets, 1000, 560, T(1, "budgets.copy"), T(2, "budgets.limits"), T(3, "budgets.yearly"));
 
         var events = app.Get<EventsViewModel>();
         events.Selected = events.Items.First(e => e.Name.StartsWith("Wakacje"));

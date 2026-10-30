@@ -26,7 +26,15 @@ public sealed partial class BudgetRowViewModel : ObservableObject
     [ObservableProperty] private string _historyText = "";
     [ObservableProperty] private bool _hasLimit;
 
+    // the yearly limit and what was spent in the calendar year
+    [ObservableProperty] private string _yearSpentText = "";
+    [ObservableProperty] private double _yearFraction;
+    [ObservableProperty] private string _yearPercentText = "";
+    [ObservableProperty] private string _yearStatus = "Ok";
+    [ObservableProperty] private bool _hasYearLimit;
+
     private string _limitText = "";
+    private string _yearLimitText = "";
 
     public BudgetRowViewModel(BudgetsViewModel owner, CategoryOption option)
     {
@@ -56,6 +64,34 @@ public sealed partial class BudgetRowViewModel : ObservableObject
             OnPropertyChanged();
             _owner.SetLimit(this, amount);
         }
+    }
+
+    /// <summary>The yearly limit as typed; like the monthly one it applies from the shown month on.</summary>
+    public string YearLimitText
+    {
+        get => _yearLimitText;
+        set
+        {
+            var text = (value ?? "").Trim();
+            if (text == _yearLimitText) return;
+            decimal amount;
+            if (text.Length == 0) amount = 0;
+            else if (!AmountParser.TryParse(text, out amount))
+            {
+                OnPropertyChanged(); // reject: show the old value again
+                return;
+            }
+            _yearLimitText = amount == 0 ? "" : amount.ToString("0.##", CultureInfo.CurrentCulture);
+            OnPropertyChanged();
+            _owner.SetYearLimit(this, amount);
+        }
+    }
+
+    public void SetYearLimitFromModel(decimal limit)
+    {
+        _yearLimitText = limit > 0 ? limit.ToString("0.##", CultureInfo.CurrentCulture) : "";
+        HasYearLimit = limit > 0;
+        OnPropertyChanged(nameof(YearLimitText));
     }
 
     /// <summary>Takes the value from the model without saving it again.</summary>
@@ -133,6 +169,21 @@ public sealed partial class BudgetsViewModel : ObservableObject, IPeriodNavigabl
 
     public void RefreshOnShow() => Reload();
 
+    internal void SetYearLimit(BudgetRowViewModel row, decimal amount)
+    {
+        try
+        {
+            _core.Budgets.SetYearlyLimit(row.CategoryId, amount, Month);
+            Message = "";
+        }
+        catch (UpdateRequiredException)
+        {
+            _toast.Show(Res.Get("UpdateRequiredShort"));
+        }
+        Reload();
+        _hub.NotifyNow();                                                                    // the Dashboard shows the limits too
+    }
+
     public void Reload()
     {
         var title = Month.ToString("MMMM yyyy", CultureInfo.CurrentCulture);
@@ -141,12 +192,14 @@ public sealed partial class BudgetsViewModel : ObservableObject, IPeriodNavigabl
         var budgets = _core.Reader.GetBudgets();
         var effective = BudgetMath.Effective(budgets, Month);
         var cats = _core.Reader.GetCategories();
-        var progress = BudgetMath.Progress(Month, budgets, cats, _core.Reader.GetTransactions())
-            .ToDictionary(l => l.Category.Id);
+        var effectiveYearly = BudgetMath.EffectiveYearly(budgets, Month);
+        var transactions = _core.Reader.GetTransactions();
+        var progress = BudgetMath.Progress(Month, budgets, cats, transactions).ToDictionary(l => l.Category.Id);
+        var yearProgress = BudgetMath.YearlyProgress(Month, budgets, cats, transactions).ToDictionary(l => l.Category.Id);
 
         // expense categories that can take a limit; archived ones only while they still have one
         var options = CategoryHelpers.Flatten(cats, c =>
-            c.Type != CategoryType.Income && (!c.IsArchived || effective.ContainsKey(c.Id)));
+            c.Type != CategoryType.Income && (!c.IsArchived || effective.ContainsKey(c.Id) || effectiveYearly.ContainsKey(c.Id)));
 
         var wanted = options.Select(o => o.Id).ToList();
         if (!wanted.SequenceEqual(Rows.Select(r => r.CategoryId)))
@@ -162,11 +215,27 @@ public sealed partial class BudgetsViewModel : ObservableObject, IPeriodNavigabl
         }
 
         string Money(decimal v) => v.ToString("C0", CultureInfo.CurrentCulture);
-        decimal totalLimit = 0;
+        decimal totalLimit = 0, totalYearly = 0;
         foreach (var row in Rows)
         {
             var limit = effective.GetValueOrDefault(row.CategoryId);
             row.SetLimitFromModel(limit);
+            var yearly = effectiveYearly.GetValueOrDefault(row.CategoryId);
+            row.SetYearLimitFromModel(yearly);
+            if (yearProgress.TryGetValue(row.CategoryId, out var year))
+            {
+                row.YearSpentText = Res.Format("BudgetsSpentOf", Money(year.Spent));
+                row.YearFraction = (double)Math.Min(1m, year.Fraction);
+                row.YearPercentText = (year.Fraction * 100m).ToString("0", CultureInfo.CurrentCulture) + "%";
+                row.YearStatus = year.Status.ToString();
+            }
+            else
+            {
+                row.YearSpentText = "";
+                row.YearFraction = 0;
+                row.YearPercentText = "";
+                row.YearStatus = "Ok";
+            }
             if (progress.TryGetValue(row.CategoryId, out var line))
             {
                 row.SpentText = Res.Format("BudgetsSpentOf", Money(line.Spent));
@@ -182,17 +251,30 @@ public sealed partial class BudgetsViewModel : ObservableObject, IPeriodNavigabl
                 row.Status = "Ok";
             }
             row.HistoryText = HistoryOf(row.CategoryId, budgets);
-            if (limit > 0 && cats.FirstOrDefault(c => c.Id == row.CategoryId)?.ParentId is null) totalLimit += limit;
+            var isMain = cats.FirstOrDefault(c => c.Id == row.CategoryId)?.ParentId is null;
+            if (limit > 0 && isMain) totalLimit += limit;
+            if (yearly > 0 && isMain) totalYearly += yearly;
         }
-        TotalText = totalLimit > 0 ? Res.Format("BudgetsTotal", Money(totalLimit)) : "";
+        TotalText = string.Join("   ", new[]
+        {
+            totalLimit > 0 ? Res.Format("BudgetsTotal", Money(totalLimit)) : "",
+            totalYearly > 0 ? Res.Format("BudgetsTotalYear", Money(totalYearly)) : "",
+        }.Where(t => t.Length > 0));
     }
 
     private static string HistoryOf(Guid categoryId, IEnumerable<Budget> budgets)
     {
         var parts = budgets.Where(b => b.CategoryId == categoryId).OrderBy(b => b.ValidFromMonth)
-            .Select(b => b.MonthlyAmount > 0
-                ? Res.Format("BudgetsHistoryItem", b.ValidFromMonth.ToString("MM.yyyy", CultureInfo.CurrentCulture), b.MonthlyAmount.ToString("C0", CultureInfo.CurrentCulture))
-                : Res.Format("BudgetsHistoryOff", b.ValidFromMonth.ToString("MM.yyyy", CultureInfo.CurrentCulture)))
+            .Select(b =>
+            {
+                var from = b.ValidFromMonth.ToString("MM.yyyy", CultureInfo.CurrentCulture);
+                var month = b.MonthlyAmount.ToString("C0", CultureInfo.CurrentCulture);
+                var year = b.YearlyAmount.ToString("C0", CultureInfo.CurrentCulture);
+                return b.MonthlyAmount > 0 && b.YearlyAmount > 0 ? Res.Format("BudgetsHistoryBoth", from, month, year)
+                    : b.MonthlyAmount > 0 ? Res.Format("BudgetsHistoryItem", from, month)
+                    : b.YearlyAmount > 0 ? Res.Format("BudgetsHistoryYearly", from, year)
+                    : Res.Format("BudgetsHistoryOff", from);
+            })
             .ToList();
         return parts.Count == 0 ? "" : Res.Get("BudgetsHistory") + " " + string.Join(" · ", parts);
     }

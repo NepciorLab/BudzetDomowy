@@ -225,11 +225,11 @@ public sealed class Materializer
                 break;
             case Budget b:
                 Exec(conn, tx, """
-                    INSERT OR REPLACE INTO budgets (id, category_id, monthly_cents, valid_from_month)
-                    VALUES ($id, $cat, $amt, $from)
+                    INSERT OR REPLACE INTO budgets (id, category_id, monthly_cents, valid_from_month, yearly_cents)
+                    VALUES ($id, $cat, $amt, $from, $year)
                     """,
                     ("$id", Id(b.Id)), ("$cat", Id(b.CategoryId)), ("$amt", Money.ToCents(b.MonthlyAmount)),
-                    ("$from", Day(b.ValidFromMonth)));
+                    ("$from", Day(b.ValidFromMonth)), ("$year", Money.ToCents(b.YearlyAmount)));
                 break;
             case RecurringTransaction r:
                 Exec(conn, tx, """
